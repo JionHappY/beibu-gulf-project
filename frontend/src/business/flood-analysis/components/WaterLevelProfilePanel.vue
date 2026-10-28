@@ -287,13 +287,9 @@ async function dockToTask(): Promise<boolean> {
 
     // 等待期间用户改了水位：结果已对不上当前参数，不能再覆盖直连的新结果
     const stillCurrent = floodStore.waterLevel === submittedWaterLevel
-    if (!stillCurrent) {
-      taskStore.setDocked(FLOOD_ROUTE_PATH, true)
-      return true
-    }
 
     // 结果由 renderers 消费（面板停靠后页面仍持有渲染回调）
-    if (slot.status === 'done' && slot.result) {
+    if (stillCurrent && slot.status === 'done' && slot.result) {
       const payload = slot.result as FloodAnalysisPayload
       renderers.analysis?.({
         features: payload.features,

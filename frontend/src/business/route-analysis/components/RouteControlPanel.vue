@@ -349,6 +349,10 @@ function buildChain(): RoutePoint[] {
   return ROUTE_SLOT_KEYS.map((k) => slots.value[k]).filter((p): p is RoutePoint => p !== null)
 }
 
+function chainSignature(points: RoutePoint[], routeMode: RouteModeKey): string {
+  return JSON.stringify([routeMode, points.map((p) => [p.lng, p.lat, p.name ?? null])])
+}
+
 /**
  * 开始查询（v4-S3：请求归属收进面板）。
  *
@@ -376,13 +380,9 @@ async function handleQuery(): Promise<void> {
   }
 
   const chain = buildChain()
-  const requestSignature = JSON.stringify([
-    mode.value,
-    chain.map((p) => [p.lng, p.lat, p.name ?? null]),
-  ])
+  const requestSignature = chainSignature(chain, mode.value)
   const isRequestCurrent = (): boolean =>
-    JSON.stringify([mode.value, buildChain().map((p) => [p.lng, p.lat, p.name ?? null])]) ===
-    requestSignature
+    chainSignature(buildChain(), mode.value) === requestSignature
   const segments: RoutePathResult[] = []
   calculating.value = true
 

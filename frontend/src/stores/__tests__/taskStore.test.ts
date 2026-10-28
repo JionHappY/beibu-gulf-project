@@ -543,6 +543,18 @@ describe('useTaskStore', () => {
       expect(slot?.result).toEqual({ v: 1 })
     })
 
+    it('waitForResult：taskId 匹配 ⇒ 正常返回该任务终态', async () => {
+      store.slots['/route-analysis'] = {
+        ...base,
+        taskId: 't-own',
+        status: 'done',
+        result: { owner: 'self' },
+      }
+      await expect(
+        store.waitForResult('/route-analysis', { taskId: 't-own' })
+      ).resolves.toMatchObject({ taskId: 't-own', result: { owner: 'self' } })
+    })
+
     it('🔴 waitForResult：槽位已换成同 route 的新任务 ⇒ 旧等待者 resolve null', async () => {
       store.slots['/route-analysis'] = { ...base, taskId: 't-old', status: 'running' }
 

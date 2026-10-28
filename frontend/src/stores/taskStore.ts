@@ -380,21 +380,18 @@ export const useTaskStore = defineStore('task', () => {
 
     return new Promise<TaskSlot | null>((resolve) => {
       const start = Date.now()
+      const finishMissing = (): boolean => {
+        clearInterval(timer)
+        resolve(null)
+        return true
+      }
 
       const check = (): boolean => {
         const slot = slots.value[route]
-        if (!slot) {
-          // 槽位被 clearAll 移除：无任务可等
-          clearInterval(timer)
-          resolve(null)
-          return true
-        }
+        // 槽位被 clearAll 移除：无任务可等
+        if (!slot) return finishMissing()
         // 同 route 已换任务：旧等待者不得把新任务的结果当成自己的
-        if (expectedTaskId !== undefined && slot.taskId !== expectedTaskId) {
-          clearInterval(timer)
-          resolve(null)
-          return true
-        }
+        if (expectedTaskId !== undefined && slot.taskId !== expectedTaskId) return finishMissing()
         if (isTerminalStatus(slot.status)) {
           clearInterval(timer)
           resolve({ ...slot })

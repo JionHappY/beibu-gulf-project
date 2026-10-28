@@ -212,7 +212,13 @@ describe('cruise-coverage：分层规则覆盖面（W61 M4：from.path 不许窄
 describe('tsconfig.cruise.json：@backend 跨端别名必须让依赖进图（z185）', () => {
   const TASK_TS = 'frontend/src/types/task.ts'
   const BACKEND_TASK_TYPES = 'backend/src/modules/task/types/task.ts'
-  const DEPCRUISE_BIN = path.join(ROOT, 'node_modules/dependency-cruiser/bin/dependency-cruise.mjs')
+  // 从模块解析器取主仓已安装包：guard:mutation 在无 node_modules 的 worktree 副本里跑本测试。
+  const DEPCRUISE_ENTRY = fileURLToPath(import.meta.resolve('dependency-cruiser'))
+  const DEPCRUISE_ROOT = path.resolve(path.dirname(DEPCRUISE_ENTRY), '../..')
+  const DEPCRUISE_PKG = JSON.parse(
+    fs.readFileSync(path.join(DEPCRUISE_ROOT, 'package.json'), 'utf8')
+  )
+  const DEPCRUISE_BIN = path.join(DEPCRUISE_ROOT, DEPCRUISE_PKG.bin['dependency-cruiser'])
 
   /** 与 `npm run cruise` 同一个二进制、同一份 .dependency-cruiser.cjs，只换 tsConfig。 */
   function cruiseDeps(cruiseConfig) {

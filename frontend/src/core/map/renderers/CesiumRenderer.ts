@@ -779,8 +779,8 @@ export class CesiumRenderer extends MapRenderer {
     setupViewportListener(this, id)
   }
 
-  /** 视口变化时增量更新裁剪图层：移除出视口的 Entity，添加新进入的（基类"重新显示"钩子同入口） */
-  _refreshCulledLayer(id: string): void {
+  /** 视口变化时增量更新裁剪图层：移除出视口的 Entity，添加新进入的 */
+  _updateCulledLayer(id: string): void {
     updateCulledLayer(this, id)
   }
 
@@ -1873,7 +1873,6 @@ export function addImageOverlayLayer(
   }
 }
 
-/** 设置图层可见性：Entity 数组逐个 show；dataSource / imageryLayer 直接设 show */
 function doSetVisibility(renderer: CesiumRenderer, id: string, visible: boolean): void {
   const layer = renderer._layers.get(id)
   const inst = layer?.instance
@@ -1887,6 +1886,7 @@ function doSetVisibility(renderer: CesiumRenderer, id: string, visible: boolean)
     } else if (typeof inst === 'object') {
       ;(inst as { show?: boolean }).show = visible
     }
+    if (visible && layer?.allFeatures) updateCulledLayer(renderer, id)
     // 1004-03：viewer 已销毁时显隐只改本账本，渲染请求跳过（不再 TypeError）
     aliveViewer(renderer)?.scene.requestRender()
   }

@@ -744,9 +744,9 @@ export class OLRenderer extends MapRenderer {
 
   _doSetVisibility(id: string, visible: boolean): void {
     const layer = this._layers.get(id)
-    if (layer && layer.instance) {
-      ;(layer.instance as { setVisible: (v: boolean) => void }).setVisible(visible)
-    }
+    if (!layer?.instance) return
+    ;(layer.instance as { setVisible: (v: boolean) => void }).setVisible(visible)
+    if (visible && this._cullLayers.has(id)) this._refreshCulledLayer(id)
   }
   /** 覆写基类 removeLayer：先清理裁剪图层状态（索引 + moveend 监听）再走基类移除，防止 _cullLayers 残留与监听泄漏 */
   removeLayer(id: string): void {

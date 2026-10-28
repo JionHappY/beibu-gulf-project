@@ -107,8 +107,6 @@ export class MapRenderer implements MapRendererContract {
     const layer = this._layers.get(id)
     if (layer) {
       layer.visible = visible
-      // 先补刷新再应用显隐：引擎侧 setVisible/requestRender 必须看到刷新后的切片（a095）
-      if (visible) this._refreshCulledLayer(id)
       this._doSetVisibility(id, visible)
     } else {
       this._pendingVisibility.set(id, visible)
@@ -287,13 +285,6 @@ export class MapRenderer implements MapRendererContract {
   _doSetVisibility(_id: string, _visible: boolean): void {
     throw new Error('_doSetVisibility 未实现')
   }
-
-  /**
-   * 视口裁剪图层「重新显示」时的补刷新（a095）：两引擎的裁剪增量刷新在隐藏期都按 visible
-   * 早退，视口若在隐藏期间移动过，重新显示拿到的就是隐藏前的切片。无裁剪的渲染器保持空实现
-   * （与 `_setCameraState` 同口径的可选钩子）。
-   */
-  _refreshCulledLayer(_id: string): void {}
 
   _doRemoveLayer(_layer: LayerState): void {
     throw new Error('_doRemoveLayer 未实现')

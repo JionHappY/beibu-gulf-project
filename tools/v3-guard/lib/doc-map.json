@@ -51,7 +51,7 @@
       "role": "六条不变量与 RC1–RC4 根因守则",
       "status": "active",
       "guard": "tools/v3-guard/agent-docs-check.mjs",
-      "owns": ["单源/闭环/守恒/对称/可观测/受控", "RC1–RC4", "判据四要求"],
+      "owns": ["单源/闭环/守恒/对称/可观测/受控", "RC1–RC4", "判据五要求"],
       "readWhen": ["B", "C", "F"],
       "writeWhen": ["不变量修订（需用户批准）"],
       "ts": ""

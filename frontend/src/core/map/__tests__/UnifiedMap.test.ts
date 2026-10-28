@@ -81,6 +81,7 @@ vi.mock('@/core/map/renderers', () => {
     getMap: vi.fn().mockReturnValue({}),
     getViewer: vi.fn().mockReturnValue({}),
     getType: vi.fn().mockReturnValue(type === '2d' ? '2d' : '3d'),
+    setBubbleAnchor: vi.fn(),
     startBreathing: vi.fn(),
     stopBreathing: vi.fn(),
   })
@@ -468,6 +469,73 @@ describe('UnifiedMap Click Interaction Tests', () => {
     hoverHandler({ detail: { featureType: null, data: null, coordinate: null } })
     await wrapper.vm.$nextTick()
     expect(wrapper.find('.map-feature-bubble').exists()).toBe(false)
+  })
+
+  it('🔴 指针移出地图容器：清未钉住的悬浮气泡并解锚（无 pointerleave 绑定即红）', async () => {
+    wrapper = mount(UnifiedMap, {
+      props: { mapType: '2d' },
+      ...makeMountOptions(mapStore),
+    })
+
+    await new Promise((resolve) => setTimeout(resolve, 50))
+    await flushPromises()
+    await new Promise((resolve) => setTimeout(resolve, 50))
+
+    const renderer = mockedCreateRenderer.mock.results[0].value
+    const hoverHandler = renderer.on.mock.calls.find((c: unknown[]) => c[0] === 'hover')?.[1]
+
+    hoverHandler({
+      detail: {
+        featureType: 'port',
+        data: { id: '2', name: 'hover-port', lng: 108.2, lat: 21.6 },
+        coordinate: [108.2, 21.6],
+      },
+    })
+    await wrapper.vm.$nextTick()
+    expect(wrapper.find('.map-feature-bubble').exists()).toBe(true)
+
+    // 指针直接移出容器（OL 不再派发 pointermove）⇒ 悬浮气泡必须收
+    await wrapper.find('.unified-map-wrapper').trigger('pointerleave')
+    expect(wrapper.find('.map-feature-bubble').exists()).toBe(false)
+    expect(renderer.setBubbleAnchor).toHaveBeenLastCalledWith(null)
+  })
+
+  it('指针移出地图容器：已钉住的港口/设施气泡保留（离开 ≠ 关闭钉住）', async () => {
+    wrapper = mount(UnifiedMap, {
+      props: { mapType: '2d' },
+      ...makeMountOptions(mapStore),
+    })
+
+    await new Promise((resolve) => setTimeout(resolve, 50))
+    await flushPromises()
+    await new Promise((resolve) => setTimeout(resolve, 50))
+
+    const renderer = mockedCreateRenderer.mock.results[0].value
+    const clickHandler = renderer.on.mock.calls.find((c: unknown[]) => c[0] === 'click')?.[1]
+
+    clickHandler({
+      detail: {
+        featureType: 'port',
+        data: { id: '1', name: 'test-port', lng: 108.1, lat: 21.5 },
+        coordinate: [108.1, 21.5],
+      },
+    })
+    await wrapper.vm.$nextTick()
+    await wrapper.find('.unified-map-wrapper').trigger('pointerleave')
+    expect(wrapper.find('.map-feature-bubble').exists()).toBe(true)
+    expect(wrapper.find('.bubble-close').exists()).toBe(true)
+
+    // 设施气泡同属「钉住」通道，同样不随指针离开关闭
+    clickHandler({
+      detail: {
+        featureType: 'site-nearby-facility',
+        data: { id: 'p1', name: '市人民医院', poiType: 'hospital', lng: 108.1, lat: 21.5 },
+        coordinate: [108.1, 21.5],
+      },
+    })
+    await wrapper.vm.$nextTick()
+    await wrapper.find('.unified-map-wrapper').trigger('pointerleave')
+    expect(wrapper.find('.map-facility-bubble').exists()).toBe(true)
   })
 
   it('should not show bubble on 3d clicks (bubble is 2d-only capability)', async () => {

@@ -87,6 +87,17 @@ function closeBubble(): void {
   bubbleFacilityPinned.value = null
 }
 
+/**
+ * 指针离开地图容器：只清「未钉住」的悬浮气泡。
+ * 悬浮通道的唯一事件源是 pointermove（OLRenderer 只在移动时 emit hover），
+ * 指针直接移出容器后不再有事件，bubbleHover 会停在最后一个港口且悬浮态无关闭钮；
+ * 已钉住的港口/设施气泡是用户显式固定，离开地图不等于关闭它，必须保留。
+ */
+function handleMapPointerLeave(): void {
+  if (bubblePinned.value || bubbleFacilityPinned.value) return
+  bubbleHover.value = null
+}
+
 // mapStore 已由 App.vue 统一 provide，此处不重复
 
 // 底图注册走 mapStore.registerBaseLayer（互斥切换由 setBaseLayer + baseLayerKey 管理）；
@@ -737,7 +748,7 @@ defineExpose({
 </script>
 
 <template>
-  <div class="unified-map-wrapper">
+  <div class="unified-map-wrapper" @pointerleave="handleMapPointerLeave">
     <div v-show="mapType === '2d'" ref="olContainerRef" class="map-container"></div>
 
     <div

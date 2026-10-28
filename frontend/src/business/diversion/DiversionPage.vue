@@ -21,7 +21,8 @@ import {
   usePanelPlacements,
 } from '@/shared'
 import { diversionArcLayerId } from '@/shared'
-import { BarChart, ChartLoading, SankeyChart, type SankeyClickPayload } from '@/visualization'
+import { ChartLoading } from '@/shared'
+import { BarChart, SankeyChart, type SankeyClickPayload } from '@/visualization'
 import type { DiversionBreakdownResponseParsed } from '@/types/schemas'
 
 import { PORT_JSON_NAMES, resolvePortEndpoints, type LngLat } from './constants/diversionMap'

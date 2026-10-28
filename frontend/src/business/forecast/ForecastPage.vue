@@ -14,7 +14,8 @@ import { DEFAULT_LAYER_ORDER, forecastLayerId, logger, useProfileSnapshot } from
 import { useForecastStore } from '@/stores'
 import { useMapStore } from '@/stores'
 import type { ForecastSavedState } from '@/stores/forecastStore'
-import { BarChart, ChartLoading, LineChart } from '@/visualization'
+import { ChartLoading } from '@/shared'
+import { BarChart, LineChart } from '@/visualization'
 
 import ForecastControlPanel from './components/ForecastControlPanel.vue'
 import { useForecastLayer } from './composables/useForecastLayer'

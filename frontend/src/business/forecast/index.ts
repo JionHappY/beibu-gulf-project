@@ -8,5 +8,3 @@ export { useForecastComparison } from './composables/useForecastComparison'
 export { useForecastLayer } from './composables/useForecastLayer'
 export { useForecastRequest } from './composables/useForecastRequest'
 export { useForecastTimeseries } from './composables/useForecastTimeseries'
-// 首页/个人中心概览图表（6-01：此前 HomePage 深路径穿透，补收口）
-export { useOverviewCharts } from './composables/useOverviewCharts'

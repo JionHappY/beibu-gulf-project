@@ -36,7 +36,6 @@
  * 注意口径：本项只砍"永远不渲染"的内容；"可渲染内容要不要全预热/设预算/取消"是另一档
  * 取舍（§8.22 待裁），不在本项内自行决定。
  */
-import { BEIBU_TILES, prepareBeibuTileset } from '@/business/route-analysis'
 import type { TilesetJson } from '@/core'
 
 /** 预热目标：URL + 可选派生（与注册点同一函数；返回 null ⇒ 该资产裁空、无内容可预热） */
@@ -129,7 +128,9 @@ async function preloadTilesets(
 }
 
 /** 默认预热清单：从权威源 BEIBU_TILES 派生（与注册点同一函数） */
-function businessPreloadTargets(): PreloadTarget[] {
+async function businessPreloadTargets(): Promise<PreloadTarget[]> {
+  // 动态加载航线模块入口：preload 在首屏静态图内，静态导入会把 RouteAnalysisPage 一并拉进入口。
+  const { BEIBU_TILES, prepareBeibuTileset } = await import('@/business/route-analysis')
   return BEIBU_TILES.map((s) => ({
     url: s.url,
     // 与注册点同一函数（RouteAnalysisPage 也调它）——预热与渲染的清单永远一致
@@ -146,11 +147,18 @@ function businessPreloadTargets(): PreloadTarget[] {
  */
 export async function preloadBusinessAssets(
   signal?: AbortSignal,
-  targets: readonly PreloadTarget[] = businessPreloadTargets(),
+  targets?: readonly PreloadTarget[],
   fetchImpl: typeof fetch = fetch
 ): Promise<number> {
   if (done) return 0
   done = true
+  if (!targets) {
+    try {
+      targets = await businessPreloadTargets()
+    } catch {
+      return 0
+    }
+  }
   return preloadTilesets(targets, signal, fetchImpl)
 }
 

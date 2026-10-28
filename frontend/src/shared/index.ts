@@ -35,6 +35,7 @@ export * from './utils/scenario'
 export * from './utils/spatialIndex'
 export * from './utils/warmupAfterFirstFrame'
 // 收口：组件聚合导出
+export { default as ChartLoading } from './components/ChartLoading.vue'
 export { default as EmptyState } from './components/EmptyState.vue'
 export { default as ErrorBoundary } from './components/ErrorBoundary.vue'
 export { default as GCSModal } from './components/GCSModal.vue'

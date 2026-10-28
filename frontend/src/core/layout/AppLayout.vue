@@ -6,14 +6,13 @@
  * 抽屉模式（<960px）下抽屉同时承载业务面板（slot left/right）。
  */
 
-import { computed, onUnmounted, watch } from 'vue'
+import { computed, defineAsyncComponent, onUnmounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 import { MAP_CONFIG } from '@/core/config/map'
 import { useMapControls } from '@/core/map/composables/useMapControls'
 import LayerControlPanel from '@/core/map/components/LayerControlPanel.vue'
 import { PanelTitle, useGCS, useTheme } from '@/shared'
-import { RadarChart, SNAPSHOT_SELECTED_TYPES, SNAPSHOT_XIAOQU } from '@/visualization'
 
 import BottomNavBar from './components/BottomNavBar.vue'
 import GCSPanel from './components/GCSPanel.vue'
@@ -46,11 +45,8 @@ const businessNavItems = computed<NavItem[]>(() => [
   ...navItems.value.filter((i) => i.type === 'business'),
 ])
 
-// 全局雷达图数据：旧版选址域已移除（2026-10-02），首页雷达不再有"分析结果"来源，
-// 恒用示例快照并置 snapshot=true —— UI 必须明示"示例数据"，不能把快照当分析结果呈现。
-const radarXiaoqu = computed(() => SNAPSHOT_XIAOQU)
-const radarIsSnapshot = computed(() => true)
-const radarSelectedTypes = computed(() => SNAPSHOT_SELECTED_TYPES)
+// 雷达图依赖 ECharts；保持动态加载，避免布局基座把它并进首屏入口图。
+const GlobalRadarPanel = defineAsyncComponent(() => import('./components/GlobalRadarPanel.vue'))
 
 // 专注模式 class 挂 body 而非根节点：抽屉 Teleport 到 body，根节点选择器匹配不到抽屉内面板。
 // body 加 slider-focus-mode（CSS 透明化其他面板），滑块所在面板标记 slider-focus-panel，底部 nav 排除。
@@ -137,14 +133,7 @@ function goBusiness(item: NavItem): void {
       <div v-show="showPanels">
         <slot name="right">
           <!-- 右上：雷达图 4×4（与选址分析同源：分析结果第一名，未分析时快照兜底） -->
-          <GCSPanel :w="4" :h="4" anchor="top-right" :offset-x="0" :offset-y="1.25">
-            <RadarChart
-              :visible="true"
-              :xiaoqu="radarXiaoqu"
-              :selected-types="radarSelectedTypes"
-              :snapshot="radarIsSnapshot"
-            />
-          </GCSPanel>
+          <GlobalRadarPanel />
           <!-- 右下：图层控制 4×4 -->
           <GCSPanel :w="4" :h="4" anchor="top-right" :offset-x="0" :offset-y="5.5">
             <LayerControlPanel />

@@ -1,10 +1,8 @@
 import { defineAsyncComponent } from 'vue'
-import { ChartLoading } from '@/visualization'
 
-/**
- * 首页/个人页共用的懒加载图表：echarts 移出首屏关键路径，
- * 就绪后替换 ChartLoading 占位。重复定义集中于此，避免 dup 棘轮上涨。
- */
+import { ChartLoading } from '@/shared'
+
+/** 首页/个人页共用：占位走 shared，图表 barrel 只在异步 loader 里加载。 */
 export const LazyLineChart = defineAsyncComponent({
   loader: () => import('@/visualization').then((m) => m.LineChart),
   loadingComponent: ChartLoading,

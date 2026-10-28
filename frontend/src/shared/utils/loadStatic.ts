@@ -2,7 +2,7 @@
  * 统一静态资源加载器（JSON/GeoJSON）：
  * 统一超时（默认 10s）+ 可选内存缓存（TTL=缓存有效期，默认 5min）+ in-flight 去重 +
  * 缓存上限（超过按 LRU=最近最少使用近似淘汰最旧插入项）。
- * 使用方：mapDataService、forecastAdapter/floodAdapter mock 分支。
+ * 使用方：mapDataService（港口）、useBoundaryLayer（行政边界）、useCityBoundary（三市边界）。
  */
 import type { ZodType } from 'zod'
 

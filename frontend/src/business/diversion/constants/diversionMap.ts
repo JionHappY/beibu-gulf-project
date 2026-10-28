@@ -16,7 +16,7 @@
  * 宽度只做同一年三港间的相对编码（arcWidthFor：值/三弧最大值），像素宽
  * ∈ [ARC_WIDTH_MIN, ARC_WIDTH_MAX]；绝对万吨经 tooltip/桑基图表达。
  */
-import { PORT_PORTS } from '@/shared'
+import { DIVERSION_ARC_COLORS, PORT_PORTS } from '@/shared'
 import type { Port } from '@/types'
 
 /** 契约端口 key → ports.json 条目名（见头注释；新增港口先补 ports.json 再补本表） */
@@ -36,11 +36,11 @@ const ARC_SEGMENTS = 64
 const ARC_WIDTH_MIN = 2
 const ARC_WIDTH_MAX = 14
 
-/** 弧线（常规/高亮）与运河线样式（模块 constants，组件不硬编码色值——route 域同纪律） */
-export const ARC_COLOR = '#2f7bff'
-export const ARC_COLOR_HIGHLIGHT = '#ffb020'
-export const CANAL_LINE_COLOR = '#12b886'
-export const CANAL_LINE_HIGHLIGHT = '#ffd43b'
+/** 弧线（常规/高亮）与运河线样式：色值来自 shared/constants/colors.ts 单一来源。 */
+export const ARC_COLOR = DIVERSION_ARC_COLORS.arc
+export const ARC_COLOR_HIGHLIGHT = DIVERSION_ARC_COLORS.arcHighlight
+export const CANAL_LINE_COLOR = DIVERSION_ARC_COLORS.canal
+export const CANAL_LINE_HIGHLIGHT = DIVERSION_ARC_COLORS.canalHighlight
 export const CANAL_LINE_WIDTH = 3
 
 export interface LngLat {

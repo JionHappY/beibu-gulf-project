@@ -321,6 +321,26 @@ body {
   display: none;
 }
 
+/* 面板内滚动条统一走主题 token（暗色不再出现 UA 浅色条） */
+.GCS-panel * {
+  scrollbar-width: thin;
+  scrollbar-color: var(--GCS-border-default) transparent;
+}
+
+.GCS-panel *::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.GCS-panel *::-webkit-scrollbar-thumb {
+  background: var(--GCS-border-default);
+  border-radius: var(--GCS-radius-sm);
+}
+
+.GCS-panel *::-webkit-scrollbar-track {
+  background: transparent;
+}
+
 .GCS-drawer__body .GCS-panel {
   position: static !important;
   left: auto !important;

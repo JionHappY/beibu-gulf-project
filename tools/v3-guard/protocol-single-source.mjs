@@ -8,10 +8,12 @@
  * `AGENTS.md` §七-7「无权威源的多份副本；半覆盖的同步比没有同步更危险」在**协议自身**上的实例。
  * 2026-09-24 把禁忌扩到十条时，抄本当场变成第二个口径 ⇒ 立此守卫收口。
  *
- * 三道网（全部只认结构，**不嵌入条文名**——把禁忌名写进本文件，本守卫自己就成了第二份副本）：
+ * 五道网（全部只认结构，**不嵌入条文名**——把禁忌名写进本文件，本守卫自己就成了第二份副本）：
  *   ① 指针文件必须指向正本，且不得复制协议结构（中文序号章节标题）或与正本逐行重合；
  *   ② 含「禁忌表头」的 Markdown 全仓恰好 1 份且在正本（集合由文件系统扫描派生，不写清单）；
- *   ③ 协议文件不得写死门禁条数（真值只有 run-all.mjs 的 GUARDS；要带数字请登记 doc-numbers 站点）。
+ *   ③ 协议文件不得写死门禁条数（真值只有 run-all.mjs 的 GUARDS；要带数字请登记 doc-numbers 站点）；
+ *   ④ 规范文件的体量上限（行数）与其指针句；
+ *   ⑤ 接手状态档的读取字节预算（读侧的失败阈值是字节，行数口径对不上它）。
  *
  * 已知漏口（如实写，不假装完备）：换一套措辞、另起一个非"一、二、三"式标题手工重排条文，
  * 本守卫认不出。它能拦的是**最常见的两种漂移**：整段复制、和结构照搬。
@@ -80,6 +82,15 @@ export const DOC_SIZE_CEILINGS = [
 const SIZE_POINTER_TERMS = ['protocol-single-source.mjs', '体量', '校验']
 const hasSizePointer = (text) => SIZE_POINTER_TERMS.every((t) => text.includes(t))
 export const SIZE_POINTER = SIZE_POINTER_TERMS.join(' + ')
+
+/**
+ * (⑤) 接手状态档的**读取字节预算**（工单 W3 附录 A.5）。
+ *
+ * 为什么不并进 ④：④ 判的是行数，而读侧的失败阈值是**字节**（Read 工具 256KB 上限）。
+ * 2026-10-28 实测接力状态档 1,023,031 字节被 Read 直接拒绝 —— 行数口径对不上这个阈值，
+ * 用行数守它等于没守。判据取"能不能被一次读完"，不取"写了多少行"。
+ */
+export const STATE_READ_BUDGET = { file: 'docs/日志/状态/STATE.md', maxBytes: 128 * 1024 }
 
 /**
  * 纯函数便于单测：文件文本表 → 问题列表（空数组 = 通过）
@@ -160,6 +171,20 @@ export function auditProtocolSingleSource(texts) {
       )
     }
   }
+  // ⑤ 接手状态档字节预算：超限即"读不完"，判据对象必须存在（不存在也算红，不给静默放行）
+  const stateText = texts[STATE_READ_BUDGET.file]
+  if (stateText === undefined) {
+    problems.push(`✗ ${STATE_READ_BUDGET.file} 读取失败：接手状态档缺失 ⇒ "能接手"这条承诺失去对象`)
+  } else {
+    const bytes = Buffer.byteLength(stateText, 'utf8')
+    if (bytes > STATE_READ_BUDGET.maxBytes) {
+      problems.push(
+        `✗ ${STATE_READ_BUDGET.file} 超出读取预算：${bytes} 字节 > ${STATE_READ_BUDGET.maxBytes} 字节` +
+          ` ⇒ 冷启动一次读不完（历史须搬进 docs/日志/状态/archive/，本文件只留当前状态）`
+      )
+    }
+  }
+
   for (const file of [PROTOCOL_SOURCE, ...POINTER_FILES]) {
     const text = texts[file]
     if (text === undefined) continue
@@ -192,7 +217,12 @@ function walkMd(dir) {
 
 function collectTexts() {
   const out = {}
-  for (const file of new Set([PROTOCOL_SOURCE, ...POINTER_FILES, ...walkMd(ROOT)])) {
+  for (const file of new Set([
+    PROTOCOL_SOURCE,
+    ...POINTER_FILES,
+    STATE_READ_BUDGET.file,
+    ...walkMd(ROOT),
+  ])) {
     const abs = path.join(ROOT, file)
     out[file] = fs.existsSync(abs) ? fs.readFileSync(abs, 'utf8') : undefined
   }
@@ -202,13 +232,16 @@ function collectTexts() {
 function main() {
   const problems = auditProtocolSingleSource(collectTexts())
   if (problems.length > 0) {
-    console.error('[protocol-single-source] 未通过：作业协议出现了第二个口径')
+    console.error('[protocol-single-source] 未通过：文档/协议结构判据不满足（逐条见下）')
     for (const p of problems) console.error('  ' + p)
-    console.error(`处理：规则只写在 ${PROTOCOL_SOURCE}，其余文件只做指针与索引。`)
+    console.error(
+      `处理：协议条文只写在 ${PROTOCOL_SOURCE}；体量类 ✗ 行自带处置建议，按行内提示改。`
+    )
     process.exit(1)
   }
   console.log(
-    `[protocol-single-source] OK：条文正本唯一（${PROTOCOL_SOURCE}），${POINTER_FILES.length} 个指针文件无复制，协议内无写死门禁条数 ✓`
+    `[protocol-single-source] OK：条文正本唯一（${PROTOCOL_SOURCE}），${POINTER_FILES.length} 个指针文件无复制，` +
+      `协议内无写死门禁条数，${STATE_READ_BUDGET.file} 在读取预算内 ✓`
   )
 }
 

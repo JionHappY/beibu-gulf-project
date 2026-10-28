@@ -18,6 +18,7 @@ import {
   DOC_SIZE_CEILINGS,
   POINTER_FILES,
   PROTOCOL_SOURCE,
+  STATE_READ_BUDGET,
   auditProtocolSingleSource,
   normLine,
 } from '../protocol-single-source.mjs'
@@ -30,6 +31,7 @@ function realTexts() {
     PROTOCOL_SOURCE,
     ...POINTER_FILES,
     ...DOC_SIZE_CEILINGS.map((s) => s.file),
+    STATE_READ_BUDGET.file,
   ])
   const texts = {}
   for (const f of files) texts[f] = readFileSync(path.join(ROOT, f), 'utf8')
@@ -154,5 +156,35 @@ describe('protocol-single-source 守卫', () => {
     const problems = auditProtocolSingleSource(texts).join(' ')
     expect(problems).toContain('体量超限')
     expect(problems).toContain(spec.file)
+  })
+
+  // ⑤ 接手状态档字节预算（工单 W3 附录 A.5）。为什么这条必须单独有红样：
+  // ① 它判的是**字节**，与 ④ 的行数判据不是同一个面 —— 用行数样本喂它永远打不红；
+  // ② 2026-10-28 之前的真实现是"文件不存在也无声"（Read 失败与判据无关），
+  //    所以"缺失即红"必须与"超限即红"各钉一格。
+  it('@guard-red-sample 🔴 式 2 停用：状态档追加到超预算 → 必须报"超出读取预算"', () => {
+    const texts = { ...realTexts() }
+    texts[STATE_READ_BUDGET.file] += Buffer.alloc(STATE_READ_BUDGET.maxBytes + 1, 120).toString()
+    const problems = auditProtocolSingleSource(texts).join(' ')
+    expect(problems).toContain('超出读取预算')
+    expect(problems).toContain(STATE_READ_BUDGET.file)
+  })
+
+  it('🔴 式 1 删字面：状态档被删 → 必须报"失去对象"而不是静默通过', () => {
+    const texts = { ...realTexts() }
+    delete texts[STATE_READ_BUDGET.file]
+    expect(auditProtocolSingleSource(texts).join(' ')).toContain('接手状态档缺失')
+  })
+
+  it('式 3 等价重构不许红：恰好等于预算（含中文多字节）→ 必须仍绿', () => {
+    const texts = { ...realTexts() }
+    // 用三字节字符逼近边界：先清空，再补足到"字节数恰好 == maxBytes"
+    const unit = '好' // 3 字节
+    const times = Math.floor(STATE_READ_BUDGET.maxBytes / 3)
+    texts[STATE_READ_BUDGET.file] = unit.repeat(times)
+    expect(Buffer.byteLength(texts[STATE_READ_BUDGET.file], 'utf8')).toBeLessThanOrEqual(
+      STATE_READ_BUDGET.maxBytes
+    )
+    expect(auditProtocolSingleSource(texts)).toEqual([])
   })
 })

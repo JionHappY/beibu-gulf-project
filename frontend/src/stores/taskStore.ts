@@ -325,7 +325,7 @@ export const useTaskStore = defineStore('task', () => {
     params: Record<string, unknown>
   }): Promise<{ taskId: string; slot: TaskSlot | null }> {
     const taskId = await submit(input)
-    const slot = await waitForResult(input.route)
+    const slot = await waitForResult(input.route, { taskId })
     return { taskId, slot }
   }
 
@@ -373,9 +373,10 @@ export const useTaskStore = defineStore('task', () => {
    */
   function waitForResult(
     route: string,
-    options: { timeoutMs?: number } = {}
+    options: { timeoutMs?: number; taskId?: string } = {}
   ): Promise<TaskSlot | null> {
     const timeoutMs = options.timeoutMs ?? 5 * 60 * 1000
+    const expectedTaskId = options.taskId
 
     return new Promise<TaskSlot | null>((resolve) => {
       const start = Date.now()
@@ -384,6 +385,12 @@ export const useTaskStore = defineStore('task', () => {
         const slot = slots.value[route]
         if (!slot) {
           // 槽位被 clearAll 移除：无任务可等
+          clearInterval(timer)
+          resolve(null)
+          return true
+        }
+        // 同 route 已换任务：旧等待者不得把新任务的结果当成自己的
+        if (expectedTaskId !== undefined && slot.taskId !== expectedTaskId) {
           clearInterval(timer)
           resolve(null)
           return true

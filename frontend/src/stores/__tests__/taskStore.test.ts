@@ -543,6 +543,44 @@ describe('useTaskStore', () => {
       expect(slot?.result).toEqual({ v: 1 })
     })
 
+    it('🔴 waitForResult：槽位已换成同 route 的新任务 ⇒ 旧等待者 resolve null', async () => {
+      store.slots['/route-analysis'] = { ...base, taskId: 't-old', status: 'running' }
+
+      const p = store.waitForResult('/route-analysis', { taskId: 't-old' })
+      await sleep(50)
+      store.slots['/route-analysis'] = {
+        ...base,
+        submitSeq: 2,
+        taskId: 't-new',
+        status: 'done',
+        result: { wrong: true },
+      }
+
+      await expect(p).resolves.toBeNull()
+    })
+
+    it('🔴 submitAndWait：同 route 被新任务替换 ⇒ 不把新任务结果冒充给旧调用方', async () => {
+      mockFetch.mockResolvedValueOnce(
+        envelope({ taskId: 't-old', status: 'pending', queuePosition: 0, createdAtMs: 1000 })
+      )
+
+      const pending = store.submitAndWait({
+        route: '/route-analysis',
+        domain: 'route-path',
+        params: { fromLng: 1, fromLat: 2, toLng: 3, toLat: 4 },
+      })
+      await sleep(50)
+      store.slots['/route-analysis'] = {
+        ...base,
+        submitSeq: 2,
+        taskId: 't-new',
+        status: 'done',
+        result: { owner: 'second' },
+      }
+
+      await expect(pending).resolves.toEqual({ taskId: 't-old', slot: null })
+    })
+
     it('submitAndWait：提交 + 等到终态，返回 {taskId, slot}', async () => {
       mockFetch.mockResolvedValueOnce(
         envelope({ taskId: 't-9', status: 'pending', queuePosition: 0, createdAtMs: 1000 })

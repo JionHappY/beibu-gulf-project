@@ -152,11 +152,13 @@ export function useSiteSuitabilityLayer(): UseSiteSuitabilityLayerReturn {
    * （setData + manager.updateData），不复制渲染逻辑。
    */
   async function transferToBackground(): Promise<void> {
+    const submittedParams = buildRequestParams()
+    let taskId: string
     try {
-      await taskStore.submit({
+      taskId = await taskStore.submit({
         route: SITE_SUITABILITY_ROUTE_PATH,
         domain: 'site-suitability-map',
-        params: buildRequestParams(),
+        params: submittedParams,
       })
     } catch (e) {
       // 队列满/限流等失败必须说出来：静默失败会让用户以为已经在后台跑了
@@ -166,8 +168,9 @@ export function useSiteSuitabilityLayer(): UseSiteSuitabilityLayerReturn {
     // docked = 用户主动让位（展示语义 + 导航进度环的保留判据）
     taskStore.setDocked(SITE_SUITABILITY_ROUTE_PATH, true)
 
-    const slot = await taskStore.waitForResult(SITE_SUITABILITY_ROUTE_PATH)
+    const slot = await taskStore.waitForResult(SITE_SUITABILITY_ROUTE_PATH, { taskId })
     if (disposed || !slot || slot.status !== 'done') return
+    if (JSON.stringify(buildRequestParams()) !== JSON.stringify(submittedParams)) return
     const result = slot.result as SiteSuitabilityResponseParsed | undefined
     if (!result || !Array.isArray(result.features)) return
     state.setData(result)

@@ -17,6 +17,7 @@ import {
   showError,
   SliderSelectCard,
   useGCS,
+  useLatestRequest,
   usePanelPlacements,
 } from '@/shared'
 import { diversionArcLayerId } from '@/shared'
@@ -87,12 +88,13 @@ const diversionLayerGroups = [
 ]
 
 /**
- * 页面级取消（z020）：离页即 abort 本页在途请求；await 之后一律先查 `unmounted`，
+ * 页面级取消（z020）：离页即 abort 几何在途请求；await 之后一律先查 `unmounted`，
  * 拦下迟到响应——否则 `updateCanalLayer/updateArcLayers` 会在已离页的路由上重建图层
  * （ownership 已随页面 onScopeDispose 注销，迟到写入就是"画到别的页上"）。
- * 与 taskStore 无关：本页任务全为即时请求，无跨页保活语义。
+ * 分流数据另有年份竞态：年份变化也必须取消旧请求，不能只靠防抖。
  */
 const pageAbort = new AbortController()
+const latestBreakdown = useLatestRequest()
 let unmounted = false
 
 /** 转移量图 x 轴：四个货类（顺序与 result.transfer 字段一致） */
@@ -122,17 +124,18 @@ const links = computed<SankeyLink[]>(() =>
 
 async function load(): Promise<void> {
   loading.value = true
+  const signal = latestBreakdown.createSignal()
   try {
-    const data = await getBreakdown(year.value, pageAbort.signal)
-    if (unmounted) return
+    const data = await getBreakdown(year.value, signal)
+    if (unmounted || !latestBreakdown.isLatest(signal)) return
     result.value = data
     refreshArcs()
   } catch (e) {
-    if (unmounted || pageAbort.signal.aborted) return
+    if (unmounted || signal.aborted || !latestBreakdown.isLatest(signal)) return
     logger.error('[DiversionPage] load error:', e)
     showError(e, { fallback: '加载分流数据失败' })
   } finally {
-    if (!unmounted) loading.value = false
+    if (!unmounted && latestBreakdown.isLatest(signal)) loading.value = false
   }
 }
 
@@ -233,6 +236,7 @@ onMounted(() => {
 onUnmounted(() => {
   unmounted = true
   pageAbort.abort()
+  latestBreakdown.cancel()
   document.removeEventListener('click', handleGlobalClick)
   if (debounceTimer) {
     clearTimeout(debounceTimer)

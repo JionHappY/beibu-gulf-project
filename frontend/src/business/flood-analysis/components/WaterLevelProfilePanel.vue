@@ -189,7 +189,7 @@ async function runAnalysis(waterLevel: number, viaTask = false): Promise<void> {
   requesting.value = true
   try {
     const analysis = await fetchAnalysis(waterLevel, viaTask)
-    if (disposed) return
+    if (disposed || floodStore.waterLevel !== waterLevel) return
     if (analysis) {
       renderStage('淹没范围', () =>
         renderers.analysis?.({
@@ -207,7 +207,7 @@ async function runAnalysis(waterLevel: number, viaTask = false): Promise<void> {
     }
 
     const impact = await fetchImpact(waterLevel)
-    if (disposed) return
+    if (disposed || floodStore.waterLevel !== waterLevel) return
     if (impact) {
       renderStage('影响评估', () =>
         renderers.impact?.({
@@ -273,16 +273,24 @@ async function dockToTask(): Promise<boolean> {
   abortInflight()
 
   requesting.value = true
+  const submittedWaterLevel = floodStore.waterLevel
   try {
     const { slot } = await taskStore.submitAndWait({
       route: FLOOD_ROUTE_PATH,
       domain: 'flood-areas',
-      params: { waterLevel: floodStore.waterLevel },
+      params: { waterLevel: submittedWaterLevel },
     })
     if (disposed) return false
 
     // 任务被移除（clearAll）：不置停靠态
     if (!slot) return false
+
+    // 等待期间用户改了水位：结果已对不上当前参数，不能再覆盖直连的新结果
+    const stillCurrent = floodStore.waterLevel === submittedWaterLevel
+    if (!stillCurrent) {
+      taskStore.setDocked(FLOOD_ROUTE_PATH, true)
+      return true
+    }
 
     // 结果由 renderers 消费（面板停靠后页面仍持有渲染回调）
     if (slot.status === 'done' && slot.result) {

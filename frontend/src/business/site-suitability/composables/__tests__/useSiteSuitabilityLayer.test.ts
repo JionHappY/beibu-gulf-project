@@ -6,6 +6,7 @@ import { closeModal, confirmModal, gcsModalState } from '@/shared/utils/gcsFeedb
 import { useMapStore } from '@/stores/mapStore'
 import { useSiteSuitabilityStore } from '@/stores/siteSuitabilityStore'
 import { useTaskStore } from '@/stores/taskStore'
+import type { TaskSlot } from '@/types/task'
 
 // vi.mock 工厂 hoist——mock 函数用 vi.hoisted（对齐 useForecastLayer.test.ts 体例）
 const { mockApiRequest } = vi.hoisted(() => ({ mockApiRequest: vi.fn() }))
@@ -175,6 +176,71 @@ describe('useSiteSuitabilityLayer（BLM 注册/更新 + 事务取消）', () => 
       expect(arg.params.min_land_frac).toBe(0.5)
       expect(arg.params.w_inundation).toBe(0.4299)
       expect(setDockedSpy).toHaveBeenCalledWith('/site-suitability', true)
+    } finally {
+      closeModal()
+      vi.useRealTimers()
+    }
+  })
+
+  it('🔴 后台任务等待期间权重已变 ⇒ 旧参数结果不得写图', async () => {
+    useMapStore().currentRenderer = fakeRenderer as never
+    vi.useFakeTimers()
+    try {
+      mockApiRequest.mockImplementation(() => new Promise(() => undefined))
+      const state = useSiteSuitabilityStore()
+      const taskStore = useTaskStore()
+      const submitSpy = vi.spyOn(taskStore, 'submit').mockResolvedValue('task-stale')
+      let resolveTask!: (slot: TaskSlot | null | PromiseLike<TaskSlot | null>) => void
+      const waitSpy = vi
+        .spyOn(taskStore, 'waitForResult')
+        .mockImplementation(() => new Promise((resolve) => (resolveTask = resolve)))
+
+      const scope = effectScope()
+      scope.run(() => {
+        const { updateLayer } = useSiteSuitabilityLayer()
+        const { startTransaction } = useSiteSuitabilityRequest()
+        const { transactionId, signal } = startTransaction()
+        void updateLayer(transactionId, signal)
+      })
+
+      await vi.advanceTimersByTimeAsync(SLOW_REQUEST_THRESHOLD_MS + 100)
+      confirmModal()
+      await vi.advanceTimersByTimeAsync(0)
+      expect(submitSpy).toHaveBeenCalledTimes(1)
+      expect(waitSpy).toHaveBeenCalledWith('/site-suitability', { taskId: 'task-stale' })
+
+      state.setWeight('land', 0.9)
+      resolveTask({
+        taskId: 'task-stale',
+        route: '/site-suitability',
+        domain: 'site-suitability-map',
+        status: 'done',
+        progress: 1,
+        retryCount: 0,
+        createdAtMs: 1,
+        submitSeq: 1,
+        docked: true,
+        result: {
+          type: 'FeatureCollection',
+          features: [
+            {
+              type: 'Feature',
+              geometry: { type: 'Point', coordinates: [108.6, 21.9] },
+              properties: { id: 1, score: 0.99 },
+            },
+          ],
+          metadata: {
+            count: 1,
+            weights: {},
+            weightsSource: 'ahp-default',
+            kdeP99: 0,
+            minLandFrac: 0.5,
+          },
+        },
+      })
+      await vi.advanceTimersByTimeAsync(10)
+
+      expect(mockManager.updateData).not.toHaveBeenCalled()
     } finally {
       closeModal()
       vi.useRealTimers()

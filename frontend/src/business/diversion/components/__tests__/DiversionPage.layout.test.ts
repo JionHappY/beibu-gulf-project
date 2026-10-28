@@ -321,6 +321,49 @@ describe('DiversionPage 4×4 布局', () => {
     wrapper.unmount()
   })
 
+  it('🔴 年份快速切换：慢的旧响应不得覆盖新年份结果', async () => {
+    let resolveOld!: (value: unknown) => void
+    let resolveLatest!: (value: unknown) => void
+    api.getBreakdown
+      .mockResolvedValueOnce(FIXTURE)
+      .mockImplementationOnce(() => new Promise((resolve) => (resolveOld = resolve)))
+      .mockImplementationOnce(() => new Promise((resolve) => (resolveLatest = resolve)))
+    api.getCanalLine.mockResolvedValue(CANAL_FIXTURE)
+    api.getPorts.mockResolvedValue(PORTS_FIXTURE)
+
+    const { wrapper } = mountPage()
+    await flushPromises()
+
+    const yearPanel = panelWithClass(wrapper, '.year-panel')
+    await yearPanel.find('button.ssc').trigger('click')
+    const slider = yearPanel.find('input[type="range"]')
+
+    await slider.setValue('2040')
+    await new Promise((resolve) => setTimeout(resolve, 350))
+    await slider.setValue('2041')
+    await new Promise((resolve) => setTimeout(resolve, 350))
+    expect(api.getBreakdown).toHaveBeenCalledTimes(3)
+
+    resolveLatest({
+      ...FIXTURE,
+      year: 2041,
+      transfer: { year: 2041, coal: 941, grain: 1, ironOre: 1, sandCement: 0 },
+    })
+    await flushPromises()
+    resolveOld({
+      ...FIXTURE,
+      year: 2035,
+      transfer: { year: 2035, coal: 2035, grain: 1, ironOre: 1, sandCement: 0 },
+    })
+    await flushPromises()
+
+    const bar = wrapper.findComponent({ name: 'BarChart' })
+    expect(String(bar.props('title'))).toContain('2041')
+    expect(bar.props('series')).toEqual([{ name: '转移量（万吨/年）', data: [941, 1, 1, 0] }])
+
+    wrapper.unmount()
+  })
+
   it('桑基点击联动（A3）：点港节点→对应弧高亮、再点取消、点「平陆运河」→运河线高亮', async () => {
     api.getBreakdown.mockResolvedValue(FIXTURE)
     api.getCanalLine.mockResolvedValue(CANAL_FIXTURE)

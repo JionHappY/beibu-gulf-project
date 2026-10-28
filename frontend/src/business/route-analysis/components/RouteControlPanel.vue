@@ -376,6 +376,13 @@ async function handleQuery(): Promise<void> {
   }
 
   const chain = buildChain()
+  const requestSignature = JSON.stringify([
+    mode.value,
+    chain.map((p) => [p.lng, p.lat, p.name ?? null]),
+  ])
+  const isRequestCurrent = (): boolean =>
+    JSON.stringify([mode.value, buildChain().map((p) => [p.lng, p.lat, p.name ?? null])]) ===
+    requestSignature
   const segments: RoutePathResult[] = []
   calculating.value = true
 
@@ -403,6 +410,9 @@ async function handleQuery(): Promise<void> {
       // 🔴 组件已卸载：本链的后续副作用无意义（且会污染 App 级图层管理器）。
       // 后端任务仍由 taskStore 保活，不受此处影响。
       if (disposed) return
+
+      // 等待期间起点/终点/方式变了：旧链结果已不是用户当前要的东西
+      if (!isRequestCurrent()) return
 
       if (slot.status === 'failed') {
         showError(slot.error?.message ?? '路径查询失败', { fallback: '路径查询失败，请稍后重试' })
@@ -440,8 +450,8 @@ async function handleQuery(): Promise<void> {
     calculating.value = false
   }
 
-  // 组件已卸载：不再写 App 级图层管理器、不再 emit
-  if (disposed) return
+  // 组件已卸载 / 查询参数已变：不再写 App 级图层管理器、不再 emit
+  if (disposed || !isRequestCurrent()) return
 
   // 已成功段也上图（多段中断时保留可达部分），槽点始终刷新
   props.updateRouteLayers(segments, collectSlots())

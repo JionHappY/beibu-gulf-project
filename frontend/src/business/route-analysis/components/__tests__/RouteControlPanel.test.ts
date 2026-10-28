@@ -314,6 +314,50 @@ describe('RouteControlPanel — 抓取/注入交互（2026-09-12 线上反馈回
     expect(wrapper.find('.mode-btn.on').text()).toBe('最快')
   })
 
+  it('🔴 等待去程结果时切换口径 ⇒ 旧口径结果不得上图', async () => {
+    let resolveSubmit!: (value: unknown) => void
+    mocks.submitAndWait.mockImplementationOnce(
+      () => new Promise((resolve) => (resolveSubmit = resolve))
+    )
+    const wrapper = mountPanel()
+    await flushPromises()
+
+    await mapPick(wrapper, 109.1, 21.5)
+    await wrapper.findAll('.slot-btn')[0].trigger('click')
+    await flushPromises()
+    await mapPick(wrapper, 109.2, 21.6)
+    await wrapper.findAll('.slot-btn')[3].trigger('click')
+    await flushPromises()
+
+    await wrapper.find('.route-btn.primary').trigger('click')
+    await flushPromises()
+    await wrapper.findAll('.mode-btn')[1].trigger('click')
+    await flushPromises()
+
+    resolveSubmit({
+      taskId: 't-stale',
+      slot: {
+        status: 'done',
+        result: {
+          found: true,
+          mode: 'distance',
+          distanceM: 3100,
+          durationMin: 5.1,
+          snapDistanceM: { from: 3, to: 20 },
+          edgeCount: 4,
+          coordinates: [
+            [109.1, 21.5],
+            [109.12, 21.52],
+          ],
+        },
+      },
+    })
+    await flushPromises()
+
+    expect(mocks.updateRouteLayers).not.toHaveBeenCalled()
+    expect(wrapper.emitted('query-result')).toBeUndefined()
+  })
+
   it('🔴 v4：任务失败（slot.status=failed）⇒ 走 showError 且不上图', async () => {
     mocks.submitAndWait.mockResolvedValue({
       taskId: 't-1',

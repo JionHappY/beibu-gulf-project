@@ -28,6 +28,7 @@ const h = vi.hoisted(() => ({
   directCalls: [] as number[],
   /** 任务路径的调用记录 */
   taskCalls: [] as number[],
+  taskSubmitAndWait: vi.fn(),
   cancelSpy: vi.fn(),
   chart: {
     setOption: vi.fn(),
@@ -96,13 +97,7 @@ vi.mock('@/stores', async (importOriginal) => {
       getSlot: vi.fn(() => null),
       setDocked: vi.fn(),
       cancel: h.cancelSpy,
-      submitAndWait: vi.fn(async (o: { params: { waterLevel: number } }) => {
-        h.taskCalls.push(o.params.waterLevel)
-        // 模拟任务成功：返回淹没范围（无 statistics —— 真实任务域就是这样）
-        return {
-          slot: { status: 'done', result: { features: [], riskLevel: '无风险' } },
-        }
-      }),
+      submitAndWait: h.taskSubmitAndWait,
     }),
   }
 })
@@ -116,6 +111,10 @@ describe('WaterLevelProfilePanel 请求归属（v4-S3）', () => {
     vi.clearAllMocks()
     h.directCalls.length = 0
     h.taskCalls.length = 0
+    h.taskSubmitAndWait.mockImplementation(async (o: { params: { waterLevel: number } }) => {
+      h.taskCalls.push(o.params.waterLevel)
+      return { slot: { status: 'done', result: { features: [], riskLevel: '无风险' } } }
+    })
     h.apiRequest.mockResolvedValue([{ id: 'p1', name: '剖面1', points: [[108.5, 21.7, 0]] }])
   })
 
@@ -209,6 +208,49 @@ describe('WaterLevelProfilePanel 请求归属（v4-S3）', () => {
 
     // 🔴 绝不调 taskStore.cancel —— 用户把面板拖进 dock 就是为了让它继续跑
     expect(h.cancelSpy).not.toHaveBeenCalled()
+  })
+
+  it('🔴 后台任务等待期间水位已变 ⇒ 旧任务结果不得覆盖当前画面', async () => {
+    const { useFloodStore } = await import('@/stores')
+    const store = useFloodStore()
+    store.setWaterLevel(5)
+
+    let resolveTask!: (value: unknown) => void
+    h.taskSubmitAndWait.mockImplementationOnce(
+      (o: { params: { waterLevel: number } }) =>
+        new Promise((resolve) => {
+          h.taskCalls.push(o.params.waterLevel)
+          resolveTask = resolve
+        })
+    )
+
+    const wrapper = shallowMount(WaterLevelProfilePanel, { props: { stateRestored: true } })
+    const analysis = vi.fn()
+    const waterSurface = vi.fn()
+    ;(wrapper.vm as unknown as { registerRenderers: (r: unknown) => void }).registerRenderers({
+      analysis,
+      waterSurface,
+    })
+    await flushPromises()
+
+    const pending = (wrapper.vm as unknown as { dockToTask: () => Promise<boolean> }).dockToTask()
+    await flushPromises()
+    expect(h.taskCalls).toEqual([5])
+
+    store.setWaterLevel(7)
+    resolveTask({
+      slot: {
+        status: 'done',
+        result: { features: [{ id: 'stale' }], riskLevel: '无风险', actualWaterLevel: 5 },
+      },
+      taskId: 't-stale',
+    })
+    await pending
+    await flushPromises()
+
+    expect(analysis).not.toHaveBeenCalled()
+    expect(waterSurface).not.toHaveBeenCalled()
+    wrapper.unmount()
   })
 
   it('注入的渲染回调在请求落地后被调用', async () => {

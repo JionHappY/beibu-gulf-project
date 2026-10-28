@@ -315,7 +315,7 @@ onUnmounted(() => {
       <UnifiedMap ref="unifiedMapRef" :map-type="mapStore.mapType" />
     </ErrorBoundary>
     <main class="app-content">
-      <ErrorBoundary>
+      <ErrorBoundary :reset-key="route.fullPath">
         <RouterView v-slot="{ Component }">
           <component :is="Component" @require-login="handleRequireLogin" />
         </RouterView>

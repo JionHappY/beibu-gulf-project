@@ -4,7 +4,7 @@
  * 继承 AppLayout 布局基座：左侧吞吐量图表（自 AppLayout 下沉），
  * 右侧单个 4×8 Panel 放置登录/用户信息/收藏夹（UserInfoCard、PlansPanel 为独立子组件）。
  */
-import { onMounted, watch } from 'vue'
+import { onMounted, onUnmounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 import { useOverviewCharts } from '@/business'
@@ -21,10 +21,11 @@ const BarChart = LazyBarChart
 
 const { user, logout } = useAuth()
 const { cellCss, css } = useGCS()
-const { chartData, barData, loadOverviewCharts } = useOverviewCharts()
+const { chartData, barData, loadOverviewCharts, cancelOverviewCharts } = useOverviewCharts()
 
 // 与首页共用 useOverviewCharts（图表数据统一来源，无本页假数据）
 onMounted(loadOverviewCharts)
+onUnmounted(cancelOverviewCharts)
 
 // 登录成功后按 redirect 参数返回原页面——
 // handleAuthError 把被 401 打断的路径带回这里，登录后还原现场继续操作。

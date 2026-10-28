@@ -258,12 +258,8 @@ async function singleRequest<T = unknown>(
           `[apiRequest:${rid}] schema 校验失败 ${path}:`,
           result.error.issues.slice(0, 3).map((i) => i.path.join('.'))
         )
-        // 字段路径随错误透出（前 3 条），调用方排障不再盲猜（审查 L-10）
-        const issuePaths = result.error.issues
-          .slice(0, 3)
-          .map((i) => i.path.join('.') || '(root)')
-          .join('、')
-        throw new ApiError(`响应数据格式校验失败：${issuePaths}`, ErrorCode.REQUEST_FAILED)
+        // 字段路径只进日志；上屏文案固定，避免内部结构泄露给用户。
+        throw new ApiError('响应数据格式校验失败，请稍后重试', ErrorCode.REQUEST_FAILED)
       }
       return result.data as T
     }

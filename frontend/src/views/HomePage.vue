@@ -5,7 +5,7 @@
  * 港口吞吐量图表下沉到本页（业务数据由业务页持有）。
  */
 
-import { onMounted } from 'vue'
+import { onMounted, onUnmounted } from 'vue'
 
 // 6-01：经 business 桶入口取数（不再深路径穿透 composables）
 import { useOverviewCharts } from '@/business'
@@ -18,12 +18,13 @@ import { LazyBarChart, LazyLineChart } from './lazyCharts'
 const LineChart = LazyLineChart
 const BarChart = LazyBarChart
 
-const { chartData, barData, loadOverviewCharts } = useOverviewCharts()
+const { chartData, barData, loadOverviewCharts, cancelOverviewCharts } = useOverviewCharts()
 
 /** 两面板位置由 panels.ts 派生（cell 档随全局；模板不写 offset 字面量） */
 const placements = usePanelPlacements(HOME_PANELS)
 
 onMounted(loadOverviewCharts)
+onUnmounted(cancelOverviewCharts)
 </script>
 
 <template>

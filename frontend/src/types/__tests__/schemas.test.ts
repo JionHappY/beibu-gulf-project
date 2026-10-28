@@ -6,6 +6,7 @@ import { describe, expect, it } from 'vitest'
 import {
   authResponseSchema,
   boundaryCacheSchema,
+  boundaryFeatureCollectionSchema,
   favoriteAddResponseSchema,
   favoriteItemSchema,
   favoriteRemoveResponseSchema,
@@ -553,6 +554,34 @@ describe('契约覆盖补齐的 schema（生成器门禁转红后补）', () => 
     })
     expect(ok.success).toBe(true)
     expect(bad.success).toBe(false)
+  })
+
+  it('🔴 boundaryFeatureCollectionSchema 深校验嵌套坐标，缓存不能绕过', () => {
+    const polygon = {
+      type: 'FeatureCollection',
+      features: [
+        {
+          type: 'Feature',
+          geometry: {
+            type: 'Polygon',
+            coordinates: [
+              [
+                [108, 21],
+                [109, 21],
+                [109, 22],
+                [108, 21],
+              ],
+            ],
+          },
+          properties: { name: '钦州' },
+        },
+      ],
+    }
+    expect(boundaryFeatureCollectionSchema.safeParse(polygon).success).toBe(true)
+    const invalid = structuredClone(polygon)
+    invalid.features[0].geometry.coordinates[0][0][0] = '108' as never
+    expect(boundaryFeatureCollectionSchema.safeParse(invalid).success).toBe(false)
+    expect(boundaryCacheSchema.safeParse({ data: invalid, timestamp: 1 }).success).toBe(false)
   })
 
   it('diversionBreakdownResponseSchema：转移/分摊/桑基流三段齐全', () => {

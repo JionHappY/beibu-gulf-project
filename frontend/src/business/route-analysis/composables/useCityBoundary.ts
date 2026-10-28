@@ -1,4 +1,5 @@
 import { loadStatic, logger } from '@/shared'
+import { boundaryFeatureCollectionSchema } from '@/types/schemas'
 
 // 钦北防三市市域选点校验：boundary.geojson 为 12 个区县面（钦州/防城港/北海各 4，
 // adcode 4507xx/4506xx/4505xx，与选址 boundary 图层同一份静态数据源）。
@@ -46,7 +47,7 @@ async function loadCityBoundary(): Promise<BoundaryPolygon[]> {
   if (!boundaryLoading) {
     boundaryLoading = loadStatic<{
       features: Array<{ geometry?: { type?: string; coordinates?: unknown } }>
-    }>(BOUNDARY_URL)
+    }>(BOUNDARY_URL, { schema: boundaryFeatureCollectionSchema })
       .then((geo) => {
         const features = (geo.features ?? [])
           .map((f) => f.geometry)

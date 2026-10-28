@@ -22,6 +22,7 @@ vi.mock('@/business', () => ({
     chartData: { labels: [], series: [] },
     barData: { labels: [], series: [] },
     loadOverviewCharts: vi.fn(),
+    cancelOverviewCharts: vi.fn(),
   }),
 }))
 

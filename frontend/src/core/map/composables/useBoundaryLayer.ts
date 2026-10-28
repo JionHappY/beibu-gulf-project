@@ -9,7 +9,7 @@ import { LAYER_DEFAULTS } from '@/shared'
 import { loadStatic } from '@/shared'
 import { logger } from '@/shared'
 import type { LayerOptions } from '@/types'
-import { boundaryCacheSchema } from '@/types/schemas'
+import { boundaryCacheSchema, boundaryFeatureCollectionSchema } from '@/types/schemas'
 import { STORAGE_KEYS } from '@/shared/constants'
 
 export async function loadBoundaryGeoJson(
@@ -51,12 +51,8 @@ export async function loadBoundaryGeoJson(
     try {
       const geojson = await loadStatic<FeatureCollection>(MAP_CONFIG.DATA_PATHS.boundary, {
         signal,
+        schema: boundaryFeatureCollectionSchema,
       })
-
-      // 防御性检查：确保 features 数组存在
-      if (!Array.isArray(geojson.features)) {
-        throw new Error('GeoJSON 格式无效：缺少 features 数组')
-      }
 
       // 确保 feature.properties 存在并打上边界要素类型标记
       // D9：克隆后再改——loadStatic 缓存命中返回原引用，就地修改会污染共享缓存

@@ -1,6 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { z } from 'zod'
 
+import { logger } from '@/shared/utils/logger'
+
 import { ApiError, ErrorCode, useApiRequest } from '../useApiRequest'
 
 // 与实现 API_TIMEOUT_MS 同值（实现侧为模块常量不导出；此处仅作测试推进量）
@@ -187,15 +189,19 @@ describe('useApiRequest', () => {
       expect(mockFetch).toHaveBeenCalledTimes(1)
     })
 
-    it('schema 校验失败的报错携带字段路径（审查 L-10 回归）', async () => {
+    it('🔴 schema 字段路径只进日志，不上屏', async () => {
+      const sampled = vi.spyOn(logger, 'sampled')
       // 真 zod schema：data.list[0].id 缺失 → issue path = list.0.id
       const schema = z.object({ list: z.array(z.object({ id: z.string() })) })
       mockFetch.mockResolvedValue(jsonResponse({ code: 200, data: { list: [{}] } }))
       const { apiRequest } = useApiRequest()
       await expect(apiRequest('/schema-fail', { schema, method: 'POST' })).rejects.toMatchObject({
         code: ErrorCode.REQUEST_FAILED,
-        message: expect.stringContaining('list.0.id'),
+        message: expect.not.stringContaining('list.0.id'),
       })
+      expect(sampled).toHaveBeenCalledWith('warn', expect.stringContaining('schema 校验失败'), [
+        'list.0.id',
+      ])
     })
 
     it('网络异常抛 NETWORK_ERROR（含重试，最终仍抛出）', async () => {

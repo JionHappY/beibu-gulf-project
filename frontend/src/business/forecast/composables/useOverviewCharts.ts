@@ -18,16 +18,26 @@ interface UseOverviewChartsReturn {
   chartData: Ref<ChartDataset>
   barData: Ref<ChartDataset>
   loadOverviewCharts: () => Promise<void>
+  cancelOverviewCharts: () => void
 }
 
 export function useOverviewCharts(): UseOverviewChartsReturn {
   const chartData = ref<ChartDataset>({ labels: [], series: [] })
   const barData = ref<ChartDataset>({ labels: [], series: [] })
+  let controller: AbortController | null = null
+
+  function cancelOverviewCharts(): void {
+    controller?.abort()
+    controller = null
+  }
 
   async function loadOverviewCharts(): Promise<void> {
+    cancelOverviewCharts()
+    const current = new AbortController()
+    controller = current
     try {
       // 用 overview 静态快照而非 timeseries 接口：后者无 forecast 段会触发预测模型计算，首页不应跑预测
-      const res = await forecastAdapter.getOverview()
+      const res = await forecastAdapter.getOverview(current.signal)
       const charts = res.charts
       if (!charts || charts.series.length === 0) return
       chartData.value = {
@@ -50,12 +60,15 @@ export function useOverviewCharts(): UseOverviewChartsReturn {
         ],
       }
     } catch (error) {
+      if (current.signal.aborted) return
       // 图表失败不再静默——友好提示一次，仍留空图（不回落假数据）；
       // 文案经 describeError 区分成因：服务器无响应 ≠ 笼统「加载失败」
       logger.warn('[useOverviewCharts] 吞吐量图表数据加载失败:', error)
       showWarning(describeError(error, '图表数据加载失败，请稍后刷新'))
+    } finally {
+      if (controller === current) controller = null
     }
   }
 
-  return { chartData, barData, loadOverviewCharts }
+  return { chartData, barData, loadOverviewCharts, cancelOverviewCharts }
 }

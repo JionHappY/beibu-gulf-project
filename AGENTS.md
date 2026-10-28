@@ -31,7 +31,7 @@
 | E 文档/台账     | MAP + C3 + K1 §H                       | MAP / C3 / S1（按三层归位）            |
 | F 机制/门禁变更 | K4 + C3 + MAP                          | K4（门禁登记 + 红样）/ MAP / S1        |
 
-- 代号：C* = 宪法文档；K* = 契约文档；MAP = 文档地图；S1/S2 = 待解决/已解决台账；S3 = 接力状态；STD = 审查标准库；AUDIT-LIB = 桌面审件库。
+- 代号：C* = 宪法文档；K* = 契约文档；MAP = 文档地图；S1/S2 = 待解决/已解决台账；S3 = 接手状态档（`docs/日志/状态/STATE.md`）；STD = 审查标准库；AUDIT-LIB = 桌面审件库。
 - 机读版在 `tools/v3-guard/lib/doc-map.json` 的 `tasks[]`，与本表由 `doc-map-check` 守卫双向对账；新增任务类型必须两处同时登记。
 - 不知道该读哪节 → 先读 `docs/文档地图.md`。
 

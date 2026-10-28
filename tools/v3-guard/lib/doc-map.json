@@ -1,7 +1,7 @@
 {
   "meta": {
     "version": 1,
-    "date": "2026-10-27",
+    "date": "2026-10-28",
     "migrationOpen": false,
     "layers": ["宪法", "契约", "日志", "标准库", "待迁移"],
     "statuses": ["active", "stub", "planned", "parallel", "frozen", "external", "retired"],
@@ -202,15 +202,27 @@
     },
     {
       "id": "S3",
-      "path": "docs/日志/状态/接力状态.md",
+      "path": "docs/日志/状态/STATE.md",
       "layer": "日志",
-      "role": "全项目滚动状态档（原开工前必读/接力文档，零改写移入）",
+      "role": "接手状态档正本（18 字段 + 复算命令 + 失效条件；历史正文按日期归档于 archive/）",
       "status": "active",
       "guard": "tools/v3-guard/doc-map-check.mjs",
-      "owns": ["项目当前状态", "队列与未证清单"],
+      "owns": ["项目当前状态", "队列与未证清单", "待裁项与外部阻塞"],
       "readWhen": ["D", "接手"],
-      "writeWhen": ["状态变化（追加日期段）"],
-      "ts": "2026-10-05"
+      "writeWhen": ["状态变化（改字段值 + 同步 updatedAt；不追加历史段落）"],
+      "ts": "2026-10-28"
+    },
+    {
+      "id": "S3-ARCHIVE",
+      "path": "docs/日志/状态/接力状态.md",
+      "layer": "日志",
+      "role": "接力状态历史正文（权威已移交 S3 / STATE.md；正文按日期归档在 docs/日志/状态/archive/）",
+      "status": "frozen",
+      "guard": "tools/v3-guard/doc-map-check.mjs",
+      "owns": ["2026-10 接力状态历史正文"],
+      "readWhen": ["追溯 2026-10 执行记录时"],
+      "writeWhen": ["不回写；新状态进 STATE.md，新历史进 archive/"],
+      "ts": "2026-10-27"
     },
     {
       "id": "HANDOFF-20261012-SEG1",

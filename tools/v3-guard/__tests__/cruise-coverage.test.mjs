@@ -198,3 +198,96 @@ describe('cruise-coverage：分层规则覆盖面（W61 M4：from.path 不许窄
     expect(output).toContain('未覆盖整层')
   })
 })
+
+/**
+ * z185：`@backend/*` 是 2026-10-27 引入的跨端源码别名（前端直接引后端源码）。
+ * `tsconfig.cruise.json` 是**架构图**的 tsConfig——它的 paths 若缺这条别名，
+ * dependency-cruiser 会把该 specifier 静默丢弃（既不建边，也不进 couldNotResolve），
+ * 于是 `npm run cruise` 对这条跨端边、以及任何 `to: '^backend/'` 规则永久零判据。
+ *
+ * 判据只读图的语义（解析到的 resolved 路径 + 依赖 specifier），不读源码文本、
+ * 也不比对 tsconfig 的字面写法：`backend/src/*` 与 `./backend/src/*`、key 顺序不同
+ * 都是等价配置，必须照常命中——否则会逼人守住某一种写法。
+ */
+describe('tsconfig.cruise.json：@backend 跨端别名必须让依赖进图（z185）', () => {
+  const TASK_TS = 'frontend/src/types/task.ts'
+  const BACKEND_TASK_TYPES = 'backend/src/modules/task/types/task.ts'
+  const DEPCRUISE_BIN = path.join(ROOT, 'node_modules/dependency-cruiser/bin/dependency-cruise.mjs')
+
+  /** 与 `npm run cruise` 同一个二进制、同一份 .dependency-cruiser.cjs，只换 tsConfig。 */
+  function cruiseDeps(cruiseConfig) {
+    const stdout = execFileSync(
+      process.execPath,
+      [DEPCRUISE_BIN, '-c', cruiseConfig, '-T', 'json', TASK_TS],
+      { cwd: ROOT, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 }
+    )
+    const graph = JSON.parse(stdout)
+    const mod = graph.modules.find((m) => m.source === TASK_TS)
+    expect(mod, `cruise 图里没有 ${TASK_TS}（includeOnly/exclude 变了？）`).toBeTruthy()
+    return mod.dependencies
+  }
+
+  function backendEdges(deps) {
+    return deps.filter(
+      (d) => d.resolved === BACKEND_TASK_TYPES && String(d.module).startsWith('@backend/')
+    )
+  }
+
+  /**
+   * 以**受版本控制的那份** tsconfig.cruise.json 为底稿派生变体（不手抄一份别名表），
+   * 只把 baseUrl/include 换成绝对路径，好让变体落在 os.tmpdir() 里仍解析到本仓。
+   */
+  function variant(mutate) {
+    const tracked = JSON.parse(fs.readFileSync(path.join(ROOT, 'tsconfig.cruise.json'), 'utf8'))
+    const next = mutate(tracked)
+    const baseUrl = ROOT.split(path.sep).join('/')
+    next.compilerOptions.baseUrl = baseUrl
+    next.include = next.include.map((p) => `${baseUrl}/${p}`)
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'z185-cruise-'))
+    const tsconfig = path.join(dir, 'tsconfig.variant.json')
+    fs.writeFileSync(tsconfig, JSON.stringify(next, null, 2))
+    const config = path.join(dir, 'cruise.config.cjs')
+    fs.writeFileSync(
+      config,
+      `const base = require(${JSON.stringify(path.join(ROOT, '.dependency-cruiser.cjs'))})\n` +
+        'module.exports = { forbidden: base.forbidden, options: { ...base.options, ' +
+        `tsConfig: { fileName: ${JSON.stringify(tsconfig)} } } }\n`
+    )
+    return { config, cleanup: () => fs.rmSync(dir, { recursive: true, force: true }) }
+  }
+
+  it('真实配置：task.ts 对 backend task types 的依赖在图里可见且已解析', () => {
+    const deps = cruiseDeps(path.join(ROOT, '.dependency-cruiser.cjs'))
+    const edges = backendEdges(deps)
+    expect(
+      edges.length,
+      `tsconfig.cruise.json 的 paths 缺 "@backend/*" ⇒ 该边被静默丢弃（实测 deps=${deps.length}）`
+    ).toBeGreaterThan(0)
+    expect(edges.every((d) => d.couldNotResolve !== true)).toBe(true)
+  })
+
+  it('等价写法（./ 前缀 + key 顺序不同）⇒ 照常命中，不误红', () => {
+    const { config, cleanup } = variant((ts) => {
+      const paths = ts.compilerOptions.paths
+      ts.compilerOptions.paths = { '@backend/*': ['./backend/src/*'], '@/*': paths['@/*'] }
+      return ts
+    })
+    try {
+      expect(backendEdges(cruiseDeps(config)).length).toBeGreaterThan(0)
+    } finally {
+      cleanup()
+    }
+  })
+
+  it('阳性对照：临时移除别名 ⇒ 该边从图里消失（判据不是"配置里有这行"）', () => {
+    const { config, cleanup } = variant((ts) => {
+      delete ts.compilerOptions.paths['@backend/*']
+      return ts
+    })
+    try {
+      expect(backendEdges(cruiseDeps(config))).toEqual([])
+    } finally {
+      cleanup()
+    }
+  })
+})

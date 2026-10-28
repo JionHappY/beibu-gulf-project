@@ -23,6 +23,7 @@ import { UNIFIED_MAP_KEY, type UnifiedMapExposed } from '@/core'
 import { preloadCesium, UnifiedMap } from '@/core'
 import { type LayerIR, taskResultToIR, useLayerIRLayer } from '@/core'
 import {
+  captureError,
   ErrorBoundary,
   GCSModal,
   GCSToast,
@@ -43,6 +44,10 @@ const router = useRouter()
 // authUser 供 watch 驱动登出/多标签页登出时的 store 重置
 const { restoreAuth, user: authUser } = useAuth()
 const mapStore = useMapStore()
+
+function handleBoundaryError(error: unknown): void {
+  captureError(error, { source: 'ErrorBoundary' })
+}
 const taskStore = useTaskStore()
 
 const unifiedMapRef = ref<UnifiedMapExposed | null>(null)
@@ -311,11 +316,11 @@ onUnmounted(() => {
 
 <template>
   <div class="app-layout">
-    <ErrorBoundary>
+    <ErrorBoundary @error="handleBoundaryError">
       <UnifiedMap ref="unifiedMapRef" :map-type="mapStore.mapType" />
     </ErrorBoundary>
     <main class="app-content">
-      <ErrorBoundary :reset-key="route.fullPath">
+      <ErrorBoundary :reset-key="route.fullPath" @error="handleBoundaryError">
         <RouterView v-slot="{ Component }">
           <component :is="Component" @require-login="handleRequireLogin" />
         </RouterView>

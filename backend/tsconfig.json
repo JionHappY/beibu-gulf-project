@@ -2,6 +2,7 @@
   "compilerOptions": {
     "module": "commonjs",
     "moduleResolution": "node",
+    // moduleResolution: "node" 在 TS 5.x 的弃用告警；迁到 node16/bundler 后删除本行
     "ignoreDeprecations": "5.0",
     "target": "ES2022",
     "lib": ["ES2022"],
@@ -15,6 +16,8 @@
     "outDir": "./dist",
     "incremental": true,
     "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
     "forceConsistentCasingInFileNames": true,
     "noFallthroughCasesInSwitch": true,
     "skipLibCheck": true

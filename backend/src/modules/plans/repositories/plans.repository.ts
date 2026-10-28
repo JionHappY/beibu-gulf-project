@@ -164,7 +164,7 @@ export class PlansRepository {
       const newSavedXiaoqu = existing.some((xq) => xq.id === xiaoqu.id)
         ? existing.map((xq) => (xq.id === xiaoqu.id ? merged : xq))
         : [...existing, merged]
-      return this.writePayload(client, planId, row, { ...row.payload, savedXiaoqu: newSavedXiaoqu })
+      return this.writePayload(client, planId, { ...row.payload, savedXiaoqu: newSavedXiaoqu })
     })
   }
 
@@ -177,14 +177,13 @@ export class PlansRepository {
       if (newSavedXiaoqu.length === existing.length) {
         return this.toView(row)
       }
-      return this.writePayload(client, planId, row, { ...row.payload, savedXiaoqu: newSavedXiaoqu })
+      return this.writePayload(client, planId, { ...row.payload, savedXiaoqu: newSavedXiaoqu })
     })
   }
 
   private async writePayload(
     client: PoolClient,
     planId: string,
-    row: PlanRow,
     payload: Record<string, unknown>
   ): Promise<Record<string, unknown>> {
     const res = await client.query<PlanRow>(

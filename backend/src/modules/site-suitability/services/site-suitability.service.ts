@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common'
+import { Injectable, Logger } from '@nestjs/common'
 
 import { SiteSuitabilityRepository } from '../repositories/site-suitability.repository'
 import { parseWeights, type CellScore, type FactorCell, type SuitabilityWeights } from './scoring'
@@ -45,6 +45,8 @@ export interface SuitabilityDefaults {
 
 @Injectable()
 export class SiteSuitabilityService {
+  private readonly logger = new Logger(SiteSuitabilityService.name)
+
   constructor(private readonly repository: SiteSuitabilityRepository) {}
 
   async compute(query: SuitabilityQuery): Promise<SuitabilityResult> {
@@ -54,7 +56,22 @@ export class SiteSuitabilityService {
       this.repository.fetchKdeP99(),
     ])
 
-    const features = rows.map((row) => {
+    // 高程/坡度是评分必要因子：库列可空，NULL 会被比较运算伪装成最差/最宜分。
+    // 缺失格不参与排序（K1 A6/B8），不能填 0 或用中性值造出第二套口径。
+    const scorableRows = rows.filter(
+      (
+        row
+      ): row is typeof row & {
+        mean_elev_m: number
+        mean_slope_deg: number
+      } => Number.isFinite(row.mean_elev_m) && Number.isFinite(row.mean_slope_deg)
+    )
+    const omitted = rows.length - scorableRows.length
+    if (omitted > 0) {
+      this.logger.warn(`选址评分跳过 ${omitted} 个缺高程/坡度格（不参与排序）`)
+    }
+
+    const features = scorableRows.map((row) => {
       const cell: FactorCell = {
         // 契约归一：库列 bigint（pg 驱动给字符串）→ 出参 schema 声明 number。
         // id 现值量级 ≤ 1.5e5（远小于 2^53），Number() 无精度风险。

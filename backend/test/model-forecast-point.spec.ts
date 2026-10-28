@@ -4,7 +4,7 @@ import path from 'node:path'
 import ts from 'typescript'
 import { describe, expect, it } from 'vitest'
 
-import { interpolateMonthly } from '../src/modules/forecast/services/model-loader'
+import { getModelForecast, interpolateMonthly } from '../src/modules/forecast/services/model-loader'
 
 // U11：模型点输出形状 `{ time; value; type; reliability; lower?; upper? }` 此前在
 // model-loader.ts 三处各写一份匿名字面量（interpolateMonthly 返回值 / 其内部 out 数组 /
@@ -188,6 +188,46 @@ describe('模型点输出形状单一入口（U11）', () => {
     ])
     expect(Object.keys(out[0])).toEqual(['time', 'value', 'type', 'reliability'])
     expect(out[0]).toEqual({ time: '2027-06', value: 100, type: 'forecast', reliability: 1 })
+  })
+
+  it('🔴 校准区间随插值搬运，随后不被 MAPE 对称区间覆盖', async () => {
+    const out = interpolateMonthly(
+      [
+        { time: '2027-06', value: 100, lower: 90, upper: 130 },
+        { time: '2027-08', value: 140, lower: 110, upper: 170 },
+      ],
+      '2027-01'
+    )
+    expect(out[0]).toMatchObject({ time: '2027-06', lower: 90, upper: 130 })
+    expect(out[1]).toMatchObject({ time: '2027-07', lower: 100, upper: 150 })
+
+    const files = {
+      read: async () => ({
+        ports: {
+          qinzhou: {
+            predictions: [{ time: '2026-07', value: 1800, lower: 1742, upper: 2054 }],
+            backtest: { rolling_mape_by_step: { 1: 5 } },
+          },
+        },
+      }),
+    }
+    const result = await getModelForecast(files as never, 'qinzhou', '2026-06', 'cargo')
+    expect(result?.forecast[0]).toMatchObject({ lower: 1742, upper: 2054 })
+  })
+
+  it('🔴 metadata.model 跟随实际指标文件', async () => {
+    const files = {
+      read: async (file: string) => ({
+        ports: {
+          p: {
+            predictions: [{ time: '2026-07', value: 1 }],
+          },
+        },
+        file,
+      }),
+    }
+    const result = await getModelForecast(files as never, 'p', '2026-06', 'container')
+    expect(result?.metadata.model).toBe('container_model')
   })
 
   it('扫描器阳性对照：手抄三份形状能被数出 3 处', () => {

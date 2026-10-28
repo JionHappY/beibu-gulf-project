@@ -16,8 +16,8 @@ import { SiteSuitabilityService } from '../src/modules/site-suitability/services
 
 /** 假仓储：只实现本用例用到的两个方法；行形状照抄 pg 的真实返回（id 为字符串）。
  *  ⚠️ 方法名 fetchCellsAt(minLandFrac, resolution)：service 走它透传聚合参数（性能治本 2026-10-02） */
-function repoWith(
-  row: Record<string, unknown>,
+function repoWithRows(
+  rows: Record<string, unknown>[],
   spy?: { minLandFrac?: number; resolution?: number }
 ): SiteSuitabilityRepository {
   return {
@@ -26,10 +26,17 @@ function repoWith(
         spy.minLandFrac = minLandFrac
         spy.resolution = resolution
       }
-      return [row]
+      return rows
     },
     fetchKdeP99: async () => 1,
   } as unknown as SiteSuitabilityRepository
+}
+
+function repoWith(
+  row: Record<string, unknown>,
+  spy?: { minLandFrac?: number; resolution?: number }
+): SiteSuitabilityRepository {
+  return repoWithRows([row], spy)
 }
 
 const PG_ROW = {
@@ -89,6 +96,25 @@ describe('site-suitability 对外契约：id 类型归一', () => {
     expect(spy.minLandFrac).toBe(0.5)
     expect(spy.resolution).toBe(0.02)
     expect(res.metadata.resolution).toBe(0.02)
+  })
+
+  it('🔴 缺高程/坡度格不参与评分：不得伪装成最差/最宜子分', async () => {
+    const svc = new SiteSuitabilityService(
+      repoWithRows([
+        PG_ROW,
+        { ...PG_ROW, id: '5', mean_elev_m: null },
+        { ...PG_ROW, id: '6', mean_slope_deg: Number.NaN },
+      ])
+    )
+    const res = await svc.compute({
+      weights: { inundation: 0.4, terrain: 0.1, land: 0.2, access: 0.2, demand: 0.1 },
+      minLandFrac: 0.5,
+      resolution: 0,
+      weightsSource: 'query',
+    })
+
+    expect(res.features.map((f) => f.properties.id)).toEqual([4])
+    expect(res.metadata.count).toBe(1)
   })
 
   // 幽灵标签回归：metadata.weightsSource 必须回显真实来源。

@@ -16,8 +16,8 @@ interface SuitabilityCellRow {
   id: string
   lon: number
   lat: number
-  mean_elev_m: number
-  mean_slope_deg: number
+  mean_elev_m: number | null
+  mean_slope_deg: number | null
   land_frac: number
   land_class: number | null
   dist_port_m: number | null
@@ -45,7 +45,8 @@ export class SiteSuitabilityRepository {
                 mean_elev_m, mean_slope_deg, land_frac,
                 land_class, dist_port_m, dist_road_m, kde_mass
            FROM suitability_cells
-          WHERE land_frac >= $1`,
+          WHERE land_frac >= $1
+          ORDER BY id`,
         [minLandFrac]
       )
       return r.rows
@@ -63,7 +64,8 @@ export class SiteSuitabilityRepository {
               avg(kde_mass) AS kde_mass
          FROM suitability_cells
         WHERE land_frac >= $1
-        GROUP BY floor(ST_X(geom) / $2), floor(ST_Y(geom) / $2)`,
+        GROUP BY floor(ST_X(geom) / $2), floor(ST_Y(geom) / $2)
+        ORDER BY id`,
       [minLandFrac, resolution]
     )
     return r.rows

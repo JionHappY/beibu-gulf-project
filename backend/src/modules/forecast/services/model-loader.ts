@@ -52,6 +52,8 @@ export function interpolateMonthly(points: ModelPoint[], afterTime?: string): Mo
   for (let i = 0; i < kept.length; i++) {
     const cur = kept[i]
     out.push({ time: cur.time, value: cur.value, type: 'forecast', reliability: 1 })
+    if (typeof cur.lower === 'number') out[out.length - 1].lower = cur.lower
+    if (typeof cur.upper === 'number') out[out.length - 1].upper = cur.upper
     const next = kept[i + 1]
     if (!next) continue
     const gap = monthOffset(next.time) - monthOffset(cur.time)
@@ -63,6 +65,13 @@ export function interpolateMonthly(points: ModelPoint[], afterTime?: string): Mo
         type: 'forecast',
         reliability: 1,
       })
+      // 校准区间是产物权威：有则同步插值，否则交给下游旧产物 fallback。
+      if (typeof cur.lower === 'number' && typeof next.lower === 'number') {
+        out[out.length - 1].lower = Math.round(cur.lower + (next.lower - cur.lower) * t)
+      }
+      if (typeof cur.upper === 'number' && typeof next.upper === 'number') {
+        out[out.length - 1].upper = Math.round(cur.upper + (next.upper - cur.upper) * t)
+      }
     }
   }
   return out
@@ -132,10 +141,16 @@ export async function getModelForecast(
   }
 
   const info = shaped?.model_info ?? {}
+  // 模型名必须跟随实际读取文件，不能在 container 响应里谎报 throughput。
+  const modelName =
+    modelFile
+      .split('/')
+      .pop()
+      ?.replace(/\.json$/, '') ?? 'unknown'
   return {
     forecast,
     metadata: {
-      model: 'throughput_model',
+      model: modelName,
       method: info.method,
       trainingPeriod: info.training_period,
       validationPeriod: info.validation_period,

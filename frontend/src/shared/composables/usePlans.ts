@@ -16,11 +16,35 @@ import { useLatestRequest } from './useLatestRequest'
 /** 返回契约显式化，防重构时签名静默漂移 */
 interface UsePlansReturn {
   getPlans: () => Promise<Plan[]>
-  updatePlan: (id: string, name: string, typeSettings: Record<string, TypeSetting>) => Promise<Plan>
+  updatePlan: (id: string, name: string, typeSettings: unknown) => Promise<Plan>
   deletePlan: (id: string) => Promise<void>
   cancel: () => void
   loading: Ref<boolean>
   deleting: Ref<boolean>
+}
+
+/** 方案类型设置写入校验：schema 对该 JSONB 只做 unknown 透传，写入前必须自证结构。 */
+function parseTypeSettingsForWrite(raw: unknown): Record<string, TypeSetting> {
+  if (raw == null) return {}
+  if (typeof raw !== 'object' || Array.isArray(raw)) {
+    throw new Error('方案类型设置格式无效')
+  }
+  const out: Record<string, TypeSetting> = {}
+  for (const [key, value] of Object.entries(raw)) {
+    if (
+      !value ||
+      typeof value !== 'object' ||
+      typeof (value as TypeSetting).selected !== 'boolean' ||
+      !Number.isFinite((value as TypeSetting).importance) ||
+      !Number.isFinite((value as TypeSetting).defaultRadius) ||
+      ((value as TypeSetting).radius !== undefined &&
+        !Number.isFinite((value as TypeSetting).radius))
+    ) {
+      throw new Error(`方案类型设置 ${key} 格式无效`)
+    }
+    out[key] = value as TypeSetting
+  }
+  return out
 }
 
 export function usePlans(): UsePlansReturn {
@@ -90,17 +114,13 @@ export function usePlans(): UsePlansReturn {
     }
   }
 
-  async function updatePlan(
-    id: string,
-    name: string,
-    typeSettings: Record<string, TypeSetting>
-  ): Promise<Plan> {
+  async function updatePlan(id: string, name: string, typeSettings: unknown): Promise<Plan> {
     // 与 create 一致的登录兜底
     if (!isAuthenticated.value) {
       throw new Error('请先登录')
     }
     try {
-      const settings = typeSettings ?? {}
+      const settings = parseTypeSettingsForWrite(typeSettings)
       const selectedKeys = Object.entries(settings)
         .filter(([, v]) => v.selected)
         .map(([k]) => k)

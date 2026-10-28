@@ -76,12 +76,24 @@ export type AffectedFacilityParsed = z.infer<typeof affectedFacilitySchema>
 // ③ /flood 在线演算响应 —— 已随 algorithm-service（FastAPI）移除（2026-09-26），编号 ③ 不复用
 //（原 schema 业务侧零引用，仅自测；端点为退役只读端点，见 docs/开工前必读/API契约文档.md §5）
 
-// ④ 边界 GeoJSON 的 sessionStorage 缓存结构（looseObject 保留额外键，features 元素首次加载时已校验）
-export const boundaryCacheSchema = z.looseObject({
-  data: z.looseObject({
-    type: z.literal('FeatureCollection'),
-    features: z.array(z.unknown()),
-  }),
+// ④ 行政/航线边界 GeoJSON（网络与 sessionStorage 共用同一深校验）
+export const boundaryFeatureSchema = z.object({
+  type: z.literal('Feature'),
+  geometry: floodGeometrySchema,
+  properties: z.record(z.string(), z.unknown()).default({}),
+})
+
+export type BoundaryFeatureParsed = z.infer<typeof boundaryFeatureSchema>
+
+export const boundaryFeatureCollectionSchema = z.object({
+  type: z.literal('FeatureCollection'),
+  features: z.array(boundaryFeatureSchema),
+})
+
+export type BoundaryFeatureCollectionParsed = z.infer<typeof boundaryFeatureCollectionSchema>
+
+export const boundaryCacheSchema = z.object({
+  data: boundaryFeatureCollectionSchema,
   timestamp: z.number(),
 })
 
@@ -167,7 +179,7 @@ export type IndicatorComparisonResponseParsed = z.infer<typeof indicatorComparis
 // ⑧ /forecast/map 响应（GeoJSON FeatureCollection）
 // @backend-contract backend/src/modules/forecast/services/forecast.service.ts
 // @backend-contract-no-type 同上：返回值由 service 内联构造的 GeoJSON 字面量，无具名类型
-export const forecastMapDataSchema = z.looseObject({
+export const forecastMapDataSchema = z.object({
   indicator: z.string(),
   unit: z.string(),
   time: z.string(),
@@ -176,17 +188,17 @@ export const forecastMapDataSchema = z.looseObject({
   // P1-1：降级标记（可选；无 spatial/文件透传路径不带）
   metadata: forecastMetadataSchema.optional(),
   features: z.array(
-    z.looseObject({
+    z.object({
       type: z.literal('Feature'),
-      geometry: z.looseObject({
+      geometry: z.object({
         type: z.string(),
         coordinates: z.array(z.number()),
       }),
-      properties: z.looseObject({
+      properties: z.object({
         portId: z.string(),
         portName: z.string(),
         value: z.number(),
-        // reliability 对齐 ForecastMapData 类型声明（原 schema 未枚举，looseObject 透传）
+        // schema 已显式声明；reliability 在旧响应/文件中可缺省
         reliability: z.number().optional(),
       }),
     })
@@ -340,7 +352,7 @@ export const floodStatisticsResponseSchema = z.looseObject({
 export type FloodStatisticsResponseParsed = z.infer<typeof floodStatisticsResponseSchema>
 
 // ⑩ /plans CRUD 响应（嵌套复杂字段宽松化）
-export const planSchema = z.looseObject({
+export const planSchema = z.object({
   id: z.string(),
   userId: z.string(),
   name: z.string(),

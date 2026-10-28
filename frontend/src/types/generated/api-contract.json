@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-25",
+  "generatedAt": "2026-10-28",
   "source": "frontend/src/types/schemas.ts（单一事实源，types:gen 自动生成勿手改）",
   "schemas": {
     "userSchema": {
@@ -86,11 +86,41 @@
         }
       }
     },
+    "boundaryFeatureSchema": {
+      "kind": "object",
+      "fields": {
+        "type": {
+          "type": "literal",
+          "optional": false
+        },
+        "geometry": {
+          "type": "floodGeometrySchema",
+          "optional": false
+        },
+        "properties": {
+          "type": "record",
+          "optional": false
+        }
+      }
+    },
+    "boundaryFeatureCollectionSchema": {
+      "kind": "object",
+      "fields": {
+        "type": {
+          "type": "literal",
+          "optional": false
+        },
+        "features": {
+          "type": "array",
+          "optional": false
+        }
+      }
+    },
     "boundaryCacheSchema": {
       "kind": "object",
       "fields": {
         "data": {
-          "type": "object",
+          "type": "boundaryFeatureCollectionSchema",
           "optional": false
         },
         "timestamp": {

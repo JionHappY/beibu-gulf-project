@@ -60,6 +60,8 @@ export interface FloodConsumedState {
   totalLoss?: number
 }
 
+import type { FavoriteItemParsed } from '../schemas'
+
 // ===== 预测分析业务类型 =====
 
 /** 置信度阈值 */
@@ -75,20 +77,8 @@ export interface ConfidenceThresholds {
 /** 收藏对象类型：选址小区 / 浸没设施 */
 export type FavoriteItemType = 'xiaoqu' | 'facility'
 
-/** 全局收藏项（itemType + itemId 全局唯一，收藏过一次即存在） */
-export interface FavoriteItem {
-  id: string
-  userId: string
-  itemType: FavoriteItemType
-  itemId: string
-  name: string
-  // 缺失坐标为 null（后端不再伪造 (0,0) 哨兵）；消费方经 Number.isFinite 过滤
-  lng: number | null
-  lat: number | null
-  /** 业务快照（选址：score/breakdown；浸没：type/loss）——详情展示用，非唯一键 */
-  snapshot?: Record<string, unknown> | null
-  savedAt: string
-}
+/** 全局收藏项：字段以 favoriteItemSchema 为唯一契约（savedAt 可空） */
+export type FavoriteItem = FavoriteItemParsed
 
 /** 收藏添加入参（id/userId/savedAt 由后端生成） */
 export interface FavoriteAddInput {

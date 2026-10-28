@@ -42,6 +42,12 @@ export const useSiteSuitabilityStore = defineStore('siteSuitability', () => {
   const defaultsSource: Ref<'pending' | 'remote' | 'snapshot'> = ref('pending')
   /** once 守卫：权重 watch 回写会重入 doUpdate，同页多次调用只发一次请求 */
   let defaultsPromise: Promise<void> | null = null
+  /**
+   * defaults 代次：reset() 递增。成功与失败两个回写分支都要比对，否则迟到响应会把
+   * reset 后的快照覆盖成上一会话的远端值（defaultsSource 也会被翻回 remote/snapshot）。
+   * 与 activeTransactionId 同款语义，不引入 AbortController（请求本身无需取消，只需不回写）。
+   */
+  let defaultsSeq = 0
 
   function setIsRequesting(v: boolean): void {
     isRequesting.value = v
@@ -82,12 +88,14 @@ export const useSiteSuitabilityStore = defineStore('siteSuitability', () => {
    */
   function loadDefaults(): Promise<void> {
     if (defaultsPromise) return defaultsPromise
+    const seq = ++defaultsSeq
     defaultsPromise = (async (): Promise<void> => {
       try {
         const d = await apiRequest<SiteSuitabilityDefaultsParsed>(
           ENDPOINTS.siteSuitability.defaults,
           { method: 'GET', schema: siteSuitabilityDefaultsSchema }
         )
+        if (seq !== defaultsSeq) return
         // 后端 defaults 全量应用（逐键赋值：schema 的 Record 形不直接等同州形状）
         weights.value = {
           inundation: d.weights.inundation,
@@ -100,6 +108,7 @@ export const useSiteSuitabilityStore = defineStore('siteSuitability', () => {
         defaultsSource.value = 'remote'
         logger.info('[site-suitability] defaults 后端直连成功', d.source)
       } catch (e) {
+        if (seq !== defaultsSeq) return
         defaultsSource.value = 'snapshot'
         logger.warn('[site-suitability] defaults 拉取失败，快照兜底', {
           snapshot: { ...SNAPSHOT_PROVENANCE },
@@ -131,6 +140,8 @@ export const useSiteSuitabilityStore = defineStore('siteSuitability', () => {
     data.value = null
     defaultsSource.value = 'pending'
     defaultsPromise = null
+    // 递增代次：在途的 defaults 响应回来时 seq 已过期，成功/失败两支都不得再写本 store
+    defaultsSeq++
   }
 
   return {

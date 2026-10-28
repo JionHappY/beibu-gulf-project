@@ -23,7 +23,7 @@
 - `externalBlockers`：① 阿里云备案主体状态未知（需控制台，无凭据代人查）② 服务器能否出网到 Cloudflare 未验证 ③ `PUBLIC_URL` 未配置 ⇒ CI 公网断言无法落地 ④ E-8：push 前哨被仓库根外来目录 `_traetmp/` 阻断（`docs/日志/状态/外部依赖登记.md` E-8）
 - `activeFiles`：`docs/日志/状态/STATE.md`、`docs/日志/状态/接力状态.md`（历史）、`docs/日志/状态/archive/*`、`tools/v3-guard/protocol-single-source.mjs`、`.github/workflows/ci.yml`、`package.json`
 - `verificationDebt`：① CI 未含公网入口断言（待 `PUBLIC_URL`）② `audit:data` 已接 CI 但 `pending` 不参与退出码（待裁决②）③ W4 的 `tileset.json` 探活判据未做（待裁决③）
-- `knownFailures`：① 公网入口 403（见 `publicEntry`）② `qinzhou-port` / `bridges-city` 不入库 ⇒ 新机部署静默 404（`docs/3dtiles-改造任务表.md` §8.21）③ 3D 剩余三项：`h.head=29.6` 高于岸顶 0.6m、low LOD 水面高约 58m、GLB 生成链不在仓 ④ `flood-precomputed`、`terrain-tiles` 两组 `provenanceStatus=pending` 且不计入退出码
+- `knownFailures`：① 公网入口 403（见 `publicEntry`）② `qinzhou-port` / `bridges-city` 不入库 ⇒ 新机部署静默 404（`docs/3dtiles-改造任务表.md` §8.21）③ 3D 剩余三项：`h.head=29.6` 高于岸顶 0.6m、low LOD 水面高约 58m、GLB 生成链不在仓 ④ `flood-precomputed`、`terrain-tiles` 两组 `provenanceStatus=pending` 且不计入退出码 ⑤ `K4:371` 的复现钩子 `git log -1 -- 接力状态.md` 在归档后指到指针笔而非原落盘笔（历史 SHA 仍可在同一路径的 git 历史里查到，但命令不再唯一指向）
 - `archiveIndex`：见下表
 
 ## archiveIndex（历史正文分片）

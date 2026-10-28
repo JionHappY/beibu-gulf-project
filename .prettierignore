@@ -39,6 +39,12 @@ pdf_build/
 # 未跟踪的会话产物；其中 tmp-pinglu/*.json 实为 OSM 拉取失败的 406 错误页伪装成 JSON，
 # prettier 解析即报错；未忽略会导致 pre-push format:check 全仓红——先例同上）
 tmp-*/
+# 接力状态归档正文（2026-10-28 加入：工单 W3 要求"零改写搬进 archive/"。
+# prettier --write 会重排表格列宽与段落换行 ⇒ 改的正是被判据钉住的正文；
+# `docs/日志/状态/接力状态.md` 与 STATE.md 的 archiveIndex 都载明"按名序拼接 == 归档前
+# 原文"的 sha256，重排即让该声称当场失实。未忽略则 pre-commit 与 format:check 全红。
+# 与下面的 pinglu 资产同理：**产物字节面即判据面**，格式门禁不得改它。）
+docs/日志/状态/archive/
 # 平陆运河已入库的瓦片与影像产物（2026-09-22 加入：`backend/static/pinglu/` 由建模脚本
 # 生成、随仓库分发（cab20aad 31 glb + 31 b3dm + tileset 清单），非手写代码。
 # prettier 会重排 tileset.json 的键序与缩进（tileset.json diff 1594 行、b3dm 套 1620 行），

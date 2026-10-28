@@ -20,8 +20,8 @@ interface SuitabilityCellRow {
   mean_slope_deg: number
   land_frac: number
   land_class: number | null
-  dist_port_m: number
-  dist_road_m: number
+  dist_port_m: number | null
+  dist_road_m: number | null
   kde_mass: number | null
 }
 

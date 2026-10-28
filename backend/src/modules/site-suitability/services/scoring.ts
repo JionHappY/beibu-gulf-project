@@ -48,8 +48,8 @@ export interface FactorCell {
   meanSlopeDeg: number
   landFrac: number
   landClass: number | null
-  distPortM: number
-  distRoadM: number
+  distPortM: number | null
+  distRoadM: number | null
   kdeMass: number | null
 }
 

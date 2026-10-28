@@ -95,9 +95,18 @@ export function terrainScore(
  * 结构。论文附敏感性分析（尺度 ±50% 扰动）。
  */
 export function accessScore(
-  distPortM: number,
-  distRoadM: number,
+  distPortM: number | null,
+  distRoadM: number | null,
   t: ScoreThresholds = DEFAULT_THRESHOLDS
 ): number {
+  // 缺距离不是「零距离」：返回 0，避免 exp(0)=1 把无数据格抬成满分
+  if (
+    typeof distPortM !== 'number' ||
+    typeof distRoadM !== 'number' ||
+    !Number.isFinite(distPortM) ||
+    !Number.isFinite(distRoadM)
+  ) {
+    return 0
+  }
   return 0.6 * Math.exp(-distPortM / t.portScaleM) + 0.4 * Math.exp(-distRoadM / t.roadScaleM)
 }

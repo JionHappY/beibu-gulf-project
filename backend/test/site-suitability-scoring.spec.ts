@@ -66,6 +66,15 @@ describe('子分数单调性（手工复算 oracle）', () => {
     expect(accessScore(50000, 50000)).toBeLessThan(0.05)
     expect(accessScore(1000, 0)).toBeLessThan(accessScore(0, 0))
   })
+  it('🔴 距离缺失不是零距离：null / 非有限值必须返回 0 而不是满分', () => {
+    expect(accessScore(null, null)).toBe(0)
+    expect(accessScore(0, null)).toBe(0)
+    expect(accessScore(Number.NaN, 0)).toBe(0)
+    const wAccess = { inundation: 0, terrain: 0, land: 0, access: 1, demand: 0 }
+    expect(
+      cellScore({ ...BASE_CELL, distPortM: null, distRoadM: null }, wAccess, 0).sub.access
+    ).toBe(0)
+  })
   it('土地类分序：人造(50) > 耕地(40) > 林地(10) > 红树林(95) ≥ 水体(80)（临港口径）', () => {
     expect(LAND_CLASS_SCORE[50]).toBeGreaterThan(LAND_CLASS_SCORE[40])
     expect(LAND_CLASS_SCORE[40]).toBeGreaterThan(LAND_CLASS_SCORE[10])

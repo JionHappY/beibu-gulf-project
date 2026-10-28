@@ -122,10 +122,8 @@ export function useECharts({
     }
   }
 
-  /**
-   * 销毁图表实例
-   */
-  function disposeChart(): void {
+  /** 销毁实例资源；主题订阅归组件生命周期，容器暂时撤下时不能一并释放 */
+  function disposeChartInstance(): void {
     window.removeEventListener('resize', handleResize)
     if (resizeObserver) {
       resizeObserver.disconnect()
@@ -136,6 +134,11 @@ export function useECharts({
     }
     chartInstance?.dispose()
     chartInstance = null
+  }
+
+  /** 组件卸载：实例资源 + 主题订阅一并清理 */
+  function disposeChart(): void {
+    disposeChartInstance()
     stopThemeWatch?.()
     stopThemeWatch = null
     if (themeTimer) {
@@ -160,6 +163,7 @@ export function useECharts({
   // onMounted 时 chartRef 尚为 null，需在容器由空变非空时补初始化
   watch(chartRef, (el) => {
     if (el) initChart()
+    else disposeChartInstance()
   })
 
   // 监听数据源变化

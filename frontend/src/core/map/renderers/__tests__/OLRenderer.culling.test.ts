@@ -290,6 +290,30 @@ describe('OLRenderer 视口裁剪集成', () => {
       expect(renderedSource(0).getFeatures()).toHaveLength(N)
       expect(renderedSource(1).getFeatures()).toHaveLength(N + 7)
     })
+
+    // a095：隐藏期间 moveend 刷新被跳过（省查询），视口移动后重新显示必须补刷新换切片，
+    // 否则 source 停在隐藏前的视口，显示出来是错的/空的一片。
+    it('隐藏 → 改视口 → 重新显示：拿到新视口切片，旧切片被替换', () => {
+      const qinzhou = makePoints(QINZHOU, N, 'qzV')
+      const fangcheng = makePoints(FANGCHENG, N, 'fcV')
+      renderer!.addPointLayer('toggle', [...qinzhou, ...fangcheng], {})
+
+      // 初始视口在钦州港 → 只渲染 qzV
+      expect([...sourceFeatureIds(renderedSource())].every((id) => id.startsWith('qzV'))).toBe(true)
+
+      // 隐藏 → 移动视口到防城港并触发 moveend：隐藏不刷新，source 仍是旧切片
+      renderer!.setVisibility('toggle', false)
+      map().getView().setExtent(extentAround(FANGCHENG))
+      map().trigger('moveend')
+      expect([...sourceFeatureIds(renderedSource())].every((id) => id.startsWith('qzV'))).toBe(true)
+
+      // 重新显示 → 复用裁剪刷新，换成新视口切片
+      renderer!.setVisibility('toggle', true)
+      const ids = sourceFeatureIds(renderedSource())
+      expect(ids.size).toBe(N)
+      expect([...ids].every((id) => id.startsWith('fcV'))).toBe(true)
+      expect([...ids].every((id) => !id.startsWith('qzV'))).toBe(true)
+    })
   })
 
   describe('监听生命周期（removeLayer / destroy）', () => {

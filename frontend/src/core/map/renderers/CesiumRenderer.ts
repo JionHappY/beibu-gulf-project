@@ -779,8 +779,8 @@ export class CesiumRenderer extends MapRenderer {
     setupViewportListener(this, id)
   }
 
-  /** 视口变化时增量更新裁剪图层：移除出视口的 Entity，添加新进入的 */
-  _updateCulledLayer(id: string): void {
+  /** 视口变化时增量更新裁剪图层：移除出视口的 Entity，添加新进入的（基类"重新显示"钩子同入口） */
+  _refreshCulledLayer(id: string): void {
     updateCulledLayer(this, id)
   }
 

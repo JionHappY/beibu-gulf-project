@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "audit:data": "node tools/data-audit/source-registry.mjs",
     "build": "npm run typecheck && cd frontend && vite build",
     "build:analyze": "cd frontend && vite build --mode analyze",
     "changelog": "node tools/gen-changelog.cjs && prettier --write CHANGELOG.md",

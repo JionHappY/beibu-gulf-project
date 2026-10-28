@@ -162,6 +162,17 @@ jobs:
       - name: Run v3 guard
         run: npm run guard:v3
 
+      # 数据来源登记（W9 → 2026-10-28 接线，工单 W2）：`tools/data-audit/source-registry.mjs`
+      # 此前**从未被执行过**——不在 GUARDS、不在 package.json、不在 CI、不在 husky；
+      # 它的测试只覆盖纯函数、不执行 main()，所以"从未运行"被误读成"一直绿"。
+      # 现判据：`git ls-files backend/data backend/static` 出的每一件必须被 source-registry.json
+      # 某组覆盖，否则 exit 1。**未覆盖项不挂在 guard:v3 的 GUARDS 里**（那是 tools/v3-guard/
+      # 下的快集），故单列一步；本步不得加 `if:`（条件不成立时等于没挂强制点）。
+      # 已知边界：`provenanceStatus=pending` 目前**不参与**退出码 —— 是否改成当场红/到期红
+      # 是用户裁决项（工单 §四-2），执行方不得自行选边；在此之前本步只拦"未登记"。
+      - name: Data provenance registry
+        run: npm run audit:data
+
       # 指标状态派生漂移核对（1004-09）：附录 §8 状态列手改即红。
       # 该判据此前只挂在人手敲的 ci:local ⇒ 本地不跑就无人拦；CI 这步绕不过。
       - name: Verify metrics status derivation

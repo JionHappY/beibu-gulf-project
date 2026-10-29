@@ -773,6 +773,7 @@ defineExpose({
       />
     </div>
 
+    <!-- 以下为地图自身状态条：已在错误反馈通道例外清单登记，不重复走 toast -->
     <Transition name="fade">
       <div v-if="loading || switching" class="map-loading">
         <div class="loading-spinner"></div>

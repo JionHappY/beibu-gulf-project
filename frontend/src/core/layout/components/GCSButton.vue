@@ -33,9 +33,17 @@ const { cell, cellPixel } = useGCS()
 const buttonStyle = computed(() => ({
   ...cell(props.w, props.h),
   borderRadius: `${cellPixel.value * 0.15}px`,
-  backgroundColor: props.active ? 'var(--GCS-color-primary)' : 'var(--GCS-bg-panel)',
-  color: props.active ? 'var(--GCS-text-inverse)' : 'var(--GCS-text-regular)',
-  boxShadow: 'var(--GCS-shadow-sm)',
+  backgroundColor: props.disabled
+    ? 'var(--GCS-bg-container)'
+    : props.active
+      ? 'var(--GCS-color-primary)'
+      : 'var(--GCS-bg-panel)',
+  color: props.disabled
+    ? 'var(--GCS-text-disabled)'
+    : props.active
+      ? 'var(--GCS-text-inverse)'
+      : 'var(--GCS-text-regular)',
+  boxShadow: props.disabled ? 'none' : 'var(--GCS-shadow-sm)',
   fontSize: `${cellPixel.value * 0.18}px`,
 }))
 
@@ -100,7 +108,6 @@ function handleClick() {
 }
 
 .GCS-button:disabled {
-  opacity: 0.5;
   cursor: not-allowed;
 }
 

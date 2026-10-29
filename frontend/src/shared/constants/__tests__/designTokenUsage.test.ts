@@ -55,3 +55,39 @@ describe('输入框键盘焦点环', () => {
     expect(decl['outline-offset'], selector).toBe('2px')
   })
 })
+
+describe('禁用态统一到文字 token', () => {
+  it('gcs-chip 禁用不再用 opacity', () => {
+    const decl = declarations(readCss('style.css'), '.gcs-chip:disabled')
+    expect(decl.color).toBe('var(--GCS-text-disabled)')
+    expect(decl.cursor).toBe('not-allowed')
+    expect(decl.opacity).toBeUndefined()
+  })
+
+  it('登录提交禁用态使用容器底与 disabled 文字', () => {
+    const decl = declarations(sfcStyle('views/LoginPanel.vue'), '.submit-btn:disabled')
+    expect(decl.background).toBe('var(--GCS-bg-container)')
+    expect(decl.color).toBe('var(--GCS-text-disabled)')
+    expect(decl.cursor).toBe('not-allowed')
+    expect(decl.opacity).toBeUndefined()
+  })
+
+  it('航线主按钮禁用态回到中性底/边框', () => {
+    const decl = declarations(
+      sfcStyle('business/route-analysis/components/RouteControlPanel.vue'),
+      '.route-btn.primary:disabled'
+    )
+    expect(decl.background).toBe('var(--GCS-bg-container)')
+    expect(decl['border-color']).toBe('var(--GCS-border-default)')
+    expect(decl.color).toBe('var(--GCS-text-disabled)')
+  })
+
+  it('GCSButton 样式层不再用 opacity 表示禁用', () => {
+    const decl = declarations(
+      sfcStyle('core/layout/components/GCSButton.vue'),
+      '.GCS-button:disabled'
+    )
+    expect(decl.cursor).toBe('not-allowed')
+    expect(decl.opacity).toBeUndefined()
+  })
+})

@@ -466,7 +466,7 @@ body {
 }
 
 .gcs-chip:disabled {
-  opacity: 0.4;
+  color: var(--GCS-text-disabled);
   cursor: not-allowed;
 }
 

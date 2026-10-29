@@ -1035,7 +1035,7 @@
    **异常情况**：可 grep 的模式——`w="3.5"` 之类非整数 Cell；样式里出现 `#` 色值或 `rgb(`；`window.innerWidth` 直接参与组件逻辑；面板内用绝对定位而不用锚点 offset。
    **风险等级**：P2
    **整改方向**：改用 GCSPanel 与 useGCS；色值收口 token；间距走布局常量。
-   **验收标准**：□ 尺寸整数 Cell □ 零硬编码色值 □ 间距走布局常量 □ 断点判定只经 layoutTierFor（守卫 viewport-tier-single-source 零副本）
+   **验收标准**：□ 尺寸整数 Cell □ 零硬编码色值 □ 间距走布局常量 □ 断点判定只经 `layoutTierFor`（人工复核 2026-10-29：`grep -rn "innerWidth\|matchMedia" frontend/src`，命中仅 `useGCS.ts` / `useSliderFocus.ts` 经 `layoutTierFor` 消费与 `useTheme.ts` 的配色媒体查询；原 `viewport-tier-single-source` 守卫已归档且零消费，不复活，同类漂移第 2 次出现再立项）
 
 ---
 

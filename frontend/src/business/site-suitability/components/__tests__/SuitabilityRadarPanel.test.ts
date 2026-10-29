@@ -12,9 +12,15 @@ import { fileURLToPath } from 'node:url'
 import { mount } from '@vue/test-utils'
 import { describe, expect, it, vi } from 'vitest'
 
+import { CHART_COLORS } from '@/shared'
+
 interface RadarOptionLike {
   title: { text: string }
-  radar: { indicator: Array<{ name: string; max: number }> }
+  radar: {
+    indicator: Array<{ name: string; max: number }>
+    splitLine: { lineStyle: { color: string } }
+    axisLine: { lineStyle: { color: string } }
+  }
   series: Array<{ type: string; data: Array<{ value: number[] }> }>
   tooltip: { confine?: boolean }
 }
@@ -98,6 +104,8 @@ describe('SuitabilityRadarPanel', () => {
       '产业需求',
     ])
     expect(o.radar.indicator.every((i) => i.max === 1)).toBe(true)
+    expect(o.radar.splitLine.lineStyle.color).toBe(CHART_COLORS.splitLine.light)
+    expect(o.radar.axisLine.lineStyle.color).toBe(CHART_COLORS.axisLine.light)
     // 最高分格（id=2）的五个子分，顺序与轴一致
     expect(o.series[0].data[0].value).toEqual([0.25, 0.5, 0.75, 1, 0.5])
     expect(o.tooltip.confine).toBe(true)

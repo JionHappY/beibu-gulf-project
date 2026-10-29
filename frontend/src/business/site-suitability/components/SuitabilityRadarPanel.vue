@@ -67,7 +67,8 @@ const scoreText = computed(() => (peak.value ? peak.value.properties.score.toFix
 function getOption(): Record<string, unknown> {
   const dark = isDark.value
   const text = chartColor('textPrimary', dark)
-  const gridColor = dark ? 'rgba(255,255,255,.18)' : 'rgba(0,0,0,.12)'
+  const splitLine = chartColor('splitLine', dark)
+  const axisLine = chartColor('axisLine', dark)
   const muted = chartColor('textSecondary', dark)
   return {
     backgroundColor: 'transparent',
@@ -87,9 +88,9 @@ function getOption(): Record<string, unknown> {
       radius: '62%',
       indicator: CRITERIA.map((c) => ({ name: c.label, max: 1 })),
       axisName: { color: muted, fontSize: 10 },
-      splitLine: { lineStyle: { color: gridColor } },
+      splitLine: { lineStyle: { color: splitLine } },
       splitArea: { show: false },
-      axisLine: { lineStyle: { color: gridColor } },
+      axisLine: { lineStyle: { color: axisLine } },
     },
     series: [
       {

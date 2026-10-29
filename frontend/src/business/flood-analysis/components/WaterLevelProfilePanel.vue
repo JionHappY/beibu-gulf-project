@@ -194,8 +194,8 @@ function renderStage(stage: string, run: () => void): void {
  *    才归为 success-empty，报告面板显示「暂无结果」而不是伪造成 0。
  */
 function isEmptyAnalysis(payload: FloodAnalysisPayload): boolean {
-  const statistics = payload.statistics as unknown as Record<string, unknown> | null | undefined
-  return payload.features.length === 0 && Object.keys(statistics ?? {}).length === 0
+  // why: FloodStatistics 已是解析后的对象，Object.keys 只要求对象形状；exit: statistics 改为非对象联合类型时
+  return payload.features.length === 0 && Object.keys(payload.statistics ?? {}).length === 0
 }
 
 /** 本轮结果是否已失效：卸载、被新轮取代、或水位已变 */

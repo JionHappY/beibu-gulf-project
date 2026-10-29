@@ -159,7 +159,7 @@ class CesiumViewerManager {
       requestRenderMode: true,
       maximumRenderTimeChange: Infinity,
       // cesium 类型未收录 highDynamicRange/fxaa（版本差异），结构化断言保留运行期行为
-    } as unknown as ConstructorParameters<typeof Viewer>[1])
+    } as unknown as ConstructorParameters<typeof Viewer>[1]) // why: highDynamicRange/fxaa 未进 Cesium d.ts；exit: 类型收录这些 Viewer 选项后删断言
 
     // 渲染循环错误进日志 + 全局 toast（一次性防刷屏）——具名监听：
     // Viewer 单例复用下 scene.renderError 常驻不变，匿名监听重挂即累加（同 a085 病根）
@@ -1136,7 +1136,7 @@ export class CesiumRenderer extends MapRenderer {
         t.show = hit
         return hit
       }
-      if (inst?.root) mark(inst.root as unknown as AnyTile)
+      if (inst?.root) mark(inst.root as unknown as AnyTile) // why: AnyTile 是渲染器内部最小结构，与 Cesium3DTile 结构兼容；exit: mark 参数改用 Cesium 类型后
       this.viewer?.scene.requestRender()
     }
     return true
@@ -1543,7 +1543,7 @@ interface CesiumEntityLike {
 /** GeoJSON dataSource 样式应用（贴地形 polygon / point / polyline 样式），add/update 共用单一来源 */
 function applyGeoJsonDataSourceStyle(dataSource: GeoJsonDataSource, options: LayerOptions): void {
   dataSource.entities.values.forEach((entity) => {
-    const e = entity as unknown as CesiumEntityLike
+    const e = entity as unknown as CesiumEntityLike // why: Entity 与内部 CesiumEntityLike 的 PropertyBag 结构不重叠；exit: 改用 Cesium PropertyBag 类型后
     // properties 可能为 undefined（无属性的 GeoJSON 要素），判空避免崩溃
     if (!e.properties) e.properties = {}
     e.properties.featureType = options.featureType || 'geojson'
@@ -1734,7 +1734,7 @@ export function addGeoTIFFLayer(
       tilingScheme: new GeographicTilingScheme(),
       tileWidth: 4096,
       tileHeight: 2819,
-    } as unknown as ConstructorParameters<typeof SingleTileImageryProvider>[0])
+    } as unknown as ConstructorParameters<typeof SingleTileImageryProvider>[0]) // why: tilingScheme 属运行期选项，未进 Cesium d.ts；exit: 类型收录后直接传
     // 补 PNG 加载失败监听（OL 侧 addGeoTIFFLayer 已有等价监听）：把静默无图变成可见 warn
     // F-5：具名回调；provider 生命周期与图层绑定（hillshade 移除即销毁），无独立泄漏路径
     if (provider.errorEvent) {
@@ -1808,7 +1808,7 @@ export async function add3DTilesLayer(
     renderer.viewer.scene.requestRender()
     // statistics（瓦片就绪/加载计数）Cesium 1.142 的 Cesium.d.ts 未导出（仅运行时存在），
     // 结构化断言读取，仅用于日志、不参与逻辑
-    const tilesetStats = (tileset as unknown as { statistics?: { numberOfTilesTotal?: number } })
+    const tilesetStats = (tileset as unknown as { statistics?: { numberOfTilesTotal?: number } }) // why: Cesium3DTileset 无 statistics 字段；exit: 官方类型或模块扩充声明后删断言
       .statistics
     logger.debug(
       `[CesiumRenderer] add3DTilesLayer 已添加瓦片集: ${id} → ${url}（瓦片总数 ${tilesetStats?.numberOfTilesTotal ?? '?'}）`
@@ -1854,7 +1854,7 @@ export function addImageOverlayLayer(
       tilingScheme: new GeographicTilingScheme(),
       tileWidth: data.size[0],
       tileHeight: data.size[1],
-    } as unknown as ConstructorParameters<typeof SingleTileImageryProvider>[0])
+    } as unknown as ConstructorParameters<typeof SingleTileImageryProvider>[0]) // why: tilingScheme 属运行期选项，未进 Cesium d.ts；exit: 类型收录后直接传
 
     const imageryLayer = renderer.viewer.imageryLayers.addImageryProvider(provider)
     // 缺省不透明：该图层用于与 3D Tiles 模型对照核验，盖住在线底图才看得清
@@ -1915,7 +1915,7 @@ function doRemoveLayer(renderer: CesiumRenderer, layer: LayerState): void {
       })
     } else if (viewer) {
       // instance 为 unknown：按 Cesium 容器逐一尝试（imageryLayers / primitives / dataSources）
-      const inst = layer.instance as unknown as
+      const inst = layer.instance as unknown as  // why: layer.instance 为 unknown；exit: 图层实例联合类型收口后改单断言
         | ImageryLayer
         | Cesium3DTileset
         | DataSource
@@ -2123,7 +2123,7 @@ async function sampleTerrainHeights(
     }
     const positions = coordinates.map(([lng, lat]) => Cartographic.fromDegrees(lng, lat))
     const sampled = await sampleTerrain(
-      terrainProvider as unknown as Parameters<typeof sampleTerrain>[0],
+      terrainProvider as unknown as Parameters<typeof sampleTerrain>[0], // why: 局部窄化类型与 TerrainProvider 不重叠；exit: 改用 viewer.terrainProvider 原类型后
       10,
       positions
     )

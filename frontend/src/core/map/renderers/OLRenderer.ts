@@ -15,10 +15,8 @@ import VectorLayer from 'ol/layer/Vector'
 import OlMap from 'ol/Map'
 import type MapBrowserEvent from 'ol/MapBrowserEvent'
 import Overlay from 'ol/Overlay'
-import { toGeoCoord, toMapCoord, toPointGeometry } from '../olCoord'
 import VectorSource from 'ol/source/Vector'
 import type XYZ from 'ol/source/XYZ'
-import { createBaseTileSource } from '../baseTileSource'
 import { Circle, Fill, Stroke, Style, Text } from 'ol/style'
 import type { StyleFunction } from 'ol/style/Style'
 import View from 'ol/View'
@@ -33,6 +31,8 @@ import { isCoverLayerKey } from '@/shared'
 import type { LayerOptions, MapRendererEventMap, PointFeature, PolygonFeature } from '@/types'
 import type { CameraState, FlyToOptions, FlyToTarget, GeoPoint } from '@/types'
 
+import { createBaseTileSource } from '../baseTileSource'
+import { toGeoCoord, toMapCoord, toPointGeometry } from '../olCoord'
 import { type AreaAwareVectorLayer, createVectorLayerByGeometry } from '../perf/areaLayer'
 import { CAMERA_DEBOUNCE_MS } from '../perf/cameraTiming'
 import { MapRenderer } from './MapRenderer'
@@ -578,7 +578,7 @@ export class OLRenderer extends MapRenderer {
         if (item.geometry?.type === 'MultiPolygon') {
           // MultiPolygon：每部件 [外环, ...内环]，构造 ol MultiPolygon
           //（旧实现把部件数组当单 Polygon 环组——部件 2..N 被当成第 1 部件的孔洞挖掉）
-          const multi = coordinates as unknown as unknown[][]
+          const multi = coordinates as unknown as unknown[][] // why: coordinates 来自 GeoJSON unknown，先按数组收窄；exit: 改用 GeoJSON 类型守卫后单断言
           if (!Array.isArray(multi[0]) || !Array.isArray(multi[0][0])) return null
           const polygons = multi
             .map((poly) => toClosedRings(poly))
@@ -588,7 +588,7 @@ export class OLRenderer extends MapRenderer {
         } else {
           // Polygon（有类型）：coordinates 即环组，内环保留
           // 无类型：裸 coordinates 取首环（Cesium 同口径）
-          const rawRings: unknown[] =
+          const rawRings: unknown[] = // why: coordinates 来自 GeoJSON unknown，先按数组收窄；exit: 改用 GeoJSON 类型守卫后单断言
             item.geometry?.type === 'Polygon'
               ? (coordinates as unknown as unknown[])
               : [coordinates[0]]

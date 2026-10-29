@@ -11,6 +11,7 @@
  */
 import type { Viewer } from 'cesium'
 import { buildModuleUrl, SkyBox } from 'cesium'
+
 import { CAMERA_DEBOUNCE_MS } from './cameraTiming'
 
 /** 图层条目的结构化最小面（隐藏/恢复只碰 visible 与引擎侧 show） */
@@ -171,6 +172,7 @@ export function scheduleLazySkyBox(viewer: Viewer): void {
     }
   }
   const scheduleIdle = (): void => {
+    // why: requestIdleCallback 在旧 lib.dom 未声明；exit: 目标 TS lib 收录后直接使用 window.requestIdleCallback
     const idle = (
       window as unknown as {
         requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => void

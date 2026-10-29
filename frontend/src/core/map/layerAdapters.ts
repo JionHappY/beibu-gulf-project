@@ -21,8 +21,8 @@ import type {
   Tiles3DCapability,
   Water3DCapability,
 } from '@/types'
-import { DEFAULT_ENGINES, ENGINE_NAMES } from '@/types'
 import type { LayerType, Tiles3DData, WaterSurfaceData } from '@/types'
+import { DEFAULT_ENGINES, ENGINE_NAMES } from '@/types'
 
 // ===== 引擎适用性（面板三态）=====
 
@@ -97,6 +97,7 @@ function assertPolygonArray(data: unknown): asserts data is PolygonFeature[] {
 
 /** 能力守卫的唯一实现：某方法存在即认为具备该能力（六个 isXxxCapable 共用） */
 function hasCapability<C>(renderer: MapRenderer, method: string): renderer is MapRenderer & C {
+  // why: method 来自配置字符串，需动态索引做能力探针；exit: 把 method 收窄为 keyof MapRenderer 后
   return typeof (renderer as unknown as Record<string, unknown>)[method] === 'function'
 }
 

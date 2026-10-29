@@ -10,8 +10,8 @@ import { shallowRef } from 'vue'
 import { perfTimeFn } from '@/shared'
 import { logger } from '@/shared'
 import type { EngineName, LayerEntry, LayerOptions, MapRenderer } from '@/types'
-import { ENGINE_NAMES } from '@/types'
 import type { LayerType } from '@/types'
+import { ENGINE_NAMES } from '@/types'
 
 import { LAYER_ADAPTERS } from './layerAdapters'
 
@@ -454,6 +454,7 @@ export class BusinessLayerManager {
       if (!adapter)
         continue
         // 重建前清待定显隐意图，防止旧意图覆盖 registry 状态（按钮蓝但图层不显示）
+        // why: 能力探针需读取 MapRenderer 契约未声明的可选方法；exit: 契约声明 clearPendingVisibility 后直接调用
       ;(
         renderer as unknown as { clearPendingVisibility?: (id: string) => void }
       )?.clearPendingVisibility?.(key)

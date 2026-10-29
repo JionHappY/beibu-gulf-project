@@ -18,10 +18,12 @@ let _preloadScheduled = false
  */
 export function preloadCesium(): void {
   try {
+    // why: Window 无 Cesium 字符串索引；exit: declare global Window.Cesium 后直接读
     if ((window as unknown as Record<string, unknown>).Cesium) return
     if (_preloadScheduled) return
     _preloadScheduled = true
 
+    // why: requestIdleCallback 运行期能力探测；exit: 目标 TS lib 收录后直接调用
     const idle = (window as unknown as { requestIdleCallback?: (cb: () => void) => void })
       .requestIdleCallback
     const doPreload = () => {
@@ -62,6 +64,7 @@ export function preloadCesium(): void {
  * Cesium 内部 `instanceof` 判可见性失效 ⇒ 3D Tiles 图层全部零渲染且零报错。
  */
 function ensureCesiumLoaded(): Promise<void> {
+  // why: Window 无 Cesium 字符串索引；exit: declare global Window.Cesium 后直接读
   if ((window as unknown as Record<string, unknown>).Cesium) return Promise.resolve()
   if (_cesiumLoadPromise) return _cesiumLoadPromise
 

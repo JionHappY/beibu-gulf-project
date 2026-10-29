@@ -308,7 +308,8 @@ export class ForecastService {
       }
     }
 
-    this.engineCache.set(key, result as unknown as Record<string, unknown>)
+    // why: ComputedForecast 是 type 别名（带隐式索引签名）；exit: 缓存改泛型后单断言
+    this.engineCache.set(key, result as Record<string, unknown>)
     return result
   }
 

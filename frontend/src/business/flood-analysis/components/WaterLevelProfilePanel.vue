@@ -198,6 +198,11 @@ function isEmptyAnalysis(payload: FloodAnalysisPayload): boolean {
   return payload.features.length === 0 && Object.keys(statistics ?? {}).length === 0
 }
 
+/** 本轮结果是否已失效：卸载、被新轮取代、或水位已变 */
+function isRoundStale(round: number, waterLevel: number): boolean {
+  return disposed || round !== analysisRound || floodStore.waterLevel !== waterLevel
+}
+
 async function runAnalysis(waterLevel: number, viaTask = false): Promise<void> {
   if (disposed) return
 
@@ -205,7 +210,7 @@ async function runAnalysis(waterLevel: number, viaTask = false): Promise<void> {
   floodStore.setAnalysisStatus('requesting')
 
   const analysis = await fetchAnalysis(waterLevel, viaTask)
-  if (disposed || round !== analysisRound || floodStore.waterLevel !== waterLevel) return
+  if (isRoundStale(round, waterLevel)) return
 
   if (!analysis) {
     // 旧统计原样保留，报告面板按 failure + 旧水位标 stale（不把失败显示成 0）
@@ -230,7 +235,7 @@ async function runAnalysis(waterLevel: number, viaTask = false): Promise<void> {
   }
 
   const impact = await fetchImpact(waterLevel)
-  if (disposed || round !== analysisRound || floodStore.waterLevel !== waterLevel) return
+  if (isRoundStale(round, waterLevel)) return
   if (impact) {
     renderStage('影响评估', () =>
       renderers.impact?.({

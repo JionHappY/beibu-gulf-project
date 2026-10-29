@@ -354,7 +354,7 @@ jobs:
       - name: Install Playwright browsers (chromium)
         run: npx playwright install --with-deps chromium
 
-      - name: Run E2E (smoke + first-paint + perf-drag)
+      - name: Run E2E (smoke + first-paint + perf-drag + task-flow)
         run: npm run e2e
 
       - name: Upload E2E traces (failure)
@@ -640,7 +640,7 @@ jobs:
   # 2026-09-12：needs 随巨石 job 拆分更新；C6 过滤把测试/audit 跳过（skipped ≠ failure）时
   # 部署照常（"main 部署不受过滤影响"）；audit/测试真红（failure）仍经 !failure() 阻断。
   deploy:
-    needs: [audit, build-push-images]
+    needs: [audit, build-push-images, e2e]
     runs-on: ubuntu-latest
     if: always() && !failure() && !cancelled() && github.ref == 'refs/heads/main'
     steps:

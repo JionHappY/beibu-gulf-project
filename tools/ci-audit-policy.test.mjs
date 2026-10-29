@@ -41,4 +41,17 @@ describe('CI audit 分级策略', () => {
       /npm audit --audit-level=critical\s*\n\s*echo "--- dev high 报告（不阻断）---"/
     )
   })
+
+  it('发布门禁：deploy needs 必须包含 e2e（真实任务 flow 阻断发布）', () => {
+    expect(CI).toMatch(/deploy:\s*\n\s*needs: \[[^\]]*\be2e\b[^\]]*\]/)
+  })
+
+  it('🟥 红样：从 deploy needs 摘掉 e2e ⇒ 本判据必红', () => {
+    const mutated = CI.replace(
+      'needs: [audit, build-push-images, e2e]',
+      'needs: [audit, build-push-images]'
+    )
+    expect(mutated).not.toBe(CI)
+    expect(mutated).not.toMatch(/deploy:\s*\n\s*needs: \[[^\]]*\be2e\b[^\]]*\]/)
+  })
 })

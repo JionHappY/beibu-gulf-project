@@ -246,6 +246,14 @@ export default defineConfig([
         },
       ],
       'simple-import-sort/exports': 'warn',
+      // z177：业务枚举用 as const 数组 + 派生 union；TS enum 零存量，新增即报
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: 'TSEnumDeclaration',
+          message: '业务枚举用 as const 数组 + (typeof ARR)[number] 派生 union，禁止 TS enum',
+        },
+      ],
       // no-console：生产环境 error，其余 warn（DEV 守卫豁免由 NODE_ENV 控制）
       'no-console': process.env.NODE_ENV === 'production' ? 'error' : 'warn',
       'no-empty': 'off',

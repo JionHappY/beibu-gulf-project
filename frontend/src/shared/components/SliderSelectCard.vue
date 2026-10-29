@@ -128,20 +128,22 @@ const onSliderInput = (e: Event) => {
   color: var(--GCS-text-inverse);
 }
 
+/* 小字行高不再压到 1：行盒=字号时，12px 字配 12px 行盒上下沿易被裁。
+   仓内无 --GCS-line-height-* token，不新建排版体系，取本组件 .ssc-label 既有的 1.2。 */
 .ssc-dot {
   font-size: 12px;
-  line-height: 1;
+  line-height: 1.2;
 }
 
 .ssc-badge {
   font-size: var(--GCS-font-size-xs);
-  line-height: 1;
+  line-height: 1.2;
   opacity: 0.85;
 }
 
 .ssc-status {
   font-size: 12px;
-  line-height: 1;
+  line-height: 1.2;
   color: var(--GCS-color-primary);
   white-space: nowrap;
 }
@@ -181,7 +183,7 @@ const onSliderInput = (e: Event) => {
 
 .ssc-placeholder {
   font-size: 12px;
-  line-height: 1;
+  line-height: 1.2;
   white-space: nowrap;
   opacity: 0.85;
 }

@@ -58,7 +58,6 @@
 
   --GCS-text-secondary: rgb(96 98 102); /* 说明文字、info-label */
   --GCS-text-muted: rgb(96 103 112); /* 辅助文字、占位符；对白 5.72:1、对 bg-active 5.11:1（AA） */
-
   --GCS-text-inverse: rgb(255 255 255); /* 反白（蓝色背景上的文字） */
   --GCS-text-disabled: rgb(
     192 196 204

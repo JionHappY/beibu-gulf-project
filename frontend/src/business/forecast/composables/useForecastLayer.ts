@@ -138,8 +138,8 @@ export function useForecastLayer(): UseForecastLayerReturn {
     if (!r) return
 
     const indicator = forecastState.activeIndicator
-    const rawTime = forecastState.currentTime
-    const time = rawTime.includes('-') ? rawTime : `${rawTime}-12`
+    // 年模式直接传 "YYYY"：后端聚合 12 个月，缓存键也与月模式自然分开
+    const time = forecastState.currentTime
     const key = forecastLayerId(indicator)
 
     // 检查图层是否已注册，若未注册则先注册（注册体与 watch 同一份）

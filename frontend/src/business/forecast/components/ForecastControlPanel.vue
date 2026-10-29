@@ -226,7 +226,7 @@ function onTimelineSliderInput(value: number) {
 const YEAR_MARKS = timelineYears().map((year) => ({ year, label: `${year}.1` }))
 
 function jumpToYear(year: number) {
-  forecastState.setCurrentTime(`${year}-01`)
+  forecastState.setCurrentTime(isYearMode.value ? String(year) : `${year}-01`)
 }
 
 const displayTime = computed(() => {

@@ -88,6 +88,17 @@ describe('getMapData', () => {
     expect(result.features).toHaveLength(80)
   })
 
+  it('年模式热力图按年度合计生成 features，unit 标 /年', async () => {
+    const mockReadFile = vi.fn().mockResolvedValue(JSON.stringify(cargoData))
+    const service = makeService(mockReadFile)
+    const result = (await service.getMapData('cargo', '2020')) as {
+      unit: string
+      features: unknown[]
+    }
+    expect(result.unit).toBe('万吨/年')
+    expect(result.features.length).toBeGreaterThan(0)
+  })
+
   it('feature.properties 仅暴露 portId/portName/value/reliability', async () => {
     const mockReadFile = vi.fn().mockResolvedValue(JSON.stringify(cargoData))
     const service = makeService(mockReadFile)
@@ -283,6 +294,30 @@ describe('getIndicatorData', () => {
     }
     expect(noTime.ports.p1.value).toBeNull()
   })
+
+  it('年模式 value = 该年 12 个月之和，unit 标 /年（与折线/热力图同口径）', async () => {
+    const mockReadFile = vi.fn().mockResolvedValue(JSON.stringify(cargoData))
+    const service = makeService(mockReadFile)
+    const full = (await service.getIndicatorData('cargo', undefined, 'p1')) as {
+      ports: Record<
+        string,
+        {
+          historical: Array<{ time: string; value: number }>
+          forecast: Array<{ time: string; value: number }>
+        }
+      >
+    }
+    const series = [...full.ports.p1.historical, ...full.ports.p1.forecast]
+    const expected = series
+      .filter((d) => d.time.startsWith('2020-'))
+      .reduce((sum, d) => sum + d.value, 0)
+    const year = (await service.getIndicatorData('cargo', '2020', 'p1')) as {
+      ports: Record<string, { value: number }>
+      unit: string
+    }
+    expect(year.unit).toBe('万吨/年')
+    expect(year.ports.p1.value).toBe(expected)
+  })
 })
 
 describe('getTimeSeriesData', () => {
@@ -305,24 +340,37 @@ describe('getTimeSeriesData', () => {
     expect(result.granularity).toBe('month')
   })
 
-  it('year 粒度按年聚合为 YYYY 且 value 为年均值整数', async () => {
+  it('year 粒度按年聚合为 YYYY，value 等于该年 12 个月之和，unit 标 /年', async () => {
     const mockReadFile = vi.fn().mockResolvedValue(JSON.stringify(cargoData))
     const service = makeService(mockReadFile)
+    const monthly = (await service.getTimeSeriesData(
+      'cargo',
+      'p1',
+      undefined,
+      undefined,
+      'month'
+    )) as { series: Array<{ data: Array<{ time: string; value: number }> }> }
+    const sums = new Map<string, number>()
+    for (const d of monthly.series[0].data) {
+      const year = d.time.slice(0, 4)
+      sums.set(year, (sums.get(year) ?? 0) + d.value)
+    }
     const result = (await service.getTimeSeriesData(
       'cargo',
       'p1',
       undefined,
       undefined,
       'year'
-    )) as { series: Array<{ data: Array<{ time: string; value: number }> }> }
-    const data = result.series[0].data
-    for (const d of data) {
-      expect(d.time).toMatch(/^\d{4}$/)
-      expect(Number.isInteger(d.value)).toBe(true)
+    )) as {
+      series: Array<{ data: Array<{ time: string; value: number }> }>
+      unit: string
     }
-    const years = data.map((d: { time: string }) => d.time)
-    expect(years).toContain('2020')
-    expect(years).toContain('2022')
+    expect(result.unit).toBe('万吨/年')
+    for (const d of result.series[0].data) {
+      expect(d.time).toMatch(/^\d{4}$/)
+      expect(d.value).toBe(sums.get(d.time))
+    }
+    expect([...sums.keys()]).toEqual(expect.arrayContaining(['2020', '2022']))
   })
 
   it('不指定 portId 返回所有港口序列', async () => {

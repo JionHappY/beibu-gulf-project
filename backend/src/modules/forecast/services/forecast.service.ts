@@ -5,7 +5,7 @@ import { BusinessError, ErrorCode, missingParamError } from '../../../common/err
 import { DataFilesService } from '../../../infra/files/data-files.service'
 
 import type { ForecastPoint, HistoricalPoint, SpatialFeature } from './forecast-engine'
-import { computeForecast, generateSpatialValues } from './forecast-engine'
+import { aggregateYearPoint, computeForecast, generateSpatialValues } from './forecast-engine'
 import { getModelForecast } from './model-loader'
 import { applyCanalScenario, type ScenarioId, scenarioLabel } from './scenario.service'
 
@@ -309,7 +309,7 @@ export class ForecastService {
 
     return {
       indicator: computed.indicator,
-      unit: computed.unit,
+      unit: /^\d{4}$/.test(time) ? `${computed.unit}/年` : computed.unit,
       time,
       canalScenario: computed.canalScenario,
       type: 'FeatureCollection',
@@ -371,9 +371,10 @@ export class ForecastService {
     canalScenario: ScenarioId = 'baseline'
   ): Promise<Record<string, unknown>> {
     const computed = await this.getOrComputeForecast(type, scenarioLevel, canalScenario)
+    const isYear = time != null && /^\d{4}$/.test(time)
     const result: Record<string, unknown> = {
       indicator: computed.indicator,
-      unit: computed.unit,
+      unit: isYear ? `${computed.unit}/年` : computed.unit,
       canalScenario: computed.canalScenario,
       ports: {},
     }
@@ -388,8 +389,10 @@ export class ForecastService {
       pushPortSource(dataSources, port.metadata)
       let value: number | null = null
       if (time) {
-        const point =
-          port.historical.find((d) => d.time === time) || port.forecast.find((d) => d.time === time)
+        const allPoints = [...port.historical, ...port.forecast]
+        const point = isYear
+          ? aggregateYearPoint(allPoints, time)
+          : allPoints.find((d) => d.time === time)
         value = point?.value ?? null // 合法 0 值不被 || 当缺失
       }
       portsOut[pid] = {
@@ -432,21 +435,15 @@ export class ForecastService {
       if (end) allData = allData.filter((d) => d.time <= end)
 
       if (granularity === 'year') {
-        const yearly: Record<string, { time: string; value: number; count: number; type: string }> =
-          {}
+        const yearly: Record<string, { time: string; value: number; type: string }> = {}
         allData.forEach((d) => {
           const y = d.time.split('-')[0]
-          if (!yearly[y]) yearly[y] = { time: y, value: 0, count: 0, type: d.type ?? 'historical' }
+          if (!yearly[y]) yearly[y] = { time: y, value: 0, type: d.type ?? 'historical' }
+          // 年度合计：三图同口径；type 取最后一条，使含预测的年标记为 forecast
           yearly[y].value += d.value
-          yearly[y].count++
-          // 年内可能跨历史/预测（当前年），type 取最后一条为准，使含预测的年标记为 forecast
           yearly[y].type = d.type ?? 'historical'
         })
-        allData = Object.values(yearly).map((d) => ({
-          time: d.time,
-          value: Math.round(d.value / d.count),
-          type: d.type,
-        }))
+        allData = Object.values(yearly)
       }
 
       series.push({ portId: pid, portName: port.portName, data: allData })
@@ -456,7 +453,7 @@ export class ForecastService {
 
     return {
       indicator: computed.indicator,
-      unit: computed.unit,
+      unit: granularity === 'year' ? `${computed.unit}/年` : computed.unit,
       granularity: granularity || 'month',
       canalScenario: computed.canalScenario,
       series,

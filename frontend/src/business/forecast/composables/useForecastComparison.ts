@@ -32,8 +32,8 @@ export function useForecastComparison(): UseForecastComparisonReturn {
 
   async function load(transactionId: number, signal: AbortSignal): Promise<void> {
     try {
-      const rawTime = forecastState.currentTime
-      const time = rawTime.includes('-') ? rawTime : `${rawTime}-12`
+      // 年模式直接传 "YYYY"：后端按 12 个月合计返回，禁止用 YYYY-12 冒充年度
+      const time = forecastState.currentTime
       const confKey = BAR_INDICATORS.map(
         (i) => forecastState.confidenceThresholds[i] ?? DEFAULT_CONFIDENCE
       ).join(',')

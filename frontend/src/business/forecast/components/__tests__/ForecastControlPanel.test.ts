@@ -125,6 +125,20 @@ describe('ForecastControlPanel 时间轴卡片', () => {
     wrapper.unmount()
   })
 
+  it('年模式点击刻度写入 YYYY（不再混入 -01）', async () => {
+    const wrapper = mountPanel()
+    const store = useForecastStore()
+
+    await timeCard(wrapper)!.trigger('click')
+    await wrapper.find('.gr-toggle input').setValue(true)
+    await wrapper.findAll('.t-tick.clickable')[2].trigger('click')
+
+    expect(store.currentTime).toBe('2031')
+    expect(wrapper.find('.ssc.selecting .ssc-status').text()).toBe('2031年')
+
+    wrapper.unmount()
+  })
+
   it('可点击刻度跳年（选择步进保留），点刻度不收起卡片', async () => {
     const wrapper = mountPanel()
     const store = useForecastStore()

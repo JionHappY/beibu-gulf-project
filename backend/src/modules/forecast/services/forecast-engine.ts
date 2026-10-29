@@ -135,6 +135,20 @@ export interface SpatialFeature {
   properties: Record<string, unknown> & { portId?: string; portName?: string }
 }
 
+/** 年度合计：取该年所有可用月份求和；无月份数据返回 null。type/reliability 取最后一条。 */
+export function aggregateYearPoint<T extends { time: string; value: number }>(
+  data: T[],
+  year: string
+): T | null {
+  const matched = data.filter((d) => d.time.startsWith(`${year}-`))
+  if (matched.length === 0) return null
+  return {
+    ...matched[matched.length - 1],
+    time: year,
+    value: matched.reduce((sum, d) => sum + d.value, 0),
+  }
+}
+
 export function generateSpatialValues(
   historicalData: HistoricalPoint[],
   forecast: ForecastPoint[],
@@ -142,7 +156,9 @@ export function generateSpatialValues(
   spatialFeatures: SpatialFeature[]
 ): SpatialFeature[] {
   const allValues: Array<HistoricalPoint | ForecastPoint> = [...historicalData, ...forecast]
-  const timeEntry = allValues.find((d) => d.time === timePoint)
+  const timeEntry = /^\d{4}$/.test(timePoint)
+    ? aggregateYearPoint(allValues, timePoint)
+    : allValues.find((d) => d.time === timePoint)
   if (!timeEntry) return []
 
   const result: SpatialFeature[] = []

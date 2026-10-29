@@ -96,7 +96,7 @@ const visible = computed(
 }
 
 .stack-empty-hint {
-  padding: 14px 10px;
+  padding: 12px 10px;
   border: 1px dashed var(--GCS-color-primary);
   border-radius: var(--GCS-radius-md);
   text-align: center;
@@ -133,6 +133,8 @@ const visible = computed(
   font-size: 12px;
 }
 
+/* 1px 重叠属"堆叠感"手法（见 .stack-card 头注释）：相邻卡上沿压掉前一张的下边框，
+   两条 1px 边框叠成一条线，而不是留出 2px 双线。负间距是视觉重叠，不做 8 格收敛。 */
 .stack-card + .stack-card {
   margin-top: -1px;
 }

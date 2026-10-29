@@ -73,7 +73,7 @@ function onPointerUp(e: PointerEvent): void {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 5px 10px;
+  padding: 4px 10px;
   border: 1px solid var(--chip-color);
 
   /* 胶囊形：半径取 999px 随高度自适应，属几何形状，不走四档 token */

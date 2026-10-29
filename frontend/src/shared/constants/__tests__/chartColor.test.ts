@@ -27,10 +27,7 @@ const SKIP_DIR = /^(__tests__|__mocks__|node_modules|\.local|dist)$/
  * 各条豁免必须仍在使用（见下「豁免不得过期」用例），删了色值就要删豁免。
  */
 const ALLOWED_LITERALS: Record<string, string[]> = {
-  // 雷达网格线用半透明黑白叠层，CHART_COLORS 无对应语义键
-  'business/site-suitability/components/SuitabilityRadarPanel.vue': [
-    'rgba(255,255,255,.18)|rgba(0,0,0,.12)',
-  ],
+  // 当前无豁免；雷达网格线已改由 CHART_COLORS.splitLine/axisLine 提供
 }
 
 type HitKind = 'palette' | 'literal' | 'keyPick'

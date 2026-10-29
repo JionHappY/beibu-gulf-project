@@ -1,4 +1,4 @@
-// 港口（来自 backend/data/ports.json，经 GET /api/ports 返回；统一 lng/lat 命名）
+// 港口（前端静态资产 frontend/public/data/ports.json；2026-08-29 自后端回迁，不再经 GET /api/ports；统一 lng/lat 命名）
 export interface Port {
   id: string
   name: string

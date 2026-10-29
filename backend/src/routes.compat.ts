@@ -27,4 +27,9 @@ export const COMPAT_ENDPOINTS: CompatEndpoint[] = [
     consumerRe: /\/plans\/[^'"\s`]*xiaoqu/,
   },
   { method: 'GET', path: 'nest-api/forecast/:portId' },
+  // 根别名 GET /forecast（d146，2026-10-29）：前端零消费、保留不删。
+  // 不设 consumerRe：Vue Router 的 `path: '/forecast'` 与 API 根路径同形，行级正则无法
+  // 区分（实测误伤 frontend/src/business/manifest.ts 的路由表）；「前端零消费」改由
+  // swagger-contract 的 ENDPOINTS 断言守（前端一旦在 ENDPOINTS 声明即红）。
+  { method: 'GET', path: 'nest-api/forecast' },
 ]

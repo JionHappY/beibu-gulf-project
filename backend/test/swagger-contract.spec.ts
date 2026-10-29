@@ -33,10 +33,10 @@ const BACKEND_ONLY_PATHS: Record<string, string> = {
   '/health/ready': '就绪探针（同上）',
   '/health/version': '版本探针（同上）',
   '/csp-report': '浏览器 CSP 上报（nginx report-uri 直通，无前端代码调用）',
-  '/forecast': '前端零调用（2026-10-06 实测：ENDPOINTS 与调用点 0 命中）——保留端点',
   '/route/path':
     '前端已改走异步任务域（domain=route-path，只调 /task）；该 GET 仅后端 e2e/fixture 与兼容调用使用',
-  // Express 遗留兼容端点：权威登记在 backend/src/routes.compat.ts（不在此手抄第二份）
+  // 内部/兼容端点（含 GET /forecast 根别名）：权威登记在 backend/src/routes.compat.ts，
+  // 白名单由此派生——不在此手抄第二份
   ...Object.fromEntries(
     COMPAT_ENDPOINTS.map((e) => [
       normalizePath('/' + e.path.replace(/^nest-api\//, '')),
@@ -153,6 +153,23 @@ describe('swagger-contract — 端点双向核对（b018）', () => {
     expect(problems[0]).toContain('/secret/endpoint')
   })
 
+  it('@guard-red-sample GET /forecast 根别名漏登记（COMPAT_ENDPOINTS 未登记）⇒ 必红', () => {
+    // 白名单由 COMPAT_ENDPOINTS 派生（不手抄）：根别名必须在唯一登记里，派生后的
+    // BACKEND_ONLY_PATHS 必须含它；否则下面这条 Swagger 端点必红（漏登记即可检出）。
+    expect(COMPAT_ENDPOINTS).toContainEqual(
+      expect.objectContaining({ method: 'GET', path: 'nest-api/forecast' })
+    )
+    expect(BACKEND_ONLY_PATHS).toHaveProperty('/forecast')
+    const problems = auditSwaggerContract({
+      swaggerPaths: ['/nest-api/forecast'],
+      frontendPaths: [],
+      backendOnly: {},
+    })
+    expect(problems).toHaveLength(1)
+    expect(problems[0]).toContain('后端→前端')
+    expect(problems[0]).toContain('/forecast')
+  })
+
   it('阳性对照：双向对齐（含 BACKEND_ONLY 登记与参数归一）⇒ 不红', () => {
     const problems = auditSwaggerContract({
       swaggerPaths: ['/nest-api/favorites/{itemType}/{itemId}', '/nest-api/health'],
@@ -173,5 +190,11 @@ describe('swagger-contract — 端点双向核对（b018）', () => {
       backendOnly: BACKEND_ONLY_PATHS,
     })
     expect(problems, problems.join('\n')).toEqual([])
+  })
+
+  it('GET /forecast 根别名：前端 ENDPOINTS 不声明（零消费面登记，d146）', () => {
+    // 五面之一「前端 ENDPOINTS」：根别名保留为后端独有（BACKEND_ONLY_PATHS 派生自
+    // COMPAT_ENDPOINTS）。前端一旦在 ENDPOINTS 声明它，本断言即红，须重裁「接线 vs 删登记」。
+    expect(frontendPaths).not.toContain('/forecast')
   })
 })

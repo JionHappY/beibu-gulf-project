@@ -5,9 +5,11 @@ import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue'
 
 import { useSliderFocus } from '@/core'
 import {
+  AppIcon,
   CANAL_SCENARIO_OPTIONS,
   CONFIRM_DELAY,
   DEFAULT_CONFIDENCE,
+  type IconName,
   ROW_HEIGHT_CELL,
   SliderSelectCard,
   useGCS,
@@ -45,10 +47,10 @@ const smallFontSizeCss = computed(() => `${cellPixel.value * 0.15}px`)
 //（cargo 基期归一指数，见 tools/forecast/derive-activity.mjs）。berth/traffic 纯合成指标已下架
 //（源文件保留标 _provenance），不再有「（模拟）」角标
 const INDICATORS = [
-  { key: 'cargo', label: '货物', icon: '📦' },
-  { key: 'container', label: '集装箱', icon: '📋' },
-  { key: 'activity', label: '港口吞吐活跃度', icon: '📈' },
-]
+  { key: 'cargo', label: '货物', icon: 'cargo' },
+  { key: 'container', label: '集装箱', icon: 'container' },
+  { key: 'activity', label: '港口吞吐活跃度', icon: 'activity' },
+] as const satisfies readonly { key: string; label: string; icon: IconName }[]
 
 // selected 由 store activeIndicator 派生（getter）——
 // 快照恢复 restoreState 设置 activeIndicator 后按钮高亮自动一致（原本地双源：恢复非 cargo 时按钮仍亮 cargo）
@@ -288,7 +290,7 @@ function stopPlayback() {
           @update:slider-value="(v) => onConfidenceSliderInput(ind.key, String(v))"
         >
           <template #icon>
-            <span class="ind-icon">{{ ind.icon }}</span>
+            <span class="ind-icon"><AppIcon :name="ind.icon" /></span>
           </template>
         </SliderSelectCard>
       </div>

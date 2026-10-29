@@ -68,7 +68,9 @@ function handleClick() {
     @click="handleClick"
   >
     <span class="button-label">{{ label }}</span>
-    <span v-if="icon" class="button-icon" :style="iconStyle" aria-hidden="true">{{ icon }}</span>
+    <span v-if="icon" class="button-icon" :style="iconStyle" aria-hidden="true">
+      <slot name="icon">{{ icon }}</slot>
+    </span>
   </button>
 </template>
 

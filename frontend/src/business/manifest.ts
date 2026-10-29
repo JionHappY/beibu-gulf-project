@@ -15,6 +15,7 @@
  */
 import type { RouteRecordRaw } from 'vue-router'
 
+import type { IconName } from '@/shared'
 import { useFloodStore, useForecastStore, useSiteSuitabilityStore } from '@/stores'
 
 interface BusinessModule {
@@ -28,8 +29,8 @@ interface BusinessModule {
   title: string
   /** 底部导航显示名 */
   navLabel: string
-  /** 底部导航图标 */
-  navIcon: string
+  /** 底部导航图标（`@/shared` 图标名表中的登记名，由 AppIcon 渲染内联 SVG） */
+  navIcon: IconName
   /** 路由懒加载组件；null = 模块未实现（仅占位导航，不注册路由） */
   component: (() => Promise<unknown>) | null
   /** 登出时执行的业务状态重置（无状态模块可省略）；调用点在 App.vue 登出重置链 */
@@ -44,7 +45,7 @@ export const businessModules: BusinessModule[] = [
     engine: '2d',
     title: '选址分析',
     navLabel: '选址分析',
-    navIcon: '◎',
+    navIcon: 'site-suitability',
     component: () => import('@/business/site-suitability').then((m) => m.SiteSuitabilityPage),
     reset: () => useSiteSuitabilityStore().reset(),
   },
@@ -55,7 +56,7 @@ export const businessModules: BusinessModule[] = [
     engine: '3d',
     title: '分流分析',
     navLabel: '分流分析',
-    navIcon: '≋',
+    navIcon: 'diversion',
     component: () => import('@/business/diversion').then((m) => m.DiversionPage),
     // 页面状态为本地 ref（年份/结果），无持久 store；登出时路由保留，
     // reset 声明为 no-op 以维持"已实现模块必须声明 reset"的清单不变量（同上一条）
@@ -67,7 +68,7 @@ export const businessModules: BusinessModule[] = [
     engine: '2d',
     title: '预测分析',
     navLabel: '预测分析',
-    navIcon: '📊',
+    navIcon: 'forecast',
     component: () => import('@/business/forecast').then((m) => m.ForecastPage),
     // 登出须清快照：reset() 刻意不清快照（保卸载重置链路），clearState 兜底清登出前旧会话
     reset: () => {
@@ -81,7 +82,7 @@ export const businessModules: BusinessModule[] = [
     engine: '3d',
     title: '浸没分析',
     navLabel: '浸没分析',
-    navIcon: '🌊',
+    navIcon: 'flood',
     component: () => import('@/business/flood-analysis').then((m) => m.FloodAnalysisPage),
     reset: () => useFloodStore().clearState(),
   },
@@ -91,7 +92,7 @@ export const businessModules: BusinessModule[] = [
     engine: '3d',
     title: '航线分析',
     navLabel: '航线分析',
-    navIcon: '🚢',
+    navIcon: 'route',
     component: () => import('@/business/route-analysis').then((m) => m.RouteAnalysisPage),
     // 页面状态为本地 ref（起终点/结果），无持久 store；登出时路由保留、图层由页面清理，
     // reset 声明为 no-op 以维持"已实现模块必须声明 reset"的清单不变量（单一事实源不变量）

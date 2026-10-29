@@ -11,13 +11,14 @@
  */
 import { computed } from 'vue'
 
+import { AppIcon, type IconName } from '@/shared'
 import { isActiveStatus, type TaskStatus } from '@/types/task'
 
 export interface TaskDockCard {
   taskId: string
   route: string
   label: string
-  icon: string
+  icon: IconName
   status: TaskStatus
   progress: number
 }
@@ -71,7 +72,7 @@ const ordered = computed(() =>
         />
       </svg>
       <span v-else class="task-dock__dot" :class="`dot-${card.status}`" />
-      <span class="task-dock__icon">{{ card.icon }}</span>
+      <span class="task-dock__icon"><AppIcon :name="card.icon" /></span>
       <span class="task-dock__label">{{ card.label }}</span>
       <span class="task-dock__status">{{ STATUS_TEXT[card.status] }}</span>
     </button>

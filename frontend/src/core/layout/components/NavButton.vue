@@ -29,7 +29,7 @@ export default { name: 'GCSNavButton' }
 
 import { computed } from 'vue'
 
-import { useGCS } from '@/shared'
+import { AppIcon, isIconName, useGCS } from '@/shared'
 
 import {
   EMPTY_ROUTE_READINESS,
@@ -131,7 +131,13 @@ const buttonSize = computed(() => Math.round(cellPixel.value * 0.8))
       :disabled="disabled"
       :active="active"
       @click="$emit('click')"
-    />
+    >
+      <!-- 已登记图标名走内联 SVG；未登记（主题切换 ☀️/🌙 等未点名字符）原样透出 -->
+      <template #icon>
+        <AppIcon v-if="isIconName(icon)" :name="icon" />
+        <span v-else>{{ icon }}</span>
+      </template>
+    </GCSButton>
 
     <!--
       进度环：绝对定位居中、覆盖按钮四周。

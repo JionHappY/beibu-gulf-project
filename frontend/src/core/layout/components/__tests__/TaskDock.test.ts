@@ -9,7 +9,7 @@ const running: TaskDockCard = {
   taskId: 't1',
   route: '/flood-analysis',
   label: '淹没分析',
-  icon: '🌊',
+  icon: 'flood',
   status: 'running',
   progress: 0.4,
 }
@@ -18,7 +18,7 @@ const done: TaskDockCard = {
   taskId: 't2',
   route: '/forecast',
   label: '预测趋势',
-  icon: '📈',
+  icon: 'activity',
   status: 'done',
   progress: 1,
 }

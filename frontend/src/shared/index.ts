@@ -35,6 +35,7 @@ export * from './utils/scenario'
 export * from './utils/spatialIndex'
 export * from './utils/warmupAfterFirstFrame'
 // 收口：组件聚合导出
+export { default as AppIcon } from './components/AppIcon.vue'
 export { default as ChartLoading } from './components/ChartLoading.vue'
 export { default as EmptyState } from './components/EmptyState.vue'
 export { default as ErrorBoundary } from './components/ErrorBoundary.vue'
@@ -44,3 +45,5 @@ export { default as PaginatedListPanel } from './components/PaginatedListPanel.v
 export { default as PanelTitle } from './components/PanelTitle.vue'
 export { default as PlanSaveModal } from './components/PlanSaveModal.vue'
 export { default as SliderSelectCard } from './components/SliderSelectCard.vue'
+// 图标名表：名 → 内联 SVG path 的唯一权威源
+export * from './components/icons'

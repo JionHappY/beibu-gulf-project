@@ -105,7 +105,7 @@ function handleRequireLogin() {
 
 // 注册底部导航项：core/layout 不引 business，由根入口从 manifest 注入业务导航项（分层铁律）
 registerNavItems([
-  { type: 'home', label: '首页', icon: '⌂', path: '/', disabled: false },
+  { type: 'home', label: '首页', icon: 'home', path: '/', disabled: false },
   ...businessModules.map((m) => ({
     type: 'business' as const,
     label: m.navLabel,
@@ -113,7 +113,7 @@ registerNavItems([
     path: m.path,
     disabled: false,
   })),
-  { type: 'profile', label: '个人中心', icon: '👤', path: '/profile', disabled: false },
+  { type: 'profile', label: '个人中心', icon: 'profile', path: '/profile', disabled: false },
 ])
 
 // ===== v4 任务停靠体系（S5/S6）=====
@@ -204,7 +204,7 @@ const dockCards = computed<TaskDockCard[]>(() => {
       taskId: slot.taskId,
       route: slot.route,
       label: mod?.navLabel ?? slot.route,
-      icon: mod?.navIcon ?? '⏳',
+      icon: mod?.navIcon ?? 'pending',
       status: slot.status,
       progress: slot.progress,
     })

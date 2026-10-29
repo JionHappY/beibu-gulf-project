@@ -26,17 +26,23 @@ const PORT_ID_BY_NAME: Record<string, string> = {
   防城港: 'fangchenggang',
 }
 
-function readJson(rel: string): any {
-  return JSON.parse(readFileSync(path.join(ROOT, rel), 'utf8'))
+interface ForecastDataFile {
+  data: Record<string, { spatial?: { features?: Array<{ geometry?: { coordinates?: unknown } }> } }>
+}
+
+interface ForecastIndexFile {
+  metadata: { ports: Array<{ id: string; lng: number; lat: number }> }
+}
+
+function readJson<T>(rel: string): T {
+  return JSON.parse(readFileSync(path.join(ROOT, rel), 'utf8')) as T
 }
 
 /** 权威坐标表：{ qinzhou: {lng, lat}, ... } */
 function authoritativeAnchors(): Record<string, { lng: number; lat: number }> {
-  const ports = readJson('frontend/public/data/ports.json') as Array<{
-    name: string
-    lng: number
-    lat: number
-  }>
+  const ports = readJson<Array<{ name: string; lng: number; lat: number }>>(
+    'frontend/public/data/ports.json'
+  )
   const out: Record<string, { lng: number; lat: number }> = {}
   for (const p of ports) {
     const id = PORT_ID_BY_NAME[p.name]
@@ -57,7 +63,7 @@ describe('热力锚点一致性（防三轨回归）', () => {
   it.each(['cargo', 'container', 'activity'])(
     '%s.json 的空间锚点等于 ports.json 权威坐标',
     (indicator) => {
-      const data = readJson(`backend/data/forecast/${indicator}.json`)
+      const data = readJson<ForecastDataFile>(`backend/data/forecast/${indicator}.json`)
       for (const [id, want] of Object.entries(anchors)) {
         const coords = data.data[id]?.spatial?.features?.[0]?.geometry?.coordinates
         expect(coords, `${indicator}.json 缺少 ${id} 的锚点`).toBeDefined()
@@ -67,7 +73,7 @@ describe('热力锚点一致性（防三轨回归）', () => {
   )
 
   it('index.json 的 metadata.ports 等于权威坐标（它是坐标的原始来源，必须同源）', () => {
-    const idx = readJson('backend/data/forecast/index.json')
+    const idx = readJson<ForecastIndexFile>('backend/data/forecast/index.json')
     const byId: Record<string, { lng: number; lat: number }> = {}
     for (const p of idx.metadata.ports) byId[p.id] = { lng: p.lng, lat: p.lat }
     for (const [id, want] of Object.entries(anchors)) {
@@ -95,8 +101,8 @@ describe('热力锚点一致性（防三轨回归）', () => {
       [108.35, 21.77],
     ]
     for (const indicator of ['cargo', 'container', 'activity']) {
-      const data = readJson(`backend/data/forecast/${indicator}.json`)
-      for (const [id, coords] of Object.entries<any>(data.data)) {
+      const data = readJson<ForecastDataFile>(`backend/data/forecast/${indicator}.json`)
+      for (const [id, coords] of Object.entries(data.data)) {
         const c = coords?.spatial?.features?.[0]?.geometry?.coordinates
         for (const mock of MOCK_ANCHORS) {
           expect(c, `${indicator}.json 的 ${id} 仍是 mock 市区坐标`).not.toEqual(mock)

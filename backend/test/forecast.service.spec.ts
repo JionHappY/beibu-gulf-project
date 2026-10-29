@@ -163,7 +163,15 @@ describe('getMapData', () => {
   it('activity 派生指标：文件自带 forecast 透传 + 单位指数 + 真坐标锚点（非 mock 市区点）', async () => {
     const mockReadFile = vi.fn().mockResolvedValue(JSON.stringify(activityData))
     const service = makeService(mockReadFile)
-    const result = (await service.getMapData('activity', '2022-01')) as any
+    const result = (await service.getMapData('activity', '2022-01')) as {
+      type: string
+      indicator: string
+      unit: string
+      features: Array<{
+        geometry: { coordinates: [number, number] }
+        properties: Record<string, unknown>
+      }>
+    }
     expect(result.type).toBe('FeatureCollection')
     expect(result.indicator).toBe('activity')
     expect(result.unit).toBe('指数')
@@ -189,7 +197,11 @@ describe('getPortData', () => {
   it('指定单一指标加载该港口数据', async () => {
     const mockReadFile = vi.fn().mockResolvedValue(JSON.stringify(cargoData))
     const service = makeService(mockReadFile)
-    const result = (await service.getPortData('p1', 'cargo')) as Record<string, any>
+    const result = (await service.getPortData('p1', 'cargo')) as {
+      portId: string
+      portName: string
+      indicators: Record<string, { unit: string; historical: Array<{ time: string }> }>
+    }
     expect(result.portId).toBe('p1')
     expect(result.portName).toBe('港口A')
     expect(result.indicators.cargo.unit).toBe('万吨')
@@ -226,10 +238,12 @@ describe('getPortData', () => {
   it('start/end 同时过滤历史与预测', async () => {
     const mockReadFile = vi.fn().mockResolvedValue(JSON.stringify(cargoData))
     const service = makeService(mockReadFile)
-    const result = (await service.getPortData('p1', 'cargo', '2020-06', '2025-06')) as Record<
-      string,
-      any
-    >
+    const result = (await service.getPortData('p1', 'cargo', '2020-06', '2025-06')) as {
+      indicators: Record<
+        string,
+        { historical: Array<{ time: string }>; forecast: Array<{ time: string }> }
+      >
+    }
     for (const d of result.indicators.cargo.historical) {
       expect(d.time >= '2020-06' && d.time <= '2025-06').toBe(true)
     }
@@ -281,7 +295,10 @@ describe('getTimeSeriesData', () => {
       undefined,
       undefined,
       undefined
-    )) as Record<string, any>
+    )) as {
+      series: Array<{ data: Array<{ time: string; value: number }> }>
+      granularity: string
+    }
     expect(result.series).toHaveLength(1)
     expect(result.series[0].data).toHaveLength(144)
     expect(result.series[0].data[0].time).toBe('2020-01')
@@ -297,7 +314,7 @@ describe('getTimeSeriesData', () => {
       undefined,
       undefined,
       'year'
-    )) as Record<string, any>
+    )) as { series: Array<{ data: Array<{ time: string; value: number }> }> }
     const data = result.series[0].data
     for (const d of data) {
       expect(d.time).toMatch(/^\d{4}$/)

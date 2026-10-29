@@ -133,7 +133,7 @@ export default defineConfig([
   },
 
   js.configs.recommended,
-  // 新增：TypeScript recommended 规则集（关闭 no-explicit-any，阶段 10 清零后可改为 'error'）
+  // TypeScript recommended 规则集；源码已无显式 any，no-explicit-any 按 error 守约
   ...tseslint.configs.recommended,
   ...pluginVue.configs['flat/recommended'],
 
@@ -221,8 +221,8 @@ export default defineConfig([
       'simple-import-sort': simpleImportSort,
     },
     rules: {
-      // 覆盖 TS 规则：项目当前有显式 any，阶段 10 清零后可改为 'error'
-      '@typescript-eslint/no-explicit-any': 'off',
+      // 显式 any 已清零：新增即报错，确需第三方边界时用 unknown + 收窄
+      '@typescript-eslint/no-explicit-any': 'error',
       '@typescript-eslint/no-unused-vars': [
         'warn',
         { caughtErrors: 'none', argsIgnorePattern: '^_', varsIgnorePattern: '^_' },

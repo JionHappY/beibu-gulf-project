@@ -36,11 +36,21 @@ type FloodPersistedSnapshot = {
   totalLoss: number
 }
 
+/**
+ * 淹没分析请求的展示状态。
+ *
+ * `empty` 专指**请求成功但没有任何统计载荷**（features 为空且 statistics 为空对象），
+ * 与「水位 0 / 无设施」这类**真实零值**区分：后者 statistics 有完整字段，仍按 0 展示。
+ * `failure` 时不改旧数据，报告面板据此把旧结果标成 stale。
+ */
+export type FloodAnalysisStatus = 'idle' | 'requesting' | 'success' | 'empty' | 'failure'
+
 export const useFloodStore = defineStore('flood', () => {
   // ─── 分析数据 ──────────────────────────────────────────────
   const floodStatistics = ref<FloodStatistics | null>(null)
   const floodFeatures = ref<FloodFeature[]>([])
   const floodRiskLevel = ref('无风险')
+  const analysisStatus = ref<FloodAnalysisStatus>('idle')
 
   // ─── 水位控制 ──────────────────────────────────────────────
   const waterLevel = ref(0)
@@ -67,12 +77,18 @@ export const useFloodStore = defineStore('flood', () => {
     floodStatistics.value = statistics
     floodFeatures.value = features
     floodRiskLevel.value = riskLevel
+    analysisStatus.value = 'success'
+  }
+
+  function setAnalysisStatus(status: FloodAnalysisStatus): void {
+    analysisStatus.value = status
   }
 
   function resetFloodAnalysis(): void {
     floodStatistics.value = null
     floodFeatures.value = []
     floodRiskLevel.value = '无风险'
+    analysisStatus.value = 'idle'
   }
 
   // ─── 水位控制 ──────────────────────────────────────────────
@@ -135,6 +151,8 @@ export const useFloodStore = defineStore('flood', () => {
     floodStatistics,
     floodFeatures,
     floodRiskLevel,
+    analysisStatus,
+    setAnalysisStatus,
     // 水位控制
     waterLevel,
     waterLevelActive,

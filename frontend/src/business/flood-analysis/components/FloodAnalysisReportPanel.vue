@@ -94,36 +94,61 @@ const row = (label: string, value: string, extra: Partial<ReportRow> = {}): Repo
 })
 
 /**
- * 7 行报告的唯一事实源：模板侧一段 v-for，不再逐行写标签/值的重复结构。
- * 前三行（面积/水深）随 floodStatistics 出现或消失——门控在这里表达；
- * 数值统一 `?? 0`（合法 0 不经 OR 链误判跳到下一兜底）。
+ * 报告行唯一事实源：模板侧一段 v-for，不再逐行写标签/值的重复结构。
+ *
+ * 🔴 整张表以 floodStatistics 为门控：没有统计载荷时一行都不渲染，
+ *    而不是用 `?? 0` 拼出「0 个 / 0元 / 无风险」——那会把「没拿到」伪装成「真的没有」。
+ *    成功响应里的真实 0（水位 0m 的面积/风险）仍有完整 statistics，照常显示 0。
  */
 const rows = computed<ReportRow[]>(() => {
   const s = floodStore.floodStatistics
+  if (!s) return []
   const depthMark = depthIsReference.value ? { text: '*', class: 'ref-mark' as const } : undefined
   const upMark = levelAdjustment.value
     ? { text: '⇧', class: 'level-adjust-mark' as const, title: levelHint.value }
     : undefined
   const summary = facilityTypeSummary.value || undefined
-  const loss = formatLoss(Number(floodStore.totalLoss ?? s?.estimatedLoss ?? 0))
-  const depthRows = [
-    row('平均水深', `${s?.averageDepth ?? 0} m`, { title: depthHint.value, mark: depthMark }),
-    row('最大水深', `${s?.maxDepth ?? 0} m`, { title: depthHint.value, mark: depthMark }),
-  ]
-  const list: ReportRow[] = s
-    ? [row('淹没面积', `${s.floodArea ?? 0} km²`, { mark: upMark }), ...depthRows]
-    : []
-  list.push(
+  const loss = formatLoss(Number(floodStore.totalLoss ?? s.estimatedLoss ?? 0))
+  const list: ReportRow[] = [
+    row('淹没面积', `${s.floodArea ?? 0} km²`, { mark: upMark }),
+    row('平均水深', `${s.averageDepth ?? 0} m`, { title: depthHint.value, mark: depthMark }),
+    row('最大水深', `${s.maxDepth ?? 0} m`, { title: depthHint.value, mark: depthMark }),
     row('受影响设施', `${floodStore.affectedFacilities.length} 个`, {
       title: summary,
       valueClass: summary ? 'has-hint' : undefined,
     }),
     // 预估损失（X4）：disaster 的 totalLoss 与 estimatedLoss 现同式，?? 兜底链两侧可互换
     row('预估损失', `${loss}元`, { valueClass: 'highlight' }),
-    row('影响等级', impactLevel.value)
-  )
+    row('影响等级', impactLevel.value),
+  ]
   if (affectedPorts.value.length) list.push(row('受影响港口', affectedPorts.value.join('、')))
   return list
+})
+
+/** 无数据时的占位文案：区分请求中 / 失败 / 成功空 / 未开始，均不显示伪零 */
+const placeholder = computed<string | null>(() => {
+  if (floodStore.hasAnalysisData) return null
+  if (floodStore.analysisStatus === 'requesting') return '淹没分析中…'
+  if (floodStore.analysisStatus === 'failure') return '淹没分析请求失败，暂无数据'
+  return '暂无淹没分析结果'
+})
+
+/**
+ * 旧结果标记：请求失败或成功空时，store 里的旧统计原样保留，
+ * 这里显式标注它属于哪一档旧水位，避免被读成当前水位的分析结果。
+ */
+const staleInfo = computed<{ badge: string; detail: string } | null>(() => {
+  const status = floodStore.analysisStatus
+  if (!floodStore.hasAnalysisData) return null
+  if (status !== 'failure' && status !== 'empty') return null
+  const stats = floodStore.floodStatistics
+  const oldLevel = stats?.actualWaterLevel ?? stats?.waterLevel ?? stats?.requestedWaterLevel
+  const levelText = typeof oldLevel === 'number' ? `（水位 ${oldLevel}m）` : ''
+  const cause = status === 'failure' ? '请求失败' : '未返回淹没统计'
+  return {
+    badge: `上次结果${levelText}`,
+    detail: `水位 ${floodStore.waterLevel}m ${cause}，当前仍显示上次结果${levelText}`,
+  }
 })
 </script>
 
@@ -131,12 +156,18 @@ const rows = computed<ReportRow[]>(() => {
   <div class="flood-analysis-report-panel">
     <!-- 标题区 -->
     <div class="panel-header">
-      <div class="header-title">浸没分析报告</div>
+      <div class="header-title">
+        浸没分析报告
+        <span v-if="staleInfo" class="stale-badge" :title="staleInfo.detail">{{
+          staleInfo.badge
+        }}</span>
+      </div>
     </div>
 
     <!-- 灰色内容区：3.8宽×2.8高，距标题下方0.6cell、左右各0.1cell -->
     <div class="report-content" :style="contentStyle">
-      <!-- 行集与前置门控见 rows computed；受影响设施 title 为后端 type 聚合，不新造数据 -->
+      <!-- 无数据/失败/成功空一律走占位，不渲染伪零行（见 placeholder）；行集门控见 rows -->
+      <div v-if="placeholder" class="report-placeholder">{{ placeholder }}</div>
       <div v-for="item in rows" :key="item.label" class="info-item">
         <span class="info-label">{{ item.label }}</span>
         <span class="info-value" :class="item.valueClass" :title="item.title"
@@ -191,6 +222,27 @@ const rows = computed<ReportRow[]>(() => {
   justify-content: center;
   align-items: center;
   padding: v-bind(cell16px);
+}
+
+/* 旧结果标记：失败/成功空时旧统计仍在，徽章必须一眼可见；
+   完整说明（当前水位 + 失败原因）走 title，避免挤占 2.8cell 的行区 */
+.stale-badge {
+  margin-left: 6px;
+  padding: 0 4px;
+  font-size: var(--GCS-font-size-xs);
+  font-weight: 500;
+  color: var(--GCS-color-warning);
+  border: 1px solid var(--GCS-color-warning);
+  border-radius: 4px;
+  cursor: help;
+  vertical-align: middle;
+}
+
+/* 无数据占位：不渲染任何 0 值行（见 placeholder） */
+.report-placeholder {
+  font-size: 14px;
+  color: var(--GCS-text-muted);
+  text-align: center;
 }
 
 /* 信息行：左右对齐，占满灰色面板宽度 */

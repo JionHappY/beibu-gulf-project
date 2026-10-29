@@ -56,9 +56,11 @@ vi.mock('@/core/layout/useSliderFocus', () => ({
   useSliderFocus: () => ({ beginSliderFocus: vi.fn(), endSliderFocus: vi.fn() }),
 }))
 
-vi.mock('@/shared/composables/useApiRequest', async () => {
+vi.mock('@/shared/composables/useApiRequest', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/shared/composables/useApiRequest')>()
   const { ref } = await import('vue')
   return {
+    ...actual,
     useApiRequest: () => ({
       apiRequest: h.apiRequest,
       token: ref(''),
@@ -77,7 +79,17 @@ vi.mock('@/services/adapters/floodAdapter', async (importOriginal) => {
       getWaterArea: vi.fn().mockResolvedValue([[108.5, 21.7]]),
       getFloodAnalysis: vi.fn(async (level: number) => {
         h.directCalls.push(level)
-        return { features: [], statistics: {}, riskLevel: '无风险', actualWaterLevel: level }
+        return {
+          features: [],
+          statistics: {
+            riskLevel: '无风险',
+            waterLevel: level,
+            actualWaterLevel: level,
+            floodArea: 0,
+          },
+          riskLevel: '无风险',
+          actualWaterLevel: level,
+        }
       }),
       getFloodStatistics: vi.fn().mockResolvedValue({}),
       getImpactAssessment: vi.fn().mockResolvedValue({
@@ -101,6 +113,8 @@ vi.mock('@/stores', async (importOriginal) => {
     }),
   }
 })
+
+import type { FloodStatistics } from '@/types'
 
 import { FLOOD_ANALYSIS_DELAY } from '../../composables/useFloodRequest'
 import WaterLevelProfilePanel from '../WaterLevelProfilePanel.vue'
@@ -341,8 +355,62 @@ describe('WaterLevelProfilePanel 请求归属（v4-S3）', () => {
       })
 
       expect(analysis).toHaveBeenCalledTimes(1)
-      // 这一格的判别项只有 unhandled（finally 本来就会复位 requesting，拿它当判据是假绿）
+      // 这一格的判别项只有 unhandled（渲染异常已由 renderStage 兜住，拿状态复位当判据是假绿）
       expect(unhandled).toEqual([])
+      wrapper.unmount()
+    })
+  })
+
+  describe('请求结果状态传播', () => {
+    it('直连成功 ⇒ analysisStatus=success', async () => {
+      const { useFloodStore } = await import('@/stores')
+      const wrapper = shallowMount(WaterLevelProfilePanel)
+      await flushPromises()
+
+      expect(useFloodStore().analysisStatus).toBe('success')
+      wrapper.unmount()
+    })
+
+    it('直连失败 ⇒ analysisStatus=failure，旧统计原样保留', async () => {
+      vi.useFakeTimers()
+      const { useFloodStore } = await import('@/stores')
+      const store = useFloodStore()
+      store.startFloodAnalysis(
+        { riskLevel: '中风险', waterLevel: 5, floodArea: 10 } as FloodStatistics,
+        [],
+        '中风险'
+      )
+
+      const { floodAdapter } = await import('@/services/adapters/floodAdapter')
+      vi.mocked(floodAdapter.getFloodAnalysis).mockRejectedValueOnce(new Error('offline'))
+
+      const wrapper = shallowMount(WaterLevelProfilePanel, { props: { stateRestored: true } })
+      store.setWaterLevel(7)
+      await flushPromises()
+      vi.advanceTimersByTime(FLOOD_ANALYSIS_DELAY + 10)
+      await flushPromises()
+
+      expect(store.analysisStatus).toBe('failure')
+      expect(store.floodStatistics?.floodArea).toBe(10)
+      wrapper.unmount()
+      vi.useRealTimers()
+    })
+
+    it('直连成功但无统计载荷 ⇒ analysisStatus=empty，不写入伪数据', async () => {
+      const { useFloodStore } = await import('@/stores')
+      const store = useFloodStore()
+      const { floodAdapter } = await import('@/services/adapters/floodAdapter')
+      vi.mocked(floodAdapter.getFloodAnalysis).mockResolvedValueOnce({
+        features: [],
+        statistics: {} as FloodStatistics,
+        riskLevel: '无风险',
+      })
+
+      const wrapper = shallowMount(WaterLevelProfilePanel)
+      await flushPromises()
+
+      expect(store.analysisStatus).toBe('empty')
+      expect(store.floodStatistics).toBeNull()
       wrapper.unmount()
     })
   })

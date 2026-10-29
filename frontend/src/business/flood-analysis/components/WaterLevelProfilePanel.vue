@@ -128,11 +128,14 @@ function registerRenderers(next: FloodRenderers): void {
   Object.assign(renderers, next)
 }
 
-/** 面板 UI 状态（与服务端任务状态无关） */
-const requesting = ref(false)
-
 /** 卸载标志：卸载后任务仍在后端跑，但不该再写 UI 状态 */
 let disposed = false
+
+/**
+ * 本轮分析序号：同一水位重复请求时，旧轮的失败不能盖掉新轮的 requesting/success。
+ * 竞态守卫只管 HTTP abort，不保证每轮都会走到终态。
+ */
+let analysisRound = 0
 
 /** 水位防抖定时器（滑块拖动期间合并为一次请求） */
 let analysisTimer: ReturnType<typeof setTimeout> | null = null
@@ -183,41 +186,58 @@ function renderStage(stage: string, run: () => void): void {
   }
 }
 
+/**
+ * 成功响应是否「没有任何统计载荷」。
+ *
+ * 🔴 不能把 features 为空直接当空结果：水位 0 时后端返回空淹没范围 + 完整零值统计，
+ *    那是**真实零**（面积 0 / 无风险），必须照常显示 0。只有连 statistics 都没有时
+ *    才归为 success-empty，报告面板显示「暂无结果」而不是伪造成 0。
+ */
+function isEmptyAnalysis(payload: FloodAnalysisPayload): boolean {
+  const statistics = payload.statistics as unknown as Record<string, unknown> | null | undefined
+  return payload.features.length === 0 && Object.keys(statistics ?? {}).length === 0
+}
+
 async function runAnalysis(waterLevel: number, viaTask = false): Promise<void> {
   if (disposed) return
 
-  requesting.value = true
-  try {
-    const analysis = await fetchAnalysis(waterLevel, viaTask)
-    if (disposed || floodStore.waterLevel !== waterLevel) return
-    if (analysis) {
-      renderStage('淹没范围', () =>
-        renderers.analysis?.({
-          features: analysis.features,
-          statistics: analysis.statistics,
-          riskLevel: analysis.riskLevel,
-          actualWaterLevel: analysis.actualWaterLevel,
-        })
-      )
-      // 水面几何：以**后端实际命中档位**抬升（可能被向上取档，与请求水位不同）
-      const hitLevel = analysis.actualWaterLevel
-      if (typeof hitLevel === 'number') {
-        renderStage('水面几何', () => renderers.waterSurface?.(hitLevel))
-      }
-    }
+  const round = ++analysisRound
+  floodStore.setAnalysisStatus('requesting')
 
-    const impact = await fetchImpact(waterLevel)
-    if (disposed || floodStore.waterLevel !== waterLevel) return
-    if (impact) {
-      renderStage('影响评估', () =>
-        renderers.impact?.({
-          affectedFacilities: impact.affectedFacilities,
-          totalLoss: impact.totalLoss,
-        })
-      )
+  const analysis = await fetchAnalysis(waterLevel, viaTask)
+  if (disposed || round !== analysisRound || floodStore.waterLevel !== waterLevel) return
+
+  if (!analysis) {
+    // 旧统计原样保留，报告面板按 failure + 旧水位标 stale（不把失败显示成 0）
+    floodStore.setAnalysisStatus('failure')
+  } else if (isEmptyAnalysis(analysis)) {
+    floodStore.setAnalysisStatus('empty')
+  } else {
+    renderStage('淹没范围', () =>
+      renderers.analysis?.({
+        features: analysis.features,
+        statistics: analysis.statistics,
+        riskLevel: analysis.riskLevel,
+        actualWaterLevel: analysis.actualWaterLevel,
+      })
+    )
+    // 水面几何：以**后端实际命中档位**抬升（可能被向上取档，与请求水位不同）
+    const hitLevel = analysis.actualWaterLevel
+    if (typeof hitLevel === 'number') {
+      renderStage('水面几何', () => renderers.waterSurface?.(hitLevel))
     }
-  } finally {
-    if (!disposed) requesting.value = false
+    floodStore.setAnalysisStatus('success')
+  }
+
+  const impact = await fetchImpact(waterLevel)
+  if (disposed || round !== analysisRound || floodStore.waterLevel !== waterLevel) return
+  if (impact) {
+    renderStage('影响评估', () =>
+      renderers.impact?.({
+        affectedFacilities: impact.affectedFacilities,
+        totalLoss: impact.totalLoss,
+      })
+    )
   }
 }
 
@@ -272,7 +292,8 @@ async function dockToTask(): Promise<boolean> {
   clearAnalysisTimer()
   abortInflight()
 
-  requesting.value = true
+  const round = ++analysisRound
+  floodStore.setAnalysisStatus('requesting')
   const submittedWaterLevel = floodStore.waterLevel
   try {
     const { slot } = await taskStore.submitAndWait({
@@ -286,29 +307,38 @@ async function dockToTask(): Promise<boolean> {
     if (!slot) return false
 
     // 等待期间用户改了水位：结果已对不上当前参数，不能再覆盖直连的新结果
-    const stillCurrent = floodStore.waterLevel === submittedWaterLevel
+    const stillCurrent = round === analysisRound && floodStore.waterLevel === submittedWaterLevel
 
     // 结果由 renderers 消费（面板停靠后页面仍持有渲染回调）
     if (stillCurrent && slot.status === 'done' && slot.result) {
       const payload = slot.result as FloodAnalysisPayload
-      renderers.analysis?.({
-        features: payload.features,
-        statistics: payload.statistics,
-        riskLevel: payload.riskLevel,
-        actualWaterLevel: payload.actualWaterLevel,
-      })
-      if (typeof payload.actualWaterLevel === 'number') {
-        renderers.waterSurface?.(payload.actualWaterLevel)
+      if (isEmptyAnalysis(payload)) {
+        floodStore.setAnalysisStatus('empty')
+      } else {
+        renderers.analysis?.({
+          features: payload.features,
+          statistics: payload.statistics,
+          riskLevel: payload.riskLevel,
+          actualWaterLevel: payload.actualWaterLevel,
+        })
+        if (typeof payload.actualWaterLevel === 'number') {
+          renderers.waterSurface?.(payload.actualWaterLevel)
+        }
+        floodStore.setAnalysisStatus('success')
       }
+    } else if (stillCurrent && slot.status === 'failed') {
+      floodStore.setAnalysisStatus('failure')
+    } else if (stillCurrent) {
+      // 取消/结束但无结果：不留下永久的「分析中」
+      floodStore.setAnalysisStatus(floodStore.hasAnalysisData ? 'success' : 'idle')
     }
 
     taskStore.setDocked(FLOOD_ROUTE_PATH, true)
     return true
   } catch {
     // 提交失败：保持面板在原位，让用户能继续操作（页面侧负责 toast）
+    if (round === analysisRound) floodStore.setAnalysisStatus('failure')
     return false
-  } finally {
-    if (!disposed) requesting.value = false
   }
 }
 

@@ -26,7 +26,7 @@ const STORES = ['floodStore', 'forecastStore', 'mapStore', 'siteSuitabilityStore
 
 /** 仅测试引用的成员：判据不咬（每条都要说得出为什么它必须对外可见） */
 const TEST_ONLY_ALLOWED: Record<string, string[]> = {
-  floodStore: ['waterLevelActive', 'portImpactActive', 'hasAnalysisData'],
+  floodStore: ['waterLevelActive', 'portImpactActive'],
   forecastStore: [],
   mapStore: ['findLayerEntryIndex'],
   siteSuitabilityStore: ['defaultsSource'],

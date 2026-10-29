@@ -9,6 +9,29 @@ export const PLAN_NAME_REGEX = /^[\u4e00-\u9fa5a-zA-Z0-9_\-\s]{1,50}$/
 const PLAN_NAME_MESSAGE =
   '方案名称只能包含中文、字母、数字、下划线、连字符和空格，且长度不超过 50 字符'
 
+// 两个 JSONB 字段的写入口类型校验（d148）：读侧 planSchema 对 selectedKeys 是
+// z.array(z.string())，写侧原先只判真值 ⇒ 非 UI 客户端传 `"abc"` 也能落库，此后
+// GET /plans 整批被 zod 拒绝，列表打不开也就删不掉那条坏数据（自伤型可用性）。
+// 口径与前端写入侧 parseTypeSettingsForWrite 对齐：typeSettings 为「键 → 对象」映射。
+const SELECTED_KEYS_MESSAGE = 'selectedKeys 必须是字符串数组'
+const TYPE_SETTINGS_MESSAGE = 'typeSettings 必须是对象，且每个键的值必须是对象'
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
+}
+
+function assertSelectedKeys(value: unknown): void {
+  if (!Array.isArray(value) || !value.every((key) => typeof key === 'string')) {
+    throw new BusinessError(ErrorCode.INVALID_PARAMS, SELECTED_KEYS_MESSAGE)
+  }
+}
+
+function assertTypeSettings(value: unknown): void {
+  if (!isRecord(value) || !Object.values(value).every(isRecord)) {
+    throw new BusinessError(ErrorCode.INVALID_PARAMS, TYPE_SETTINGS_MESSAGE)
+  }
+}
+
 export class PlanCreateBody {
   @ApiProperty({ description: '方案名（1-50，中文/字母/数字/下划线/连字符/空格）' })
   name!: string
@@ -29,10 +52,17 @@ export class PlanCreateBody {
     if (typeof name !== 'string' || !PLAN_NAME_REGEX.test(name)) {
       throw new BusinessError(ErrorCode.INVALID_PARAMS, PLAN_NAME_MESSAGE)
     }
+    assertSelectedKeys(selectedKeys)
     const dto = new PlanCreateBody()
     dto.name = name
     dto.selectedKeys = selectedKeys
-    dto.typeSettings = typeSettings || {}
+    // 缺省落 {}（原 `|| {}` 会把 0/''/false 静默收成 {}，与「非法即拒绝」相反）
+    if (typeSettings === undefined || typeSettings === null) {
+      dto.typeSettings = {}
+    } else {
+      assertTypeSettings(typeSettings)
+      dto.typeSettings = typeSettings
+    }
     dto.weights = weights || null
     return dto
   }
@@ -58,8 +88,14 @@ export class PlanUpdateBody {
       }
       updates.name = body.name
     }
-    if (body.selectedKeys !== undefined) updates.selectedKeys = body.selectedKeys
-    if (body.typeSettings !== undefined) updates.typeSettings = body.typeSettings
+    if (body.selectedKeys !== undefined) {
+      assertSelectedKeys(body.selectedKeys)
+      updates.selectedKeys = body.selectedKeys
+    }
+    if (body.typeSettings !== undefined) {
+      assertTypeSettings(body.typeSettings)
+      updates.typeSettings = body.typeSettings
+    }
     if (body.weights !== undefined) updates.weights = body.weights
     return updates
   }

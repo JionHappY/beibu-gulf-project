@@ -16,7 +16,8 @@ const withDb = process.env.V3_INTEGRATION_DB !== undefined
 const VALID_BODY = {
   name: '钦州湾方案A',
   selectedKeys: ['hospital'],
-  typeSettings: { defaultRadius: 3000 },
+  // d148：写入边界要求 typeSettings 为「键 → 对象」映射（与前端 parseTypeSettingsForWrite 同口径）
+  typeSettings: { hospital: { selected: true, importance: 5, defaultRadius: 3000 } },
   weights: { hospital: 1.2 },
 }
 
@@ -83,7 +84,7 @@ describe.skipIf(!withDb)('plans e2e（连真库）', () => {
         userId: expect.any(String),
         name: '钦州湾方案A',
         selectedKeys: ['hospital'],
-        typeSettings: { defaultRadius: 3000 },
+        typeSettings: { hospital: { selected: true, importance: 5, defaultRadius: 3000 } },
         weights: { hospital: 1.2 },
         savedXiaoqu: [],
         createdAt: expect.any(String),
@@ -103,6 +104,30 @@ describe.skipIf(!withDb)('plans e2e（连真库）', () => {
       error: '缺少必要字段: name, selectedKeys',
       data: null,
     })
+  })
+
+  // d148：畸形 JSONB 入参在写入口即 400（修复前 200 落库，随后 GET /plans 整批 zod 失败）
+  it('selectedKeys 非数组 / typeSettings 值为非对象 → 400 且不落库', async () => {
+    const cases = [
+      { body: { name: '畸形一', selectedKeys: 'abc' }, error: 'selectedKeys 必须是字符串数组' },
+      {
+        body: { name: '畸形二', selectedKeys: ['park'], typeSettings: { hospital: 3000 } },
+        error: 'typeSettings 必须是对象，且每个键的值必须是对象',
+      },
+    ]
+    for (const { body, error } of cases) {
+      const res = await request(app.getHttpServer())
+        .post('/nest-api/plans')
+        .set('Cookie', cookieU1)
+        .send(body)
+        .expect(400)
+      expect(res.body).toEqual({ code: 400001, error, data: null })
+    }
+    const list = await request(app.getHttpServer())
+      .get('/nest-api/plans')
+      .set('Cookie', cookieU1)
+      .expect(200)
+    expect(list.body.data.map((p: { name: string }) => p.name)).not.toContain('畸形一')
   })
 
   it('名称含非法字符 → 400 文案逐字节', async () => {

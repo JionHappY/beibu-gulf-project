@@ -18,6 +18,8 @@ function expectBiz(fn: () => unknown, message: string): void {
 }
 
 const NAME_MSG = '方案名称只能包含中文、字母、数字、下划线、连字符和空格，且长度不超过 50 字符'
+const SELECTED_KEYS_MSG = 'selectedKeys 必须是字符串数组'
+const TYPE_SETTINGS_MSG = 'typeSettings 必须是对象，且每个键的值必须是对象'
 
 describe('PlanCreateBody.parse 方案名规则（后端为唯一权威）', () => {
   it('缺 name/selectedKeys → 400001 缺少必要字段', () => {
@@ -62,6 +64,57 @@ describe('PlanCreateBody.parse 方案名规则（后端为唯一权威）', () =
   })
 })
 
+// d148：读侧 planSchema 要求 selectedKeys 是 string[]、typeSettings 是「键 → 对象」，
+// 写侧原先只判真值 ⇒ 畸形 body 能落库，此后整批 GET /plans 被 zod 拒绝。
+describe('PlanCreateBody.parse 两个 JSONB 字段的写入边界校验（d148）', () => {
+  it('selectedKeys 非数组 / 含非字符串 → 400001，不落库', () => {
+    for (const selectedKeys of ['abc', { a: 1 }, ['a', 1], [null], [['a']]]) {
+      expectBiz(() => PlanCreateBody.parse({ name: '方案A', selectedKeys }), SELECTED_KEYS_MSG)
+    }
+    // 假值仍走原有「缺少必要字段」口径（顺序不变，文案不漂移）
+    expectBiz(
+      () => PlanCreateBody.parse({ name: '方案A', selectedKeys: 0 }),
+      '缺少必要字段: name, selectedKeys'
+    )
+  })
+
+  it('typeSettings 自身非对象 → 400001（含旧实现静默收成 {} 的 0/空串）', () => {
+    for (const typeSettings of ['abc', 0, false, [], ['hospital']]) {
+      expectBiz(
+        () => PlanCreateBody.parse({ name: '方案A', selectedKeys: ['a'], typeSettings }),
+        TYPE_SETTINGS_MSG
+      )
+    }
+  })
+
+  it('typeSettings 的值为非对象 → 400001（读侧按 TypeSetting 结构消费）', () => {
+    for (const value of ['x', 3000, true, null, ['x']]) {
+      expectBiz(
+        () =>
+          PlanCreateBody.parse({
+            name: '方案A',
+            selectedKeys: ['a'],
+            typeSettings: { hospital: value },
+          }),
+        TYPE_SETTINGS_MSG
+      )
+    }
+  })
+
+  it('合法值通过（阳性对照）：字符串数组 + 键 → 对象映射', () => {
+    const typeSettings = { hospital: { selected: true, importance: 5, defaultRadius: 3000 } }
+    const dto = PlanCreateBody.parse({
+      name: '方案A',
+      selectedKeys: ['hospital', 'park'],
+      typeSettings,
+    })
+    expect(dto.selectedKeys).toEqual(['hospital', 'park'])
+    expect(dto.typeSettings).toEqual(typeSettings)
+    // 空数组是合法值（方案可以一个设施都不选），不是缺字段
+    expect(PlanCreateBody.parse({ name: '方案B', selectedKeys: [] }).selectedKeys).toEqual([])
+  })
+})
+
 describe('PlanUpdateBody.parse 方案名规则（与 create 同口径，堵住改名绕口）', () => {
   it('改名时名称非法 → 400001 方案名文案（不因 update 而放宽）', () => {
     expectBiz(() => PlanUpdateBody.parse({ name: '方案!' }), NAME_MSG)
@@ -78,10 +131,18 @@ describe('PlanUpdateBody.parse 方案名规则（与 create 同口径，堵住�
     const updates = PlanUpdateBody.parse({
       name: '新方案',
       selectedKeys: ['a'],
-      typeSettings: { r: 1 },
+      typeSettings: { r: { selected: false } },
       weights: { a: 1 },
       hacked: true,
     })
     expect(Object.keys(updates).sort()).toEqual(['name', 'selectedKeys', 'typeSettings', 'weights'])
+  })
+
+  // 局部更新只校验「真传了」的字段；畸形值同样在写入口拒绝，不落库
+  it('updated 的两个 JSONB 字段畸形 → 400001', () => {
+    expectBiz(() => PlanUpdateBody.parse({ selectedKeys: 'abc' }), SELECTED_KEYS_MSG)
+    expectBiz(() => PlanUpdateBody.parse({ selectedKeys: ['a', 1] }), SELECTED_KEYS_MSG)
+    expectBiz(() => PlanUpdateBody.parse({ typeSettings: 'abc' }), TYPE_SETTINGS_MSG)
+    expectBiz(() => PlanUpdateBody.parse({ typeSettings: { r: 1 } }), TYPE_SETTINGS_MSG)
   })
 })

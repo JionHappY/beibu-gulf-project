@@ -116,6 +116,15 @@ function main() {
     if (!used) dead.push(name)
     else if (themes.size === 1 && themes.has('dark')) darkOnly.push(name)
   }
+  const rootOnly = [...defs.entries()]
+    .filter(([, themes]) => themes.has('root') && !themes.has('dark'))
+    .map(([name]) => name)
+  // 颜色族只在 :root 定义时，暗色会继承亮色值；这是主题覆盖缺口，必须红。
+  const colorRootOnly = rootOnly.filter((name) =>
+    /^--GCS-(color|bg|text|border|shadow|overlay)/.test(name)
+  )
+  const rootCount = [...defs.values()].filter((themes) => themes.has('root')).length
+  const darkCount = [...defs.values()].filter((themes) => themes.has('dark')).length
 
   const total = defs.size
   const usedCount = total - dead.length
@@ -129,7 +138,7 @@ function main() {
 
   console.log('=== GCS Design Token 统计 ===')
   console.log(
-    `定义总数: ${total}（亮/暗双块齐全 ${total - darkOnly.length - dead.length}，暗色单独定义 ${darkOnly.length}）`
+    `定义总数: ${total}（root ${rootCount}，dark ${darkCount}，仅 root ${rootOnly.length}，仅 dark ${darkOnly.length}，颜色族仅 root ${colorRootOnly.length}）`
   )
   console.log(`var() 真实引用: ${usedCount}`)
   console.log(`引用但未定义（反向缺口）: ${undefinedRefs.length}`)
@@ -164,7 +173,18 @@ function main() {
     console.log(
       '\n' +
         JSON.stringify(
-          { total, usedCount, undefinedRefs, deadTokens: dead, darkOnlyTokens: darkOnly, ratio },
+          {
+            total,
+            rootCount,
+            darkCount,
+            rootOnly,
+            colorRootOnly,
+            usedCount,
+            undefinedRefs,
+            deadTokens: dead,
+            darkOnlyTokens: darkOnly,
+            ratio,
+          },
           null,
           2
         )
@@ -181,6 +201,13 @@ function main() {
     console.error(
       `\n[token-stats] 门禁未通过：${undefinedRefs.length} 个 token 被引用但未定义（X3 反向缺口）`
     )
+    process.exit(1)
+  }
+  if (colorRootOnly.length > 0) {
+    console.error(
+      `\n[token-stats] 门禁未通过：${colorRootOnly.length} 个颜色 token 只在 :root 定义（暗色会继承亮色值）`
+    )
+    for (const name of colorRootOnly) console.error(`  ${name}`)
     process.exit(1)
   }
   console.log('\n[token-stats] 门禁通过 ✓')

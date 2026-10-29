@@ -101,6 +101,14 @@ describe('flood e2e（真数据文件 + 真库档位表）', () => {
     expect(res.body.code).toBe(400001)
   })
 
+  // d152：严格十进制文法——尾随脏字符与科学计数不再被 parseFloat 静默吞掉
+  it.each(['2.5abc', '1e1'])('waterLevel 非严格十进制（%s）→ 400（d152）', async (raw) => {
+    const res = await request(app.getHttpServer())
+      .get(`${base}/flood-areas?waterLevel=${encodeURIComponent(raw)}`)
+      .expect(400)
+    expect(res.body.code).toBe(400001)
+  })
+
   it('POST analysis/disaster 缺水位 → 400 文案逐字节', async () => {
     const res = await request(app.getHttpServer())
       .post(`${base}/analysis/disaster`)

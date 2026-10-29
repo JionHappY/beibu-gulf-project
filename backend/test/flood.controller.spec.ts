@@ -244,6 +244,43 @@ describe('getFloodAreas - 水位校验', () => {
   })
 })
 
+describe('validateWaterLevel - 严格十进制文法（d152）', () => {
+  // 拒绝：尾随脏字符 / 科学计数 / 空白 / 符号（parseFloat 会静默接受前两者）
+  it.each([
+    '2.5abc',
+    '1e1',
+    '1E1',
+    '',
+    '   ',
+    ' 2.5',
+    '2.5 ',
+    '+2.5',
+    '-1',
+    '.5',
+    '2.',
+    '0x10',
+    'NaN',
+    'Infinity',
+  ])('拒绝非法水位 %j', async (raw) => {
+    const service = makeService(vi.fn().mockResolvedValue(MOCK_FLOOD_AREA))
+    await expect(service.getFloodAreas(raw)).rejects.toMatchObject({ bizCode: 400001 })
+  })
+
+  // 合法边界（0/25/小数）阳性对照：必须放行（否则文法收紧成误杀）
+  it.each(['0', '25', '2.5', '0.0', '25.0'])('接受合法水位 %j', async (raw) => {
+    const service = makeService(vi.fn().mockResolvedValue(MOCK_FLOOD_AREA))
+    await expect(service.getFloodAreas(raw)).resolves.toBeDefined()
+  })
+
+  // 两域同族：POST body 入口同样走严格文法（不因入口不同而放宽）
+  it.each(['2.5abc', '1e1', '   '])('body 入口拒绝非法水位 %j', async (raw) => {
+    const service = makeService(vi.fn().mockResolvedValue(MOCK_FLOOD_AREA))
+    await expect(service.analyzeDisaster({ waterLevel: raw })).rejects.toMatchObject({
+      bizCode: 400001,
+    })
+  })
+})
+
 describe('deriveRiskLevel - 连续档位风险派生', () => {
   it('语义对齐风险分级（0/2/4.3/6/8/∞，海平面基准水文锚定重划）', () => {
     expect(deriveRiskLevel(0)).toBe('无风险')

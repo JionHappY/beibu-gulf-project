@@ -148,9 +148,15 @@ interface FacilityData {
   facilities: FloodFacility[]
 }
 
-/** 校验水位：有限数值且在 0–25 范围内，否则抛业务错误（parseFloat 语义对齐 Express） */
+/**
+ * 校验水位：严格十进制文法（非负整数或小数，整串匹配）且在 0–25 范围内，否则抛业务错误。
+ * d152（2026-10-29）：parseFloat 会把 '2.5abc' 读成 2.5、'1e1' 读成 10，尾随脏字符与
+ * 科学计数被静默吞掉 ⇒ 先按文法整串校验，再做范围判定。错误文案保持逐字节不变
+ * （flood.e2e-spec.ts 有文案断言）。
+ */
 function validateWaterLevel(raw: unknown): number {
-  const level = parseFloat(raw as string)
+  const text = typeof raw === 'string' ? raw : String(raw)
+  const level = /^\d+(\.\d+)?$/.test(text) ? Number(text) : Number.NaN
   if (!Number.isFinite(level) || level < 0 || level > MAX_WATER_LEVEL) {
     throw new BusinessError(
       ErrorCode.INVALID_PARAMS,

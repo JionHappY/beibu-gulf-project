@@ -27,7 +27,7 @@
   --GCS-color-primary-hover: rgb(102 177 255);
 
   /* ===== 语义状态色 ===== */
-  --GCS-color-error: rgb(255 77 79);
+  --GCS-color-error: rgb(217 45 32); /* 白底 4.83:1（AA）；与 danger 保留语义分工 */
 
   /* 816-S7-39：亮色语义色加深至 WCAG AA（白底文本 ≥4.5:1，node 实测原值 2.27/2.19/2.90 不达标）；
      success rgb(82 196 26)→rgb(24 122 48)(5.43)、warning rgb(230 162 60)→rgb(163 99 0)(4.84)、danger rgb(245 108 108)→rgb(204 58 77)(4.91)；
@@ -57,9 +57,7 @@
   ); /* 一般按钮文字（S7-48：与 primary #303133 近同值，保留为兼容别名，新代码统一用 primary） */
 
   --GCS-text-secondary: rgb(96 98 102); /* 说明文字、info-label */
-  --GCS-text-muted: rgb(
-    144 147 153
-  ); /* 辅助文字、占位符（S7-48：原 placeholder 同值双定义已随 S7-45 删除，占位符场景直接用 muted） */
+  --GCS-text-muted: rgb(96 103 112); /* 辅助文字、占位符；对白 5.72:1、对 bg-active 5.11:1（AA） */
 
   --GCS-text-inverse: rgb(255 255 255); /* 反白（蓝色背景上的文字） */
   --GCS-text-disabled: rgb(
@@ -165,7 +163,7 @@
   --GCS-text-primary: rgb(232 237 244);
   --GCS-text-regular: rgb(208 215 224); /* S7-48：与 primary 近同值，兼容别名（见亮色块注释） */
   --GCS-text-secondary: rgb(168 178 189);
-  --GCS-text-muted: rgb(122 134 148); /* S7-48：占位符场景直接用 muted */
+  --GCS-text-muted: rgb(143 160 179); /* 对 bg-elevated 5.74:1（AA） */
   --GCS-text-inverse: rgb(13 27 42);
   --GCS-text-disabled: rgb(85 103 126); /* 816-S7-47：暗色禁用态文字（较 muted 再暗一档） */
   --GCS-border-default: rgb(31 52 80);

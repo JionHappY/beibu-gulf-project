@@ -27,7 +27,7 @@
   height: 24px;
   border: 3px solid var(--GCS-bg-panel);
   border-top-color: var(--GCS-color-primary);
-  border-radius: 50%;
+  border-radius: var(--GCS-radius-round);
   animation: chart-loading-spin 0.8s linear infinite;
 }
 

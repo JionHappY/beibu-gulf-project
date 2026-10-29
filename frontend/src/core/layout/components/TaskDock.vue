@@ -96,7 +96,7 @@ const ordered = computed(() =>
   gap: 6px;
   padding: 6px 10px;
   border: 1px solid var(--GCS-border-default);
-  border-radius: 8px;
+  border-radius: var(--GCS-radius-md);
   background: var(--GCS-bg-panel-translucent);
   cursor: pointer;
   font-size: 12px;
@@ -155,7 +155,7 @@ const ordered = computed(() =>
 .task-dock__dot {
   width: 8px;
   height: 8px;
-  border-radius: 50%;
+  border-radius: var(--GCS-radius-round);
   flex: none;
 }
 

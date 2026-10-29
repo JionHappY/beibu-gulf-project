@@ -800,7 +800,7 @@ defineExpose({
 .map-container {
   width: 100%;
   height: 100%;
-  transition: opacity 0.3s ease;
+  transition: opacity var(--GCS-duration-slow) ease;
 
   /* 确保地图容器可以接收鼠标事件，即使父元素设置了 pointer-events: none */
   pointer-events: auto;
@@ -830,7 +830,7 @@ defineExpose({
   height: v-bind(spinnerSizeCss);
   border: 4px solid var(--GCS-bg-container);
   border-top: 4px solid var(--GCS-color-primary);
-  border-radius: 50%;
+  border-radius: var(--GCS-radius-round);
   animation: spin 1s linear infinite;
 }
 
@@ -850,7 +850,7 @@ defineExpose({
 .map-status-tip {
   position: absolute;
   padding: 6px 12px; /* 6px/12px 非8的整数倍，保留（复核：已登记取舍项） */
-  border-radius: 6px;
+  border-radius: var(--GCS-radius-sm);
   font-size: 13px;
 }
 
@@ -888,7 +888,7 @@ defineExpose({
 
 .fade-enter-active,
 .fade-leave-active {
-  transition: opacity 0.3s ease;
+  transition: opacity var(--GCS-duration-slow) ease;
 }
 
 .fade-enter-from,

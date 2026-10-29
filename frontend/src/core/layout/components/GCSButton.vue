@@ -88,8 +88,8 @@ function handleClick() {
   ); /* bg-panel 语义为背景，前景一律 text-inverse（原数值恰等，非功能性改动） */
 
   transition:
-    background-color 0.2s ease,
-    transform 0.1s ease;
+    background-color var(--GCS-duration-base) ease,
+    transform var(--GCS-duration-fast) ease;
 }
 
 /* outline:none 去掉默认环后用 :focus-visible 补可见焦点环（键盘可达性，WCAG 2.4.7） */

@@ -75,6 +75,8 @@ function onPointerUp(e: PointerEvent): void {
   gap: 6px;
   padding: 5px 10px;
   border: 1px solid var(--chip-color);
+
+  /* 胶囊形：半径取 999px 随高度自适应，属几何形状，不走四档 token */
   border-radius: 999px;
   background: var(--GCS-bg-panel-translucent);
   cursor: grab;
@@ -97,7 +99,7 @@ function onPointerUp(e: PointerEvent): void {
 .dot {
   width: 8px;
   height: 8px;
-  border-radius: 50%;
+  border-radius: var(--GCS-radius-round);
   background: var(--chip-color);
   flex: none;
 }

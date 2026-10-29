@@ -324,7 +324,7 @@ watch(
   white-space: nowrap;
   flex-shrink: 0;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: background var(--GCS-duration-base);
 }
 
 .list-item:hover {
@@ -355,7 +355,7 @@ watch(
   height: 14px;
   border: 2px solid var(--GCS-color-primary);
   border-top-color: transparent;
-  border-radius: 50%;
+  border-radius: var(--GCS-radius-round);
   animation: gcs-spin 0.8s linear infinite;
 }
 

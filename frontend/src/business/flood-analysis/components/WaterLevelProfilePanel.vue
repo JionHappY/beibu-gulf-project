@@ -729,7 +729,7 @@ defineExpose({ registerRenderers, dockToTask })
   padding: v-bind(cell16px);
   gap: 12px;
   background: var(--GCS-bg-panel-translucent);
-  border-radius: 8px;
+  border-radius: var(--GCS-radius-md);
   box-sizing: border-box;
 }
 
@@ -810,7 +810,7 @@ defineExpose({ registerRenderers, dockToTask })
   transform: translateX(-50%);
   white-space: nowrap;
   cursor: pointer;
-  transition: color 0.2s;
+  transition: color var(--GCS-duration-base);
 }
 
 /* 首尾单侧对齐：起点左贴、终点右贴（translateX(-50%) 会溢出面板被裁切） */

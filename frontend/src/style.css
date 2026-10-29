@@ -79,6 +79,12 @@
   --GCS-radius-lg: 12px; /* 大按钮、弹性容器 */
   --GCS-radius-round: 50%; /* 圆形（滑块拇指、loading） */
 
+  /* 动效时长三档：0.15s 快速反馈 / 0.2s 常规过渡 / 0.3s 抽屉与淡入。
+     0.8s 旋转与 1.4s 呼吸为加载/状态专用节奏，不纳入三档（几何/动效豁免）。 */
+  --GCS-duration-fast: 0.15s;
+  --GCS-duration-base: 0.2s;
+  --GCS-duration-slow: 0.3s;
+
   /* ===== z-index 刻度系统（a017） =====
    * 统一管理层级，避免各组件随意写数字导致遮挡混乱。
    * 使用方式：z-index: var(--GCS-z-xxx); */
@@ -394,12 +400,12 @@ body {
 /* 抽屉滑入/滑出动画 */
 .drawer-enter-active,
 .drawer-leave-active {
-  transition: opacity 0.25s ease;
+  transition: opacity var(--GCS-duration-base) ease;
 }
 
 .drawer-enter-active .GCS-drawer__sheet,
 .drawer-leave-active .GCS-drawer__sheet {
-  transition: transform 0.25s ease;
+  transition: transform var(--GCS-duration-base) ease;
 }
 
 .drawer-enter-from,
@@ -440,7 +446,7 @@ body {
 .slider-focus-mode .GCS-panel,
 .slider-focus-mode .GCS-drawer__backdrop,
 .slider-focus-mode .GCS-drawer__header {
-  transition: opacity 0.15s ease;
+  transition: opacity var(--GCS-duration-fast) ease;
 }
 
 /* ===== GCS 选择片（chip）=====

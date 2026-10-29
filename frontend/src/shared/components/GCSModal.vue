@@ -181,7 +181,7 @@ function handleMainAction(): void {
   border-radius: calc(var(--GCS-cell, 80px) * 0.15);
   font-size: calc(var(--GCS-cell, 80px) * 0.18);
   cursor: pointer;
-  transition: filter 0.15s;
+  transition: filter var(--GCS-duration-fast);
   box-sizing: border-box;
   display: flex;
   align-items: center;

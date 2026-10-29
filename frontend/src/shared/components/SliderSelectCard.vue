@@ -162,7 +162,7 @@ const onSliderInput = (e: Event) => {
   appearance: none;
   width: var(--GCS-slider-thumb-size);
   height: var(--GCS-slider-thumb-size);
-  border-radius: 50%;
+  border-radius: var(--GCS-radius-round);
   background: var(--GCS-color-primary);
   border: 2px solid var(--GCS-bg-panel);
   box-shadow: var(--GCS-shadow-sm); /* 投影让拇指从轨道上浮起，双主题可辨 */
@@ -172,7 +172,7 @@ const onSliderInput = (e: Event) => {
 .ssc-slider::-moz-range-thumb {
   width: var(--GCS-slider-thumb-size);
   height: var(--GCS-slider-thumb-size);
-  border-radius: 50%;
+  border-radius: var(--GCS-radius-round);
   background: var(--GCS-color-primary);
   border: 2px solid var(--GCS-bg-panel);
   box-shadow: var(--GCS-shadow-sm);

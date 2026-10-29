@@ -389,7 +389,7 @@ watch(
   padding: 8px 10px;
   margin-bottom: 6px;
   background: var(--GCS-bg-container);
-  border-radius: 6px;
+  border-radius: var(--GCS-radius-sm);
 }
 
 .fav-name {
@@ -458,7 +458,7 @@ watch(
 
 .plan-group {
   background: var(--GCS-bg-container);
-  border-radius: 6px;
+  border-radius: var(--GCS-radius-sm);
   overflow: hidden;
 }
 
@@ -468,7 +468,7 @@ watch(
   padding: 10px 12px;
   gap: 8px;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: background var(--GCS-duration-base);
 }
 
 .plan-header:hover {
@@ -523,9 +523,9 @@ watch(
   font-size: 12px;
   cursor: pointer;
   transition:
-    background-color 0.2s ease,
-    border-color 0.2s ease,
-    color 0.2s ease;
+    background-color var(--GCS-duration-base) ease,
+    border-color var(--GCS-duration-base) ease,
+    color var(--GCS-duration-base) ease;
 }
 
 .action-btn:hover:not(:disabled) {

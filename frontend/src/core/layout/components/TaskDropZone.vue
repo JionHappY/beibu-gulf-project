@@ -104,8 +104,8 @@ withDefaults(defineProps<Props>(), {
   outline-offset: 2px;
   pointer-events: none;
   transition:
-    background-color 0.15s ease,
-    outline-color 0.15s ease;
+    background-color var(--GCS-duration-fast) ease,
+    outline-color var(--GCS-duration-fast) ease;
 }
 
 /* 拖拽中：虚线提示"可放这里"（此时才可见，不破"布局零变化"） */

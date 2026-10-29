@@ -107,7 +107,7 @@ onBeforeUnmount(() => {
 .GCS-toast-dot {
   width: 8px;
   height: 8px;
-  border-radius: 50%;
+  border-radius: var(--GCS-radius-round);
   flex-shrink: 0;
 }
 
@@ -137,8 +137,8 @@ onBeforeUnmount(() => {
 .GCS-toast-enter-active,
 .GCS-toast-leave-active {
   transition:
-    opacity 0.2s ease,
-    transform 0.2s ease;
+    opacity var(--GCS-duration-base) ease,
+    transform var(--GCS-duration-base) ease;
 }
 
 .GCS-toast-enter-from,
@@ -149,6 +149,6 @@ onBeforeUnmount(() => {
 
 /* TransitionGroup 位置变化（老 toast 被挤到下一位）——平滑下移 */
 .GCS-toast-move {
-  transition: transform 0.2s ease;
+  transition: transform var(--GCS-duration-base) ease;
 }
 </style>

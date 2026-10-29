@@ -186,8 +186,8 @@ async function handleSubmit() {
   color: var(--GCS-text-regular);
   cursor: pointer;
   transition:
-    background-color 0.2s ease,
-    border-color 0.2s ease;
+    background-color var(--GCS-duration-base) ease,
+    border-color var(--GCS-duration-base) ease;
 }
 
 .mode-btn:hover {
@@ -224,7 +224,7 @@ async function handleSubmit() {
   color: var(--GCS-text-regular);
   box-sizing: border-box;
   outline: none;
-  transition: border-color 0.2s ease;
+  transition: border-color var(--GCS-duration-base) ease;
 }
 
 .form-input:focus {
@@ -250,7 +250,7 @@ async function handleSubmit() {
   font-size: v-bind(controlFontSizeCss);
   font-weight: 500;
   cursor: pointer;
-  transition: background-color 0.2s ease;
+  transition: background-color var(--GCS-duration-base) ease;
 }
 
 .submit-btn:hover:not(:disabled) {

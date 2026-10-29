@@ -655,8 +655,8 @@ defineExpose({
   font-size: v-bind(labelFontSizeCss);
   cursor: pointer;
   transition:
-    background-color 0.2s ease,
-    border-color 0.2s ease;
+    background-color var(--GCS-duration-base) ease,
+    border-color var(--GCS-duration-base) ease;
 }
 
 .route-btn:hover {
@@ -713,8 +713,8 @@ defineExpose({
   font-size: v-bind(labelFontSizeCss);
   cursor: pointer;
   transition:
-    background-color 0.2s ease,
-    color 0.2s ease;
+    background-color var(--GCS-duration-base) ease,
+    color var(--GCS-duration-base) ease;
 }
 
 .mode-btn + .mode-btn {
@@ -754,7 +754,7 @@ defineExpose({
   flex-shrink: 0;
   width: 18px;
   height: 18px;
-  border-radius: 50%;
+  border-radius: var(--GCS-radius-round);
   color: var(--GCS-text-muted);
 }
 
@@ -772,6 +772,8 @@ defineExpose({
   width: 9px;
   height: 9px;
   border: 1.4px solid currentcolor;
+
+  /* 定位针尾：仅左上三圆角，属几何形状，不走四档 token */
   border-radius: 50% 50% 50% 0;
   transform: rotate(-45deg);
 }
@@ -780,7 +782,7 @@ defineExpose({
   content: '';
   position: absolute;
   inset: 2px;
-  border-radius: 50%;
+  border-radius: var(--GCS-radius-round);
   background: currentcolor;
 }
 
@@ -796,7 +798,7 @@ defineExpose({
   color: var(--GCS-text-primary);
   font-size: v-bind(labelFontSizeCss);
   outline: none;
-  transition: border-color 0.2s ease;
+  transition: border-color var(--GCS-duration-base) ease;
 }
 
 .poi-search::placeholder {
@@ -843,7 +845,7 @@ defineExpose({
   display: inline-block;
   margin-right: 4px;
   padding: 0 4px;
-  border-radius: 3px;
+  border-radius: var(--GCS-radius-sm);
   background: var(--GCS-color-primary);
   color: var(--GCS-text-inverse);
   font-size: calc(v-bind(labelFontSizeCss) * 0.85);
@@ -890,7 +892,7 @@ defineExpose({
   width: 100%;
   padding: 6px 8px;
   border: none;
-  border-radius: 4px;
+  border-radius: var(--GCS-radius-sm);
   background: transparent;
   color: var(--GCS-text-primary);
   text-align: left;

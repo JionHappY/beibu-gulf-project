@@ -144,8 +144,8 @@ const logoutPaddingCss = css.cell8px
   font-weight: 500;
   cursor: pointer;
   transition:
-    background-color 0.2s ease,
-    color 0.2s ease;
+    background-color var(--GCS-duration-base) ease,
+    color var(--GCS-duration-base) ease;
 }
 
 .profile-logout-btn:hover {

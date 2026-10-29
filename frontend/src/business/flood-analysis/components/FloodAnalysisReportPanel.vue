@@ -187,7 +187,7 @@ const staleInfo = computed<{ badge: string; detail: string } | null>(() => {
   height: 100%;
   padding: 0;
   background: var(--GCS-bg-panel-translucent);
-  border-radius: 8px;
+  border-radius: var(--GCS-radius-md);
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
@@ -215,7 +215,7 @@ const staleInfo = computed<{ badge: string; detail: string } | null>(() => {
   display: flex;
   flex-direction: column;
   background: var(--GCS-bg-container);
-  border-radius: 6px;
+  border-radius: var(--GCS-radius-sm);
   box-sizing: border-box;
 
   /* 内容区域在灰色面板内居中 */
@@ -233,7 +233,7 @@ const staleInfo = computed<{ badge: string; detail: string } | null>(() => {
   font-weight: 500;
   color: var(--GCS-color-warning);
   border: 1px solid var(--GCS-color-warning);
-  border-radius: 4px;
+  border-radius: var(--GCS-radius-sm);
   cursor: help;
   vertical-align: middle;
 }

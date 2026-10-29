@@ -154,6 +154,8 @@ onBeforeUnmount(() => {
   right: calc(2 * v-bind(unitPx));
   z-index: 3;
   padding: calc(1 * v-bind(unitPx)) calc(2 * v-bind(unitPx));
+
+  /* 圆角随 unitPx 缩放，属动态几何，不走四档 token */
   border-radius: calc(1 * v-bind(unitPx));
   background: var(--GCS-color-warning);
   color: var(--GCS-text-inverse);
@@ -188,7 +190,7 @@ onBeforeUnmount(() => {
 
 .score-text.clickable {
   cursor: pointer;
-  transition: color 0.2s;
+  transition: color var(--GCS-duration-base);
 }
 
 .score-text.clickable:hover {
@@ -213,8 +215,8 @@ onBeforeUnmount(() => {
   opacity: 0;
   visibility: hidden;
   transition:
-    opacity 0.15s ease,
-    visibility 0.15s;
+    opacity var(--GCS-duration-fast) ease,
+    visibility var(--GCS-duration-fast);
 
   /* 负间距 hack 用途说明——score-hint 为绝对定位 tooltip，
      此处 margin-bottom:-20px 抵消 score-area 底部内边距，使悬浮提示与评分区域视觉对齐 */

@@ -274,7 +274,7 @@ const panelStyle = computed(() => {
   gap: 8px;
   padding: 6px 10px;
   border: 1px solid var(--GCS-border-default);
-  border-radius: 8px;
+  border-radius: var(--GCS-radius-md);
   background: var(--GCS-bg-elevated);
   box-shadow: var(--GCS-shadow-md);
   font-size: 12px;

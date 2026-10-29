@@ -394,8 +394,8 @@ function stopPlayback() {
 .btn-cell {
   border-radius: var(--GCS-radius-lg);
   transition:
-    background-color 0.2s,
-    border-color 0.2s;
+    background-color var(--GCS-duration-base),
+    border-color var(--GCS-duration-base);
 }
 
 .btn-cell.sel {

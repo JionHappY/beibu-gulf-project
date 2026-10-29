@@ -542,12 +542,12 @@ onUnmounted(() => {
   margin-top: 12px;
   padding: 4px 10px;
   border: 1px solid var(--GCS-border-default);
-  border-radius: 4px;
+  border-radius: var(--GCS-radius-sm);
   background: var(--GCS-bg-elevated);
   color: var(--GCS-text-regular);
   font-size: 12px;
   cursor: pointer;
-  transition: border-color 0.15s;
+  transition: border-color var(--GCS-duration-fast);
 }
 
 .clear-btn:hover {

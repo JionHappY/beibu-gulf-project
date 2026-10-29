@@ -42,7 +42,7 @@ const avatarText = computed(() => (user.value?.username || '?').charAt(0).toUppe
 .profile-avatar {
   width: v-bind(avatarSizeCss);
   height: v-bind(avatarSizeCss);
-  border-radius: 50%;
+  border-radius: var(--GCS-radius-round);
   background: var(--GCS-color-primary);
   color: var(--GCS-text-inverse);
   display: flex;

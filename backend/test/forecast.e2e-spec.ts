@@ -102,15 +102,30 @@ describe('forecast e2e（读真数据文件）', () => {
     }
   })
 
-  it('timeseries year 粒度 → YYYY 聚合整数均值', async () => {
+  it('timeseries year 粒度 → YYYY 年度合计（12 个月之和）', async () => {
+    const monthly = await request(app.getHttpServer())
+      .get(`${base}/timeseries?indicator=cargo&granularity=month`)
+      .expect(200)
+    const monthlyByPort = new Map<string, Array<{ time: string; value: number }>>(
+      monthly.body.data.series.map(
+        (s: { portId: string; data: Array<{ time: string; value: number }> }) => [s.portId, s.data]
+      )
+    )
+
     const res = await request(app.getHttpServer())
       .get(`${base}/timeseries?indicator=cargo&granularity=year`)
       .expect(200)
     expect(res.body.data.granularity).toBe('year')
+    expect(res.body.data.unit).toContain('/年')
     for (const s of res.body.data.series) {
+      const monthlyPoints = monthlyByPort.get(s.portId)
+      expect(monthlyPoints, `月粒度缺少港口 ${s.portId}`).toBeDefined()
       for (const d of s.data) {
         expect(d.time).toMatch(/^\d{4}$/)
-        expect(Number.isInteger(d.value)).toBe(true)
+        const months = monthlyPoints!.filter((m) => m.time.startsWith(`${d.time}-`))
+        expect(months.length).toBeGreaterThan(0)
+        const sum = months.reduce((acc, m) => acc + m.value, 0)
+        expect(Math.abs(d.value - sum)).toBeLessThan(1e-6)
       }
     }
   })

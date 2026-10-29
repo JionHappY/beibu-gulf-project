@@ -134,7 +134,7 @@ const onSliderInput = (e: Event) => {
 }
 
 .ssc-badge {
-  font-size: 10px;
+  font-size: var(--GCS-font-size-xs);
   line-height: 1;
   opacity: 0.85;
 }

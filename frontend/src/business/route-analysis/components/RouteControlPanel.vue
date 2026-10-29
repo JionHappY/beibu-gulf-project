@@ -912,7 +912,7 @@ defineExpose({
 }
 
 .poi-meta {
-  font-size: 10px;
+  font-size: var(--GCS-font-size-xs);
   color: var(--GCS-text-muted);
 }
 

@@ -233,7 +233,7 @@ onUnmounted(() => {
   border-radius: var(--GCS-radius-sm);
   color: var(--GCS-color-warning);
   background: var(--GCS-bg-panel);
-  font-size: 11px;
+  font-size: var(--GCS-font-size-xs);
   line-height: 1.4;
   white-space: nowrap;
   pointer-events: none;

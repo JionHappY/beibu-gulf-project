@@ -110,6 +110,6 @@ function onPointerUp(e: PointerEvent): void {
 
 .hint {
   color: var(--GCS-text-secondary);
-  font-size: 11px;
+  font-size: var(--GCS-font-size-xs);
 }
 </style>

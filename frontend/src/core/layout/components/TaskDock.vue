@@ -185,6 +185,6 @@ const ordered = computed(() =>
 
 .task-dock__status {
   color: var(--GCS-text-muted);
-  font-size: 11px;
+  font-size: var(--GCS-font-size-xs);
 }
 </style>

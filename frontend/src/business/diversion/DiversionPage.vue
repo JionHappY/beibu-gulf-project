@@ -351,7 +351,7 @@ onUnmounted(() => {
 .transfer-note {
   flex-shrink: 0;
   padding: 4px 8px 6px;
-  font-size: 11px;
+  font-size: var(--GCS-font-size-xs);
   line-height: 1.4;
   color: var(--GCS-text-muted);
 }
@@ -375,7 +375,7 @@ onUnmounted(() => {
 
 .year-hint {
   margin: 0;
-  font-size: 11px;
+  font-size: var(--GCS-font-size-xs);
   line-height: 1.5;
   color: var(--GCS-text-muted);
 }

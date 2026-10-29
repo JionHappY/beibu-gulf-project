@@ -149,7 +149,7 @@ const visible = computed(
   border: 1px solid var(--GCS-border-default);
   border-radius: var(--GCS-radius-sm);
   background: transparent;
-  font-size: 11px;
+  font-size: var(--GCS-font-size-xs);
   cursor: pointer;
 }
 </style>

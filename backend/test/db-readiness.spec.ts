@@ -82,6 +82,41 @@ describe.skipIf(!withDb)('数据就绪守卫（真库 / beibu-gulf-data）', () 
     })
   })
 
+  // ─────────── 选址域：物化表行数与 NULL 对账（d144） ───────────
+  //
+  // CI 合成种子只灌 7 格 suitability_cells；terrain_factors / access_factors 不在
+  // CI seed 内，故 access_factors 的行数对账只进生产 SQL（verify-data-readiness.sql）。
+  describe('选址域：物化表行数与 NULL 对账', () => {
+    it('suitability_cells 行数 > 0 且结构列无 NULL；可空因子计数可查', async () => {
+      const res = await db.query<{
+        n: string
+        bad: string
+        elev: string
+        slope: string
+        land: string
+        kde: string
+      }>(
+        `SELECT count(*)::text AS n,
+                count(*) FILTER (
+                  WHERE land_frac IS NULL OR dist_port_m IS NULL OR dist_road_m IS NULL
+                )::text AS bad,
+                count(*) FILTER (WHERE mean_elev_m IS NULL)::text AS elev,
+                count(*) FILTER (WHERE mean_slope_deg IS NULL)::text AS slope,
+                count(*) FILTER (WHERE land_class IS NULL)::text AS land,
+                count(*) FILTER (WHERE kde_mass IS NULL)::text AS kde
+           FROM suitability_cells`
+      )
+      const row = res.rows[0]
+      expect(Number(row.n)).toBeGreaterThan(0)
+      expect(row.bad).toBe('0')
+      // 可空因子允许 NULL：CI 夹具 900007 故意缺 land_class/kde_mass；此处只要求可计数
+      expect(Number(row.elev)).toBeGreaterThanOrEqual(0)
+      expect(Number(row.slope)).toBeGreaterThanOrEqual(0)
+      expect(Number(row.land)).toBeGreaterThanOrEqual(0)
+      expect(Number(row.kde)).toBeGreaterThanOrEqual(0)
+    })
+  })
+
   // ─────────── route 域：有向图结构（2026-09-13 v2 质变） ───────────
 
   describe('route 域：roads_edges 有向图（迁移一致性）', () => {

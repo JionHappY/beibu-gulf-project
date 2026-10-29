@@ -15,6 +15,8 @@
 --   → 逐行 PASS/FAIL；有 FAIL 则退出码非零（本次检查全部通过时会打印"检查通过"）
 --
 -- 与 backend/test/db-readiness.spec.ts 同源（CI 侧断言版）；两者改一处须同步另一处。
+-- 例外：CI 合成种子不灌 terrain_factors / access_factors，故 access_factors 一条只在
+-- 生产全量库执行；suitability_cells 段在 spec 中同步（CI 7 格夹具可满足）。
 -- 2026-10-01（部署 run#190 实测）：v2 路网 roads_edges 自 09-13 上线后，本脚本仍断言旧表
 --   roads_noded ⇒ 阶段四恒红（生产因此被拦在「镜像已换、核对未过」）。已按 spec 的现行判据
 --   改断言 roads_edges（可通行主分量 / 路由覆盖索引 / 吸附偏索引 / 探针 directed:=true）。
@@ -94,7 +96,36 @@ BEGIN
       -- ③ 迁移登记（z050）：表存在且已补录（非空）——拦住「代码上线、库没跟上」。
       -- 表缺失时本行经下方 EXCEPTION 落 FAIL（SQLERRM=relation does not exist）。
       ('schema_migrations 迁移登记表存在且已补录',
-       $q$SELECT count(*) > 0, format('rows=%s', count(*)) FROM schema_migrations$q$)
+       $q$SELECT count(*) > 0, format('rows=%s', count(*)) FROM schema_migrations$q$),
+
+      -- ④ 选址域：物化表行数与 NULL 对账（生产全量库；CI 合成种子只灌 suitability_cells）
+      ('suitability_cells 行数 > 0（选址端点依赖）',
+       $q$SELECT count(*) > 0, format('rows=%s', count(*)) FROM suitability_cells$q$),
+      ('suitability_cells 结构列无 NULL（land_frac / dist_port_m / dist_road_m）',
+       $q$SELECT count(*) FILTER (
+                    WHERE land_frac IS NULL OR dist_port_m IS NULL OR dist_road_m IS NULL
+                  ) = 0,
+                 format('nulls=%s', count(*) FILTER (
+                    WHERE land_frac IS NULL OR dist_port_m IS NULL OR dist_road_m IS NULL
+                 ))
+          FROM suitability_cells$q$),
+      ('suitability_cells 可空因子计数（mean_elev_m / mean_slope_deg / land_class / kde_mass，仅报告）',
+       $q$SELECT true,
+                 format('elev_null=%s slope_null=%s land_null=%s kde_null=%s',
+                        count(*) FILTER (WHERE mean_elev_m IS NULL),
+                        count(*) FILTER (WHERE mean_slope_deg IS NULL),
+                        count(*) FILTER (WHERE land_class IS NULL),
+                        count(*) FILTER (WHERE kde_mass IS NULL))
+          FROM suitability_cells$q$),
+      ('access_factors 行数 > 0 且 = terrain_factors、距离列无 NULL（全量库）',
+       $q$SELECT (SELECT count(*) FROM access_factors) > 0
+                  AND (SELECT count(*) FROM access_factors) = (SELECT count(*) FROM terrain_factors)
+                  AND count(*) FILTER (WHERE dist_port_m IS NULL OR dist_road_m IS NULL) = 0,
+                 format('access=%s terrain=%s nulls=%s',
+                        (SELECT count(*) FROM access_factors),
+                        (SELECT count(*) FROM terrain_factors),
+                        count(*) FILTER (WHERE dist_port_m IS NULL OR dist_road_m IS NULL))
+          FROM access_factors$q$)
     ) AS t(name, sql)
   LOOP
     BEGIN

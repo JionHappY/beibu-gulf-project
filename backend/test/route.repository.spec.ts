@@ -270,7 +270,9 @@ describe('RouteRepository.segmentGeometry - 分段几何', () => {
     // ST_DumpPoints 返回 geometry_dump(path, geom) + WITH ORDINALITY 的序号 = 3 列。
     // 曾写成 `AS dp(g, g_ord)`：g 被绑到 path（integer[]）上 → ST_X(integer[]) → 类型错 → 线上 500。
     expect(sql).toContain('AS dp(path, geom, ord)')
-    expect(sql).toContain('ST_X(dp.geom)')
+    // 出库坐标必须显式 4490→4326，不能只靠「两个地理坐标系接近」的隐式口径
+    expect(sql).toContain('ST_X(ST_Transform(dp.geom, 4326))')
+    expect(sql).toContain('ST_Y(ST_Transform(dp.geom, 4326))')
     expect(sql).toContain('ORDER BY dp.ord')
     expect(sql).not.toContain('ST_X(g)')
     expect(sql).not.toContain('AS dp(g, g_ord)')

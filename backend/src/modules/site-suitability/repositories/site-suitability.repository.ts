@@ -36,12 +36,16 @@ export class SiteSuitabilityRepository {
    * + 建对象 + 热力图渲染直接卡死。热力图看的是密度/分值分布，粗格均值与其视觉等价。
    * 聚合口径（不臆造）：坐标取格内质心；连续量（高程/坡度/陆地占比/距离/KDE）取 AVG；
    * **类目量 land_class 取众数**（AVG 会把类别号平均成无意义的数）。
+   *
+   * 出库经纬度与原聚合分组都显式 ST_Transform 到 4326：源表 geom 为 4490
+   * （db-schema-gis.sql），前端契约只认 4326，不依赖「两个地理坐标系数值接近」。
    */
   async fetchCellsAt(minLandFrac: number, resolution: number): Promise<SuitabilityCellRow[]> {
     if (!(resolution > 0)) {
       const r = await this.db.query<SuitabilityCellRow>(
         `SELECT id,
-                ST_X(geom) AS lon, ST_Y(geom) AS lat,
+                ST_X(ST_Transform(geom, 4326)) AS lon,
+                ST_Y(ST_Transform(geom, 4326)) AS lat,
                 mean_elev_m, mean_slope_deg, land_frac,
                 land_class, dist_port_m, dist_road_m, kde_mass
            FROM suitability_cells
@@ -53,8 +57,8 @@ export class SiteSuitabilityRepository {
     }
     const r = await this.db.query<SuitabilityCellRow>(
       `SELECT min(id) AS id,
-              ST_X(ST_Centroid(ST_Collect(geom))) AS lon,
-              ST_Y(ST_Centroid(ST_Collect(geom))) AS lat,
+              ST_X(ST_Transform(ST_Centroid(ST_Collect(geom)), 4326)) AS lon,
+              ST_Y(ST_Transform(ST_Centroid(ST_Collect(geom)), 4326)) AS lat,
               avg(mean_elev_m) AS mean_elev_m,
               avg(mean_slope_deg) AS mean_slope_deg,
               avg(land_frac) AS land_frac,
@@ -64,7 +68,8 @@ export class SiteSuitabilityRepository {
               avg(kde_mass) AS kde_mass
          FROM suitability_cells
         WHERE land_frac >= $1
-        GROUP BY floor(ST_X(geom) / $2), floor(ST_Y(geom) / $2)
+        GROUP BY floor(ST_X(ST_Transform(geom, 4326)) / $2),
+                 floor(ST_Y(ST_Transform(geom, 4326)) / $2)
         ORDER BY id`,
       [minLandFrac, resolution]
     )

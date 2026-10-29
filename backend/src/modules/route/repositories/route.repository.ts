@@ -344,6 +344,9 @@ JOIN ${ROUTING_TABLE} r ON r.id = t.edge_id
    * （integer[]）而不是几何上，于是 `ST_X(g)` 变成 `ST_X(integer[])` → 类型错误 → 500。
    * 该写法是迁移期留下的，因为当时 `pgr_withPoints` 恒返 0 行、几何拼接从未被执行而没暴露；
    * 2026-09-10 寻路修好后第一次跑到即 500（实测）。
+   *
+   * 出库坐标统一显式 ST_Transform 到 4326：源表 geom 为 4490（db-schema-gis.sql），
+   * 前端契约只认 4326，不能依赖「两个地理坐标系数值接近」的隐式口径。
    */
   async segmentGeometry(
     segments: RouteSegment[]
@@ -352,7 +355,8 @@ JOIN ${ROUTING_TABLE} r ON r.id = t.edge_id
     const res = await this.db.query<{ seq: number; coords: Array<[number, number]> | null }>(
       `
 SELECT t.ord::int AS seq,
-       (SELECT array_agg(ARRAY[ST_X(dp.geom), ST_Y(dp.geom)] ORDER BY dp.ord)::float8[][]
+       (SELECT array_agg(ARRAY[ST_X(ST_Transform(dp.geom, 4326)),
+                               ST_Y(ST_Transform(dp.geom, 4326))] ORDER BY dp.ord)::float8[][]
         FROM ST_DumpPoints(ST_LineSubstring(r.geom, t.lo, t.hi))
              WITH ORDINALITY AS dp(path, geom, ord)
        ) AS coords

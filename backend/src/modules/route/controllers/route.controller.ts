@@ -2,8 +2,8 @@ import { Controller, Get, Query } from '@nestjs/common'
 import { SkipThrottle } from '@nestjs/throttler'
 
 import { SKIP_AUTH_NAMED_THROTTLERS } from '../../../common/constants/throttling.constants'
-import { PoiSearchService } from '../services/pois-search.service'
-import { RouteService } from '../services/route.service'
+import { type PoiSearchResult, PoiSearchService } from '../services/pois-search.service'
+import { type RoutePathResult, RouteService } from '../services/route.service'
 import { readRouteCoords } from '../utils/route-params'
 
 // 路径规划（route 域，公开只读免鉴权）——下沉自 algorithm-service 的 /route/path。
@@ -28,14 +28,14 @@ export class RouteController {
   async searchPois(
     @Query('keyword') keyword?: string,
     @Query('limit') limit?: string
-  ): Promise<unknown> {
+  ): Promise<PoiSearchResult> {
     const parsed = Number(limit)
     return this.poiSearchService.searchPois(keyword ?? '', Number.isFinite(parsed) ? parsed : 50)
   }
 
   /** GET /route/path?fromLng=&fromLat=&toLng=&toLat=&mode=distance|time */
   @Get('path')
-  findPath(@Query() query: Record<string, string | undefined>): Promise<unknown> {
+  findPath(@Query() query: Record<string, string | undefined>): Promise<RoutePathResult> {
     // 坐标解析与异步任务域共用同一口径（route/utils/route-params）：
     // 非法参数一律 400，不把 NaN 静默传给下游
     return this.routeService.findPath({ ...readRouteCoords(query), mode: query.mode })

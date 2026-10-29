@@ -3,7 +3,16 @@ import { ApiTags } from '@nestjs/swagger'
 import { SkipThrottle } from '@nestjs/throttler'
 
 import { SKIP_AUTH_NAMED_THROTTLERS } from '../../../common/constants/throttling.constants'
-import { FloodService } from '../services/flood.service'
+import {
+  type FloodAreasResponse,
+  type FloodDisasterResponse,
+  FloodService,
+  type FloodStatisticsReferenceEntry,
+  type FloodStatisticsResponse,
+  type FloodZoneResponse,
+  type TerrainProfilesResponse,
+  type WaterAreaResponse,
+} from '../services/flood.service'
 
 /**
  * 洪涝读 API。资源型端点 kebab-case 复数，操作型端点 /analysis/<action>。
@@ -23,25 +32,29 @@ export class FloodController {
 
   /** GET /flood-areas?waterLevel=2.5 — 淹没范围数据（指定水位向上取档，未指定返回全部） */
   @Get('flood-areas')
-  getFloodAreas(@Query('waterLevel') waterLevel?: string): Promise<unknown> {
+  getFloodAreas(
+    @Query('waterLevel') waterLevel?: string
+  ): Promise<FloodAreasResponse | FloodZoneResponse[]> {
     return this.floodService.getFloodAreas(waterLevel)
   }
 
   /** GET /flood-statistics?waterLevel=2.5 — 统计数据（向上取档；超档取最高档） */
   @Get('flood-statistics')
-  getFloodStatistics(@Query('waterLevel') waterLevel?: string): Promise<unknown> {
+  getFloodStatistics(
+    @Query('waterLevel') waterLevel?: string
+  ): Promise<FloodStatisticsResponse | FloodStatisticsReferenceEntry[]> {
     return this.floodService.getFloodStatistics(waterLevel)
   }
 
   /** GET /terrain-profiles — 剖面数据（含垂直基准偏移注入） */
   @Get('terrain-profiles')
-  getTerrainProfiles(): Promise<unknown> {
+  getTerrainProfiles(): Promise<TerrainProfilesResponse> {
     return this.floodService.getTerrainProfiles()
   }
 
   /** GET /water-area — 水域边界坐标数组 [[lng, lat], ...] */
   @Get('water-area')
-  getWaterArea(): Promise<unknown> {
+  getWaterArea(): Promise<WaterAreaResponse> {
     return this.floodService.getWaterArea()
   }
 
@@ -51,7 +64,7 @@ export class FloodController {
    */
   @Post('analysis/disaster')
   @HttpCode(200)
-  analyzeDisaster(@Body() body?: { waterLevel?: unknown }): Promise<unknown> {
+  analyzeDisaster(@Body() body?: { waterLevel?: unknown }): Promise<FloodDisasterResponse> {
     return this.floodService.analyzeDisaster(body)
   }
 }

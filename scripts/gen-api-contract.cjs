@@ -16,6 +16,9 @@
  *      c. 反向核对（2026-09-23 补）：带 `@backend-contract <路径>` 注解的 schema，
  *         其每个字段名必须仍以键位出现在注解指向的后端文件里——后端删/改名而契约
  *         未同步时，a/b 两条都不会红（实测 exit=0），故补此条。
+ *      d. 覆盖闭集：每个 schema 必须带 `@backend-contract` 注解，或在
+ *         `scripts/lib/schema-exemptions.cjs` 登记三类豁免之一；未登记、登记过期
+ *         （已注解又豁免）、类别/理由非法都会 exit 1——不允许新 schema 默认沉默。
  *
  * 用法：
  *   node scripts/gen-api-contract.cjs          # 生成快照 + 校验
@@ -34,6 +37,8 @@ const TEST_FILE = path.join(ROOT, 'frontend', 'src', 'types', '__tests__', 'sche
 const OUT = path.join(ROOT, 'frontend', 'src', 'types', 'generated', 'api-contract.json')
 
 const onlyCheck = process.argv.includes('--check')
+
+const { EXEMPTION_CLASSES, SCHEMA_EXEMPTIONS } = require('./lib/schema-exemptions.cjs')
 
 // ---------- 文本解析 ----------
 
@@ -204,10 +209,12 @@ const {
 } = require('./lib/contract-fields.cjs')
 
 const contractBackends = {}
+const annotatedSchemas = new Set()
 for (const def of defs) {
   const own = declStarts.find((d) => d.name === def.name)
   const ann = backendContractOf(schemasText, own.index)
   if (!ann) continue
+  annotatedSchemas.add(def.name)
   problems.push(...annotationProblems(def.name, ann))
   const rel = ann.file
   const abs = path.join(ROOT, rel)
@@ -253,6 +260,35 @@ for (const def of defs) {
   }
   contractBackends[def.name] = { file: rel, occurrence, ...(optionality ? { optionality } : {}) }
 }
+// ---------- 覆盖闭集：每个 schema 必须「有注解」或「登记豁免」 ----------
+// 第三类（no-named-type）仍要求后端路径可核对；前端静态资产与嵌套元素才允许完全豁免。
+const exemptedSchemas = new Set()
+for (const [name, entry] of Object.entries(SCHEMA_EXEMPTIONS)) {
+  if (!defs.some((d) => d.name === name)) {
+    problems.push(`✗ 豁免登记指向不存在的 schema: ${name}`)
+  }
+  if (annotatedSchemas.has(name)) {
+    problems.push(
+      `✗ ${name}: 已有 @backend-contract 注解，豁免登记过期（删掉 SCHEMA_EXEMPTIONS 条目）`
+    )
+  }
+  if (!EXEMPTION_CLASSES[entry.class]) {
+    problems.push(`✗ ${name}: 豁免类别 ${entry.class} 不在三类登记内`)
+  }
+  if (!entry.reason || !entry.reason.trim()) {
+    problems.push(`✗ ${name}: 豁免未写理由（登记必须是可解释的）`)
+  }
+  exemptedSchemas.add(name)
+}
+for (const def of defs) {
+  if (!annotatedSchemas.has(def.name) && !exemptedSchemas.has(def.name)) {
+    problems.push(
+      `✗ ${def.name}: 未登记契约覆盖（补 @backend-contract 注解，` +
+        `或在 SCHEMA_EXEMPTIONS 登记三类豁免之一）`
+    )
+  }
+}
+
 const indirect = []
 // 剥注释后再正则匹配，避免注释里的 `// export type XxxParsed` 假命中。
 // 仅用于 parsedExport 存在性判据，不影响 parseSchemaDef 的括号配对解析。
@@ -314,9 +350,13 @@ for (const def of defs) {
 if (indirect.length) {
   console.log(`\n（间接覆盖，不计缺口: ${indirect.join('、')}）`)
 }
+console.log(
+  `\n契约覆盖：${defs.length - exemptedSchemas.size} 个 schema 有后端注解 / ` +
+    `${exemptedSchemas.size} 个登记豁免（${Object.keys(EXEMPTION_CLASSES).join(' / ')}）`
+)
 if (problems.length) {
   console.log('\n' + problems.join('\n'))
   console.log(`\n校验未通过（${problems.length} 处），请补齐后重跑。`)
   process.exit(1)
 }
-console.log(`\n校验通过：${defs.length} 个 schema 均有类型导出与测试覆盖 ✓`)
+console.log(`\n校验通过：${defs.length} 个 schema 均有类型导出、测试覆盖与契约覆盖登记 ✓`)

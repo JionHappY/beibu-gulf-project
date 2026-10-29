@@ -22,6 +22,7 @@ const {
   backendContractOf,
   annotationProblems,
 } = require('../scripts/lib/contract-fields.cjs')
+const { EXEMPTION_CLASSES, SCHEMA_EXEMPTIONS } = require('../scripts/lib/schema-exemptions.cjs')
 
 /** 造一份「注解 + schema 声明」的合成片段 */
 function annotate(commentLines) {
@@ -211,6 +212,29 @@ describe('真实 schemas.ts：注解面必须是可解释的两种状态之一',
     )
     expect(paired.length).toBeGreaterThan(0)
   })
+
+  it('覆盖闭集：每个 schema 已注解或登记豁免；登记不得过期、类别与理由必须合法', () => {
+    const problems = []
+    const declared = [...schemasText.matchAll(/^export const (\w+Schema) = /gm)].map((m) => ({
+      name: m[1],
+      index: m.index,
+    }))
+    const annotated = new Set(
+      declared.filter((d) => backendContractOf(schemasText, d.index)).map((d) => d.name)
+    )
+    for (const { name } of declared) {
+      if (!annotated.has(name) && !SCHEMA_EXEMPTIONS[name]) {
+        problems.push(`${name}: 未登记契约覆盖`)
+      }
+    }
+    for (const [name, entry] of Object.entries(SCHEMA_EXEMPTIONS)) {
+      if (!declared.some((d) => d.name === name)) problems.push(`${name}: 豁免指向不存在的 schema`)
+      if (annotated.has(name)) problems.push(`${name}: 已注解又登记豁免（过期）`)
+      if (!EXEMPTION_CLASSES[entry.class]) problems.push(`${name}: 非法豁免类别 ${entry.class}`)
+      if (!entry.reason || !entry.reason.trim()) problems.push(`${name}: 豁免未写理由`)
+    }
+    expect(problems).toEqual([])
+  })
 })
 
 /**
@@ -226,7 +250,7 @@ describe('端到端：gen-api-contract.cjs 的接线', () => {
   const TMP_ROOTS = []
 
   /** 造最小仓库：schemas.ts + 一个被注解指向的后端文件 + 空测试文件 */
-  function makeRepo({ schemas, backend }) {
+  function makeRepo({ schemas, backend, exemptions = {} }) {
     const root = fs.mkdtempSync(path.join(os.tmpdir(), 'w44-e2e-'))
     TMP_ROOTS.push(root)
     // gen 脚本用 __dirname/.. 反推仓库根，所以脚本也必须抄进临时根才能换根
@@ -235,6 +259,13 @@ describe('端到端：gen-api-contract.cjs 的接线', () => {
       fs.mkdirSync(path.dirname(dest), { recursive: true })
       fs.copyFileSync(path.join(ROOT, rel), dest)
     }
+    // 豁免登记是数据：夹具只带本用例声明的条目，避免真实 schema 名漏进最小仓库
+    fs.writeFileSync(
+      path.join(root, 'scripts/lib/schema-exemptions.cjs'),
+      `const EXEMPTION_CLASSES = ${JSON.stringify(EXEMPTION_CLASSES)}\n` +
+        `const SCHEMA_EXEMPTIONS = ${JSON.stringify(exemptions)}\n` +
+        `module.exports = { EXEMPTION_CLASSES, SCHEMA_EXEMPTIONS }\n`
+    )
     fs.mkdirSync(path.join(root, 'frontend/src/types/__tests__'), { recursive: true })
     fs.writeFileSync(path.join(root, 'frontend/src/types/schemas.ts'), schemas)
     fs.writeFileSync(
@@ -344,6 +375,55 @@ export type FooParsed = z.infer<typeof fooSchema>
     const root = makeRepo({
       schemas: SCHEMA_PAIR_OK,
       backend: { 'backend/x.ts': `export interface Foo {\n  name: string\n  count?: number\n}\n` },
+    })
+    const r = runGen(root)
+    expect(r.code).toBe(0)
+  })
+
+  it('🟥 端到端红样：新增 schema 未注解也未登记豁免 ⇒ exit 1 并点名', () => {
+    const root = makeRepo({
+      schemas:
+        SCHEMA_PAIR_OK +
+        `\nexport const extraSchema = z.object({ x: z.string() })\n` +
+        `export type ExtraParsed = z.infer<typeof extraSchema>\n`,
+      backend: { 'backend/x.ts': BACKEND_OK },
+    })
+    const r = runGen(root)
+    expect(r.code).toBe(1)
+    expect(r.output).toContain('extraSchema')
+    expect(r.output).toContain('未登记契约覆盖')
+  })
+
+  it('🟥 端到端红样：已注解的 schema 又登记豁免 ⇒ exit 1（登记过期）', () => {
+    const root = makeRepo({
+      schemas: SCHEMA_PAIR_OK,
+      backend: { 'backend/x.ts': BACKEND_OK },
+      exemptions: { fooSchema: { class: 'nested', reason: '夹具' } },
+    })
+    const r = runGen(root)
+    expect(r.code).toBe(1)
+    expect(r.output).toContain('豁免登记过期')
+  })
+
+  it('🟥 端到端红样：后端字段改名（name→title）⇒ exit 1 且两侧都点名', () => {
+    const root = makeRepo({
+      schemas: SCHEMA_PAIR_OK,
+      backend: {
+        'backend/x.ts': `export interface Foo {\n  title: string\n  count?: number\n}\n`,
+      },
+    })
+    const r = runGen(root)
+    expect(r.code).toBe(1)
+    expect(r.output).toContain('name')
+    expect(r.output).toContain('title')
+  })
+
+  it('等价重构：字段顺序调整 + 注释不误红', () => {
+    const root = makeRepo({
+      schemas: SCHEMA_PAIR_OK,
+      backend: {
+        'backend/x.ts': `export interface Foo {\n  // 字段顺序与注释属于等价写法\n  count?: number\n  name: string\n}\n`,
+      },
     })
     const r = runGen(root)
     expect(r.code).toBe(0)

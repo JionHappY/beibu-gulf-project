@@ -6,7 +6,13 @@ import { parseConfidence } from '../../../common/constants/forecast.constants'
 import { SKIP_AUTH_NAMED_THROTTLERS } from '../../../common/constants/throttling.constants'
 import { DtoPipe } from '../../../common/pipes/dto.pipe'
 import { ForecastMapQuery, ForecastTimeseriesQuery } from '../dto/forecast.dto'
-import { ForecastService } from '../services/forecast.service'
+import {
+  type ForecastIndexResponse,
+  type ForecastIndicatorResponse,
+  type ForecastMapResponse,
+  ForecastService,
+  type ForecastTimeSeriesResponse,
+} from '../services/forecast.service'
 import { parseScenarioId } from '../services/scenario.service'
 
 @Controller('forecast')
@@ -28,17 +34,19 @@ export class ForecastController {
 
   // / 与 /overview 同义：前端实际调 /overview 获取指标索引
   @Get()
-  overviewRoot(): Promise<unknown> {
+  overviewRoot(): Promise<ForecastIndexResponse> {
     return this.forecastService.readIndex()
   }
 
   @Get('overview')
-  overview(): Promise<unknown> {
+  overview(): Promise<ForecastIndexResponse> {
     return this.forecastService.readIndex()
   }
 
   @Get('map')
-  getMap(@Query(new DtoPipe(ForecastMapQuery.parse)) query: ForecastMapQuery) {
+  getMap(
+    @Query(new DtoPipe(ForecastMapQuery.parse)) query: ForecastMapQuery
+  ): Promise<ForecastMapResponse> {
     return this.forecastService.getMapData(
       query.indicator,
       query.time,
@@ -48,7 +56,9 @@ export class ForecastController {
   }
 
   @Get('timeseries')
-  getTimeseries(@Query(new DtoPipe(ForecastTimeseriesQuery.parse)) query: ForecastTimeseriesQuery) {
+  getTimeseries(
+    @Query(new DtoPipe(ForecastTimeseriesQuery.parse)) query: ForecastTimeseriesQuery
+  ): Promise<ForecastTimeSeriesResponse> {
     return this.forecastService.getTimeSeriesData(
       query.indicator,
       query.portId,
@@ -67,7 +77,7 @@ export class ForecastController {
     @Query('portId') portId?: string,
     @Query('confidence') confidence?: string,
     @Query('scenario') scenario?: string
-  ) {
+  ): Promise<ForecastIndicatorResponse> {
     return this.forecastService.getIndicatorData(
       type,
       time,

@@ -40,6 +40,77 @@ interface FloodZone {
   features?: FloodZoneFeature[]
 }
 
+// 响应允许后端扩展字段（前端 schema 为 looseObject 的对应面），索引签名保留这一事实
+/** /flood/flood-areas 的要素视图（前端 floodFeatureSchema） */
+export interface FloodFeatureResponse {
+  type: 'Feature'
+  geometry: GeoJsonGeometry
+  properties: Record<string, unknown> & { riskLevel: string }
+  [key: string]: unknown
+}
+
+/** /flood/flood-areas 指定水位响应（与前端 floodAreasResponseSchema 逐字段） */
+export interface FloodAreasResponse {
+  waterLevel: number
+  requestedWaterLevel?: number
+  actualWaterLevel?: number
+  riskLevel: string
+  features: FloodFeatureResponse[]
+  [key: string]: unknown
+}
+
+/** 未指定水位的全档位响应元素 */
+export interface FloodZoneResponse {
+  waterLevel: number
+  riskLevel: string
+  features: FloodFeatureResponse[]
+}
+
+/** /flood/flood-statistics 响应（与前端 floodStatisticsResponseSchema 逐字段） */
+export interface FloodStatisticsResponse {
+  waterLevel?: number
+  requestedWaterLevel?: number
+  actualWaterLevel?: number
+  riskLevel: string
+  riskLevelCode?: number
+  floodArea?: number
+  averageDepth?: number
+  maxDepth?: number
+  depthRefLevel?: number
+  depthUnderstatedBy?: number
+  affectedFacilityCount?: number
+  affectedPorts?: string[]
+  estimatedLoss?: number
+  description?: string
+  [key: string]: unknown
+}
+
+/** /flood/analysis/disaster 响应（与前端 floodDisasterResponseSchema 逐字段） */
+export interface FloodDisasterResponse {
+  waterLevel?: number
+  requestedWaterLevel?: number
+  riskLevel: string
+  affectedFacilities: Array<Record<string, unknown>>
+  totalLoss: number
+  [key: string]: unknown
+}
+
+/** /flood/water-area 响应：[[lng,lat], ...] */
+export type WaterAreaResponse = Array<[number, number]>
+
+/** /flood/terrain-profiles 的单条剖面（数据文件原样透传 + datumOffset 注入） */
+export interface TerrainProfileResponse {
+  id: string
+  name: string
+  port?: string
+  description?: string
+  points: Array<{ distance: number; lng: number; lat: number; elevation: number }>
+  datumOffset?: number
+}
+
+/** /flood/terrain-profiles 响应 */
+export type TerrainProfilesResponse = TerrainProfileResponse[]
+
 interface DisasterAssessment {
   affectedFacilities: Array<Record<string, unknown>>
   totalLoss: number
@@ -52,7 +123,8 @@ interface DisasterAssessment {
 // 档位数据现由 FloodLevelFeatureRow[].rowsToZones 组装。readFloodArea 死方法与
 // floodArea.json 已删（z154，2026-09-12）：切回 JSON 属回滚预案，届时从 git 历史恢复。
 
-interface StatisticsEntry extends Record<string, unknown> {
+/** 未指定水位时返回的 6 档参考表元素（与指定水位响应不同形状） */
+export interface FloodStatisticsReferenceEntry extends Record<string, unknown> {
   waterLevel: number
   /** 平均/最大水深：源数据只有 6 档 DEM 反演值（无 251 档水深），仅作参考档位数据 */
   averageDepth?: number
@@ -60,7 +132,7 @@ interface StatisticsEntry extends Record<string, unknown> {
 }
 
 interface FloodStatisticsData {
-  statistics: StatisticsEntry[]
+  statistics: FloodStatisticsReferenceEntry[]
 }
 
 interface TerrainProfileData {
@@ -113,7 +185,7 @@ export class FloodService {
    * 仅 6 档（0/2/5/8/10/15），精度退化原因见 repository 注释。
    * 未指定：返回全部档位（兼容保留，前端恒传 waterLevel）。
    */
-  async getFloodAreas(waterLevel?: string): Promise<unknown> {
+  async getFloodAreas(waterLevel?: string): Promise<FloodAreasResponse | FloodZoneResponse[]> {
     if (waterLevel !== undefined) {
       const { level, rows } = await this.resolveFloodLevel(waterLevel)
 
@@ -149,7 +221,10 @@ export class FloodService {
     return { level, rows: await this.floodRepository.pickFloodLevel(level) }
   }
 
-  private rowsToZoneResponse(rows: FloodLevelFeatureRow[], requestedLevel: number): unknown {
+  private rowsToZoneResponse(
+    rows: FloodLevelFeatureRow[],
+    requestedLevel: number
+  ): FloodAreasResponse {
     const actualLevel = Number(rows[0].level)
     const riskLevel = deriveRiskLevel(actualLevel)
     return {
@@ -164,7 +239,7 @@ export class FloodService {
   }
 
   /** 全档位响应组装（未指定水位路径） */
-  private rowsToZones(rows: FloodLevelFeatureRow[]): FloodZone[] {
+  private rowsToZones(rows: FloodLevelFeatureRow[]): FloodZoneResponse[] {
     const byLevel = new Map<number, FloodLevelFeatureRow[]>()
     for (const row of rows) {
       const lv = Number(row.level)
@@ -179,7 +254,7 @@ export class FloodService {
   }
 
   /** 多边形行 → GeoJSON Feature 数组（geometry 为 NULL 的档位行被过滤，即"档位存在但无淹没"） */
-  private rowsToFeatures(rows: FloodLevelFeatureRow[], riskLevel: string): FloodZoneFeature[] {
+  private rowsToFeatures(rows: FloodLevelFeatureRow[], riskLevel: string): FloodFeatureResponse[] {
     return rows
       .filter((row) => row.geometry !== null)
       .map((row) => ({
@@ -205,7 +280,9 @@ export class FloodService {
    *     以 depthRefLevel 显式标注其所属档位，避免被读成当前水位的精确值
    * 未指定水位：返回 6 档参考表（兼容原契约；前端 floodAdapter 恒传 waterLevel）。
    */
-  async getFloodStatistics(waterLevel?: string): Promise<unknown> {
+  async getFloodStatistics(
+    waterLevel?: string
+  ): Promise<FloodStatisticsResponse | FloodStatisticsReferenceEntry[]> {
     const reference = (await this.floodRepository.readFloodStatistics()) as FloodStatisticsData
 
     if (waterLevel === undefined) {
@@ -298,10 +375,10 @@ export class FloodService {
    * 垂直基准偏移：水位(理论深度基准面) - datumOffset = 剖面高程基准(EGM96 正高)。
    * 逐条 profile 透传，供水面线与地形同基准绘制。
    */
-  async getTerrainProfiles(): Promise<unknown> {
+  async getTerrainProfiles(): Promise<TerrainProfilesResponse> {
     const data = (await this.floodRepository.readTerrainProfile()) as TerrainProfileData
     const datumOffset = data.metadata?.datumOffset ?? 0
-    return data.profiles.map((p) => ({ ...p, datumOffset }))
+    return data.profiles.map((p) => ({ ...p, datumOffset })) as TerrainProfileResponse[]
   }
 
   /**
@@ -319,16 +396,16 @@ export class FloodService {
   }
 
   /** GET /water-area — 水域边界坐标数组 [[lng, lat], ...]（与前端 floodAdapter.getWaterArea 消费形状一致） */
-  async getWaterArea(): Promise<unknown> {
+  async getWaterArea(): Promise<WaterAreaResponse> {
     const data = (await this.floodRepository.readWaterArea()) as WaterAreaData
     if (!Array.isArray(data?.coordinates) || data.coordinates.length === 0) {
       throw new BusinessError(ErrorCode.NOT_FOUND, '水域坐标数据缺失或格式无效')
     }
-    return data.coordinates
+    return data.coordinates as WaterAreaResponse
   }
 
   /** POST /analysis/disaster — 灾害评估：读设施与淹没范围、取档后委托 assessDisaster。 */
-  async analyzeDisaster(body?: { waterLevel?: unknown }): Promise<unknown> {
+  async analyzeDisaster(body?: { waterLevel?: unknown }): Promise<FloodDisasterResponse> {
     const { waterLevel } = body ?? {}
 
     if (waterLevel === undefined) {

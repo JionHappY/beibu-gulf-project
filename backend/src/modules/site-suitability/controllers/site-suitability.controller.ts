@@ -7,6 +7,7 @@ import { parseSuitabilityQuery } from '../dto/site-suitability.dto'
 import {
   SiteSuitabilityService,
   type SuitabilityDefaults,
+  type SuitabilityResult,
 } from '../services/site-suitability.service'
 
 /**
@@ -22,7 +23,7 @@ export class SiteSuitabilityController {
   constructor(private readonly service: SiteSuitabilityService) {}
 
   @Get('map')
-  async map(@Query() query: Record<string, unknown>): Promise<unknown> {
+  async map(@Query() query: Record<string, unknown>): Promise<SuitabilityResult> {
     return this.service.compute(parseSuitabilityQuery(query))
   }
 

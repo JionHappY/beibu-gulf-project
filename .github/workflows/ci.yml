@@ -214,7 +214,7 @@ jobs:
         run: npm run cruise
 
       # 0909-G02：API 契约校验入 CI —— gen-api-contract --check 校验 schemas 全量
-      # 类型导出与测试覆盖（README「契约在 CI 校验」承诺兑现）
+      # 类型导出、测试覆盖与契约覆盖闭集（注解或三类显式豁免，README 承诺兑现）
       - name: API contract check
         run: npm run types:check
 

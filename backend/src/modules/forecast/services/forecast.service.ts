@@ -125,6 +125,53 @@ function sourceMetadata(dataSource: ForecastDataSource | undefined): {
   return dataSource ? { metadata: { dataSource } } : {}
 }
 
+/** /forecast/overview 响应（与前端 forecastIndicatorIndexSchema 逐字段） */
+export interface ForecastIndexResponse {
+  metadata: {
+    version: string
+    lastUpdated: string
+    ports: unknown[]
+    indicators: string[]
+  }
+  historical: { start: string; end: string }
+  forecast: { start: string; end: string }
+  charts?: Record<string, unknown>
+  [key: string]: unknown
+}
+
+/** /forecast/timeseries 响应（与前端 timeSeriesResponseSchema 逐字段） */
+export interface ForecastTimeSeriesResponse {
+  indicator: string
+  unit: string
+  granularity: string
+  canalScenario: string
+  series: unknown[]
+  metadata?: { dataSource?: ForecastDataSource }
+  [key: string]: unknown
+}
+
+/** /forecast/indicator/:type 响应（与前端 indicatorComparisonResponseSchema 逐字段） */
+export interface ForecastIndicatorResponse {
+  indicator: string
+  unit: string
+  canalScenario: string
+  ports: Record<string, unknown>
+  metadata?: { dataSource?: ForecastDataSource }
+  [key: string]: unknown
+}
+
+/** /forecast/map 响应（与前端 forecastMapDataSchema 逐字段） */
+export interface ForecastMapResponse {
+  indicator: string
+  unit: string
+  time: string
+  canalScenario: string
+  type: 'FeatureCollection'
+  features: unknown[]
+  metadata?: { dataSource?: ForecastDataSource }
+  [key: string]: unknown
+}
+
 /** 收集端口标记：无 port.metadata 的端口不参与聚合 */
 function pushPortSource(
   list: Array<ForecastDataSource | undefined>,
@@ -144,8 +191,8 @@ export class ForecastService {
   constructor(private readonly dataFiles: DataFilesService) {}
 
   // 预测指标索引（forecast/index.json），对齐 Express forecastRepository.readForecastIndex
-  readIndex(): Promise<unknown> {
-    return this.dataFiles.read('forecast/index.json')
+  readIndex(): Promise<ForecastIndexResponse> {
+    return this.dataFiles.read('forecast/index.json') as Promise<ForecastIndexResponse>
   }
 
   // 读盘统一走 DataFilesService（createReadCache 语义：TTL + LRU）
@@ -270,7 +317,7 @@ export class ForecastService {
     time: string,
     scenarioLevel = 1.0,
     canalScenario: ScenarioId = 'baseline'
-  ): Promise<Record<string, unknown>> {
+  ): Promise<ForecastMapResponse> {
     const computed = await this.getOrComputeForecast(indicator, scenarioLevel, canalScenario)
     const features: unknown[] = []
     // 只统计真正产出图元的港口：无 spatial / 该时刻无值（0 图元）的港口不参与降级判定，
@@ -369,16 +416,16 @@ export class ForecastService {
     portId: string | undefined,
     scenarioLevel = 1.0,
     canalScenario: ScenarioId = 'baseline'
-  ): Promise<Record<string, unknown>> {
+  ): Promise<ForecastIndicatorResponse> {
     const computed = await this.getOrComputeForecast(type, scenarioLevel, canalScenario)
     const isYear = time != null && /^\d{4}$/.test(time)
-    const result: Record<string, unknown> = {
+    const portsOut: Record<string, unknown> = {}
+    const result: ForecastIndicatorResponse = {
       indicator: computed.indicator,
       unit: isYear ? `${computed.unit}/年` : computed.unit,
       canalScenario: computed.canalScenario,
-      ports: {},
+      ports: portsOut,
     }
-    const portsOut = result.ports as Record<string, unknown>
     const ports = portId ? [portId] : Object.keys(computed.ports)
     // 只聚合**实际返回**的港口：portId 过滤后，未返回港口的降级不该污染本次响应（P1-1）
     const dataSources: Array<ForecastDataSource | undefined> = []
@@ -419,7 +466,7 @@ export class ForecastService {
     granularity: string | undefined,
     scenarioLevel = 1.0,
     canalScenario: ScenarioId = 'baseline'
-  ): Promise<Record<string, unknown>> {
+  ): Promise<ForecastTimeSeriesResponse> {
     const computed = await this.getOrComputeForecast(indicator, scenarioLevel, canalScenario)
     const ports = portId ? [portId] : Object.keys(computed.ports)
     const series: unknown[] = []

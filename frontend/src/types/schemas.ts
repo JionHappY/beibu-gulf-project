@@ -19,6 +19,7 @@ const suitabilityWeightsShape = {
 }
 
 // ① User（useAuth 的 localStorage 读取校验 + /auth/me 响应校验）
+// @backend-contract backend/src/modules/auth/guards/auth.guard.ts AuthUserView
 // 🔴 2026-09-19 修复 P0：createdAt 由 `z.string()` 改为 `z.string().nullable()`——
 // 此前必填与后端 `AuthUserView`（created_at 列可空）不符，`/auth/me` 的 200 响应
 // 会被 zod 拒绝，走 useAuth 的登出分支 ⇒ 登录后刷新即掉线。放宽是**如实**而非降级。
@@ -45,6 +46,7 @@ export const floodGeometrySchema = z.discriminatedUnion('type', [
 
 export type FloodGeometryParsed = z.infer<typeof floodGeometrySchema>
 
+// @backend-contract backend/src/modules/flood/services/flood.service.ts FloodFeatureResponse
 export const floodFeatureSchema = z.object({
   type: z.literal('Feature'),
   geometry: floodGeometrySchema,
@@ -133,8 +135,7 @@ const forecastMetadataSchema = z.object({
   dataSource: forecastDataSourceSchema.optional(),
 })
 
-// @backend-contract backend/src/modules/forecast/services/forecast.service.ts
-// @backend-contract-no-type 三个 forecast 端点的返回类型都是 Promise<Record<string, unknown>>，响应对象由 service 内联字面量构造，无具名类型可逐字段对照（字段名级核对仍在跑）
+// @backend-contract backend/src/modules/forecast/services/forecast.service.ts ForecastTimeSeriesResponse
 export const timeSeriesResponseSchema = z.object({
   indicator: z.string(),
   unit: z.string(),
@@ -155,8 +156,7 @@ export const timeSeriesResponseSchema = z.object({
 export type TimeSeriesResponseParsed = z.infer<typeof timeSeriesResponseSchema>
 
 // ⑦ /forecast/indicator/:indicator 响应
-// @backend-contract backend/src/modules/forecast/services/forecast.service.ts
-// @backend-contract-no-type 同 timeSeriesResponseSchema：返回类型是 Promise<Record<string, unknown>>，无具名类型
+// @backend-contract backend/src/modules/forecast/services/forecast.service.ts ForecastIndicatorResponse
 export const indicatorComparisonResponseSchema = z.object({
   indicator: z.string(),
   unit: z.string(),
@@ -177,8 +177,7 @@ export const indicatorComparisonResponseSchema = z.object({
 export type IndicatorComparisonResponseParsed = z.infer<typeof indicatorComparisonResponseSchema>
 
 // ⑧ /forecast/map 响应（GeoJSON FeatureCollection）
-// @backend-contract backend/src/modules/forecast/services/forecast.service.ts
-// @backend-contract-no-type 同上：返回值由 service 内联构造的 GeoJSON 字面量，无具名类型
+// @backend-contract backend/src/modules/forecast/services/forecast.service.ts ForecastMapResponse
 export const forecastMapDataSchema = z.object({
   indicator: z.string(),
   unit: z.string(),
@@ -208,6 +207,7 @@ export const forecastMapDataSchema = z.object({
 export type ForecastMapDataParsed = z.infer<typeof forecastMapDataSchema>
 
 // ⑨ /forecast/overview 响应
+// @backend-contract backend/src/modules/forecast/services/forecast.service.ts ForecastIndexResponse
 export const forecastIndicatorIndexSchema = z.object({
   metadata: z.object({
     version: z.string(),
@@ -322,8 +322,7 @@ export type CanalLineResponseParsed = z.infer<typeof canalLineResponseSchema>
 // 须先于其求值；编号保持文档序号不变）
 // 2026-09-11 起与 flood-areas/disaster 同源：waterLevel 为 251 档实际档位（不再是 6 档粗化值）；
 // averageDepth/maxDepth 仍来自 6 档 DEM 反演参考表，由 depthRefLevel 标注其所属档位
-// @backend-contract backend/src/modules/flood/services/flood.service.ts
-// @backend-contract-no-type getFloodStatistics 返回 Promise<unknown>，统计对象在该方法内用局部变量拼装；文件里的 FloodStatisticsData（:62）只有 statistics 一个字段，与本 schema 的 14 个字段不是同一个契约
+// @backend-contract backend/src/modules/flood/services/flood.service.ts FloodStatisticsResponse
 // looseObject 而非 strict（W15 登记，2026-10-21）：本端点是字段持续扩张的聚合响应，
 // 前端按需读取、未声明的键不参与渲染。必填键（riskLevel 等）改名/改型仍会被咬住 ——
 // loose 只放行「后端新增而前端未声明」的键，不放行「已声明键的改名」。若该响应将来进入
@@ -381,11 +380,15 @@ export const planSchema = z.object({
 export type PlanParsed = z.infer<typeof planSchema>
 
 // ⑪ /flood/water-area 响应（[[lng,lat],...] 坐标数组）
+// @backend-contract backend/src/modules/flood/services/flood.service.ts
+// @backend-contract-no-type 端点返回 WaterAreaResponse（[number, number][] 别名），无对象字段可逐字段比对
 export const waterAreaSchema = z.array(lngLatSchema)
 
 export type WaterAreaParsed = z.infer<typeof waterAreaSchema>
 
 // ⑫ /flood/terrain-profiles 响应
+// @backend-contract backend/src/modules/flood/services/flood.service.ts
+// @backend-contract-no-type 端点返回 TerrainProfilesResponse（记录数组），无顶层对象类型可逐字段比对
 export const terrainProfileSchema = z.array(
   z.looseObject({
     id: z.string(),
@@ -401,6 +404,7 @@ export const terrainProfileSchema = z.array(
 export type TerrainProfileParsed = z.infer<typeof terrainProfileSchema>
 
 // ⑭ /flood/flood-areas 响应（features 元素级深校验：floodFeatureSchema）
+// @backend-contract backend/src/modules/flood/services/flood.service.ts FloodAreasResponse
 export const floodAreasResponseSchema = z.looseObject({
   waterLevel: z.number(),
   requestedWaterLevel: z.number().optional(),
@@ -418,6 +422,7 @@ export type FloodAreasResponseParsed = z.infer<typeof floodAreasResponseSchema>
 // 影响评估整段被丢弃、store 保留上一档设施/损失，面板出现「面积水深当前档 + 设施损失上一档」
 // 的自相矛盾残留。缺键语义 = 无风险零影响（affectedFacilities/totalLoss 均为空/0），
 // 消费方只读后两者（floodAdapter.getImpactAssessment），无需回填档位。
+// @backend-contract backend/src/modules/flood/services/flood.service.ts FloodDisasterResponse
 export const floodDisasterResponseSchema = z.looseObject({
   waterLevel: z.number().optional(),
   requestedWaterLevel: z.number().optional(),
@@ -515,6 +520,8 @@ export type FavoriteRemoveResponseParsed = z.infer<typeof favoriteRemoveResponse
 
 // ⑳ GET /route/path 响应（Nest 统一信封）：判别 found 分成功/合法空两路。
 // 不可达/未吸附是合法空结果（专项8 7.2 断链语义），不是错误。
+// @backend-contract backend/src/modules/route/services/route.service.ts
+// @backend-contract-no-type RoutePathResult 是判别联合，字段级比对只支持对象类型；分支字段由调用方自测覆盖
 export const routePathResponseSchema = z.discriminatedUnion('found', [
   z.object({
     found: z.literal(true),
@@ -536,6 +543,7 @@ export type RoutePathResponseParsed = z.infer<typeof routePathResponseSchema>
 // ㉑ GET /route/pois 响应（Nest 信封 data 段）：航线分析选点的名称关键词搜索。
 // name/type/source 服务端 NOT NULL；district/city 可空（港口/设施点无 city）；坐标 4326（crs 禁令）
 // source = 来源点集（port/facility/xiaoqu/poi）：多源合并后前端按来源显示标签
+// @backend-contract backend/src/modules/route/repositories/pois-search.repository.ts PoiSearchRow
 export const poiSearchItemSchema = z.object({
   id: z.string(),
   name: z.string(),
@@ -547,6 +555,8 @@ export const poiSearchItemSchema = z.object({
   lat: z.number(),
 })
 
+// @backend-contract backend/src/modules/route/repositories/pois-search.repository.ts
+// @backend-contract-no-type 端点返回 PoiSearchRow[]，数组包装本身无对象字段；元素契约由 poiSearchItemSchema 核对
 export const poiSearchResponseSchema = z.array(poiSearchItemSchema)
 
 export type PoiSearchItemParsed = z.infer<typeof poiSearchItemSchema>

@@ -828,37 +828,86 @@
     }
   },
   "backendContracts": {
+    "userSchema": {
+      "file": "backend/src/modules/auth/guards/auth.guard.ts",
+      "occurrence": {
+        "id": 4,
+        "username": 3,
+        "createdAt": 2
+      },
+      "optionality": {
+        "type": "AuthUserView",
+        "drift": []
+      }
+    },
+    "floodFeatureSchema": {
+      "file": "backend/src/modules/flood/services/flood.service.ts",
+      "occurrence": {
+        "type": 6,
+        "geometry": 3,
+        "properties": 3
+      },
+      "optionality": {
+        "type": "FloodFeatureResponse",
+        "drift": []
+      }
+    },
     "timeSeriesResponseSchema": {
       "file": "backend/src/modules/forecast/services/forecast.service.ts",
       "occurrence": {
-        "indicator": 28,
-        "unit": 15,
-        "granularity": 2,
-        "canalScenario": 24,
-        "series": 2,
-        "metadata": 15
+        "indicator": 31,
+        "unit": 18,
+        "granularity": 3,
+        "canalScenario": 27,
+        "series": 3,
+        "metadata": 19
+      },
+      "optionality": {
+        "type": "ForecastTimeSeriesResponse",
+        "drift": []
       }
     },
     "indicatorComparisonResponseSchema": {
       "file": "backend/src/modules/forecast/services/forecast.service.ts",
       "occurrence": {
-        "indicator": 28,
-        "unit": 15,
-        "canalScenario": 24,
-        "ports": 8,
-        "metadata": 15
+        "indicator": 31,
+        "unit": 18,
+        "canalScenario": 27,
+        "ports": 10,
+        "metadata": 19
+      },
+      "optionality": {
+        "type": "ForecastIndicatorResponse",
+        "drift": []
       }
     },
     "forecastMapDataSchema": {
       "file": "backend/src/modules/forecast/services/forecast.service.ts",
       "occurrence": {
-        "indicator": 28,
-        "unit": 15,
-        "time": 11,
-        "canalScenario": 24,
-        "type": 6,
-        "metadata": 15,
-        "features": 6
+        "indicator": 31,
+        "unit": 18,
+        "time": 12,
+        "canalScenario": 27,
+        "type": 7,
+        "metadata": 19,
+        "features": 7
+      },
+      "optionality": {
+        "type": "ForecastMapResponse",
+        "drift": []
+      }
+    },
+    "forecastIndicatorIndexSchema": {
+      "file": "backend/src/modules/forecast/services/forecast.service.ts",
+      "occurrence": {
+        "metadata": 19,
+        "historical": 10,
+        "forecast": 10,
+        "charts": 1
+      },
+      "optionality": {
+        "type": "ForecastIndexResponse",
+        "drift": []
       }
     },
     "siteSuitabilityResponseSchema": {
@@ -909,21 +958,100 @@
     "floodStatisticsResponseSchema": {
       "file": "backend/src/modules/flood/services/flood.service.ts",
       "occurrence": {
-        "waterLevel": 26,
-        "requestedWaterLevel": 5,
-        "actualWaterLevel": 4,
-        "riskLevel": 16,
-        "riskLevelCode": 2,
-        "floodArea": 3,
-        "averageDepth": 3,
-        "maxDepth": 3,
-        "depthRefLevel": 2,
-        "depthUnderstatedBy": 3,
-        "affectedFacilityCount": 3,
-        "affectedPorts": 2,
-        "estimatedLoss": 2,
-        "description": 1
+        "waterLevel": 30,
+        "requestedWaterLevel": 8,
+        "actualWaterLevel": 6,
+        "riskLevel": 21,
+        "riskLevelCode": 3,
+        "floodArea": 4,
+        "averageDepth": 4,
+        "maxDepth": 4,
+        "depthRefLevel": 3,
+        "depthUnderstatedBy": 4,
+        "affectedFacilityCount": 4,
+        "affectedPorts": 3,
+        "estimatedLoss": 3,
+        "description": 3
+      },
+      "optionality": {
+        "type": "FloodStatisticsResponse",
+        "drift": []
       }
+    },
+    "waterAreaSchema": {
+      "file": "backend/src/modules/flood/services/flood.service.ts",
+      "occurrence": {}
+    },
+    "terrainProfileSchema": {
+      "file": "backend/src/modules/flood/services/flood.service.ts",
+      "occurrence": {
+        "id": 4,
+        "name": 4,
+        "port": 4,
+        "description": 3,
+        "points": 1
+      }
+    },
+    "floodAreasResponseSchema": {
+      "file": "backend/src/modules/flood/services/flood.service.ts",
+      "occurrence": {
+        "waterLevel": 30,
+        "requestedWaterLevel": 8,
+        "actualWaterLevel": 6,
+        "riskLevel": 21,
+        "features": 7
+      },
+      "optionality": {
+        "type": "FloodAreasResponse",
+        "drift": []
+      }
+    },
+    "floodDisasterResponseSchema": {
+      "file": "backend/src/modules/flood/services/flood.service.ts",
+      "occurrence": {
+        "waterLevel": 30,
+        "requestedWaterLevel": 8,
+        "riskLevel": 21,
+        "affectedFacilities": 6,
+        "totalLoss": 7
+      },
+      "optionality": {
+        "type": "FloodDisasterResponse",
+        "drift": []
+      }
+    },
+    "routePathResponseSchema": {
+      "file": "backend/src/modules/route/services/route.service.ts",
+      "occurrence": {
+        "found": 8,
+        "mode": 9,
+        "distanceM": 3,
+        "durationMin": 3,
+        "snapDistanceM": 3,
+        "edgeCount": 3,
+        "coordinates": 4
+      }
+    },
+    "poiSearchItemSchema": {
+      "file": "backend/src/modules/route/repositories/pois-search.repository.ts",
+      "occurrence": {
+        "id": 7,
+        "name": 7,
+        "type": 7,
+        "source": 5,
+        "city": 6,
+        "district": 7,
+        "lng": 4,
+        "lat": 3
+      },
+      "optionality": {
+        "type": "PoiSearchRow",
+        "drift": []
+      }
+    },
+    "poiSearchResponseSchema": {
+      "file": "backend/src/modules/route/repositories/pois-search.repository.ts",
+      "occurrence": {}
     },
     "taskSubmitResponseSchema": {
       "file": "backend/src/modules/task/types/task.ts",

@@ -1,22 +1,22 @@
 import { Injectable, Logger } from '@nestjs/common'
 
-import { SiteSuitabilityRepository } from '../repositories/site-suitability.repository'
-import { parseWeights, type CellScore, type FactorCell, type SuitabilityWeights } from './scoring'
+import { DEFAULT_THRESHOLDS, type ScoreThresholds } from '../constants/score.constants'
 import {
   DEFAULT_MIN_LAND_FRAC,
   DEFAULT_RESOLUTION,
   defaultWeights,
   type SuitabilityQuery,
 } from '../dto/site-suitability.dto'
-import { DEFAULT_THRESHOLDS, type ScoreThresholds } from '../constants/score.constants'
+import { SiteSuitabilityRepository } from '../repositories/site-suitability.repository'
 
+import { type CellScore, type FactorCell, parseWeights, type SuitabilityWeights } from './scoring'
 import { cellScore } from './scoring'
 
 // 加权叠加编排（单元四）：库行 → 纯函数评分 → GeoJSON FeatureCollection。
 // 计算全在内存（148k 行算术），出参形状为契约 siteSuitabilityResponseSchema（前端
 // types/schemas.ts，@backend-contract 反向核对指向本文件）。
 
-interface SuitabilityResult {
+export interface SuitabilityResult {
   type: 'FeatureCollection'
   features: Array<{
     type: 'Feature'

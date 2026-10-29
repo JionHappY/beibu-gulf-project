@@ -55,6 +55,11 @@ services:
       nest:
         condition: service_healthy
     restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: '10m'
+        max-file: '5'
 
   # v3 业务层（NestJS，Express 退役后主 API）——nginx 反代 /nest-api → nest:3000
   nest:
@@ -109,6 +114,11 @@ services:
       retries: 12
       start_period: 15s
     restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: '10m'
+        max-file: '5'
 
   # PostGIS（空间数据，beibu-gulf-data）
   postgis:

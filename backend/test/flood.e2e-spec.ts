@@ -153,7 +153,7 @@ describe('flood e2e（真数据文件 + 真库档位表）', () => {
         expect(res.body.data.features.length).toBeGreaterThan(0)
         for (const f of res.body.data.features) {
           expect(f.properties.riskLevel).toBe('中风险')
-          expect(typeof f.properties.area).toBe('number')
+          expect(typeof f.properties.area_deg2).toBe('number')
         }
       })
 
@@ -179,7 +179,7 @@ describe('flood e2e（真数据文件 + 真库档位表）', () => {
           .expect(200)
         const features = res.body.data.features as Array<{
           geometry: { type: string; coordinates: unknown }
-          properties: { area: number }
+          properties: { area_deg2: number }
         }>
         expect(features.length).toBeGreaterThan(0)
 
@@ -207,7 +207,7 @@ describe('flood e2e（真数据文件 + 真库档位表）', () => {
         for (const f of features) {
           // ST_Dump 逐部件下发 → 单部件为 Polygon，多部件为 MultiPolygon
           expect(f.geometry.type).toMatch(/^(Multi)?Polygon$/)
-          expect(typeof f.properties.area).toBe('number')
+          expect(typeof f.properties.area_deg2).toBe('number')
           walk(f.geometry.coordinates)
         }
         expect(coords.length).toBeGreaterThan(0)

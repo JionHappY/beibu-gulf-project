@@ -643,3 +643,14 @@ describe('DataFilesService 统一入口 - 读盘缓存', () => {
     expect(mockReadFile.mock.calls.length).toBe(callsAfterFill + 1)
   })
 })
+
+describe('rowsToFeatures - 淹没要素面积口径（d150）', () => {
+  it('properties 面积为 area_deg2（平方度），不再下发 area', async () => {
+    const service = makeService(vi.fn(), mockLevelRows([[3.0, 0.5]]))
+    const result = (await service.getFloodAreas('2.5')) as {
+      features: Array<{ properties: Record<string, unknown> }>
+    }
+    expect(typeof result.features[0].properties.area_deg2).toBe('number')
+    expect(result.features[0].properties).not.toHaveProperty('area')
+  })
+})

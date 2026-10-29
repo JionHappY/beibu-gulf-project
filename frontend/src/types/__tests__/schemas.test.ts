@@ -429,7 +429,7 @@ describe('flood schemas（真实数据 + 构造样本）', () => {
               ],
             ],
           },
-          properties: { riskLevel: '中风险' },
+          properties: { riskLevel: '中风险', area_deg2: 0.5 },
         },
       ],
     })

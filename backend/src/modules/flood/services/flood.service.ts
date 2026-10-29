@@ -260,7 +260,9 @@ export class FloodService {
       .map((row) => ({
         type: 'Feature',
         geometry: JSON.parse(row.geometry as string) as GeoJsonGeometry,
-        properties: { area: Number(row.area), riskLevel },
+        // area_deg2：ST_Area 的原始平方度（d150，2026-10-29）；km² 口径由 statistics 的
+        // floodArea（clipped_km2 汇总）承担，两个量纲不再同名无标注
+        properties: { area_deg2: Number(row.area), riskLevel },
       }))
   }
 

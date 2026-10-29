@@ -54,7 +54,12 @@ export const floodFeatureSchema = z.object({
   // 但原始响应边界不能强制必填：原 calculate 模式（FastAPI flood_engine 仅返回 {area}）曾因
   // 必填被全部判死（历史回归，2026-08-17 修复）——该模式已随 algorithm-service 退役删除，
   // optional 作为存量数据兼容保留，缺省由 floodAdapter 边界补 DEFAULT_RISK_LEVEL
-  properties: z.looseObject({ riskLevel: z.string().optional() }),
+  // area_deg2：淹没要素面积，ST_Area 原始平方度（d150 改名明确量纲；km² 口径见
+  // floodStatisticsResponseSchema.floodArea）。optional：存量 plans 载荷可能无此键。
+  properties: z.looseObject({
+    riskLevel: z.string().optional(),
+    area_deg2: z.number().optional(),
+  }),
 })
 
 export type FloodFeatureParsed = z.infer<typeof floodFeatureSchema>

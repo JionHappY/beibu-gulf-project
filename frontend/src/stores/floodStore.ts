@@ -43,7 +43,7 @@ type FloodPersistedSnapshot = {
  * 与「水位 0 / 无设施」这类**真实零值**区分：后者 statistics 有完整字段，仍按 0 展示。
  * `failure` 时不改旧数据，报告面板据此把旧结果标成 stale。
  */
-export type FloodAnalysisStatus = 'idle' | 'requesting' | 'success' | 'empty' | 'failure'
+type FloodAnalysisStatus = 'idle' | 'requesting' | 'success' | 'empty' | 'failure'
 
 export const useFloodStore = defineStore('flood', () => {
   // ─── 分析数据 ──────────────────────────────────────────────

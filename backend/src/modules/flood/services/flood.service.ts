@@ -99,7 +99,7 @@ export interface FloodDisasterResponse {
 export type WaterAreaResponse = Array<[number, number]>
 
 /** /flood/terrain-profiles 的单条剖面（数据文件原样透传 + datumOffset 注入） */
-export interface TerrainProfileResponse {
+interface TerrainProfileResponse {
   id: string
   name: string
   port?: string

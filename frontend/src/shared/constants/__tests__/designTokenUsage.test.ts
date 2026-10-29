@@ -44,3 +44,14 @@ describe('阴影与反色边走主题 token', () => {
     }
   })
 })
+
+describe('输入框键盘焦点环', () => {
+  it.each([
+    ['business/route-analysis/components/RouteControlPanel.vue', '.poi-search:focus-visible'],
+    ['views/LoginPanel.vue', '.form-input:focus-visible'],
+  ])('%s 的 %s 使用统一 focus 环', (rel, selector) => {
+    const decl = declarations(sfcStyle(rel), selector)
+    expect(decl.outline, selector).toBe('2px solid var(--GCS-border-focus)')
+    expect(decl['outline-offset'], selector).toBe('2px')
+  })
+})

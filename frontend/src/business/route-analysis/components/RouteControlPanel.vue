@@ -685,6 +685,8 @@ defineExpose({
 }
 
 .route-btn.primary:disabled {
+  background: var(--GCS-bg-container);
+  border-color: var(--GCS-border-default);
   color: var(--GCS-text-disabled);
   cursor: not-allowed;
 }
@@ -804,6 +806,11 @@ defineExpose({
 .poi-search:focus,
 .poi-search.focused {
   border-color: var(--GCS-color-primary);
+}
+
+.poi-search:focus-visible {
+  outline: 2px solid var(--GCS-border-focus);
+  outline-offset: 2px;
 }
 
 /* 抓取态（暂存点）占位：与搜索框同规格，替换顶行不改变版面高度 */

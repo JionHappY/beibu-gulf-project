@@ -231,6 +231,11 @@ async function handleSubmit() {
   border-color: var(--GCS-color-primary);
 }
 
+.form-input:focus-visible {
+  outline: 2px solid var(--GCS-border-focus);
+  outline-offset: 2px;
+}
+
 .form-input::placeholder {
   color: var(--GCS-text-muted);
 }
@@ -253,7 +258,8 @@ async function handleSubmit() {
 }
 
 .submit-btn:disabled {
-  opacity: 0.6;
+  background: var(--GCS-bg-container);
+  color: var(--GCS-text-disabled);
   cursor: not-allowed;
 }
 </style>

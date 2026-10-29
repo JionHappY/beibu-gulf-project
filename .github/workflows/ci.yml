@@ -110,17 +110,22 @@ jobs:
       - name: Install root dependencies
         run: npm ci
 
-      # 2026-10-04 用户裁定 A：braces <=3.0.3（GHSA-vfj7-8cjw-p6xm，2026-09-18 发布）官方
-      # 无补丁版本，链路 stylelint/lint-staged → micromatch → braces 全为 dev 依赖
-      # （npm ls braces --omit=dev 为空、npm audit --omit=dev --audit-level=high = 0 high）。
-      # 故本步只阻断生产依赖；dev 工具链该条等上游补丁后恢复全量。audit 报告/例外文件不入库。
+      # 2026-10-29 用户裁定：生产依赖 high+ 阻断不变；dev 依赖 critical 阻断、high 仅报告。
+      # overrides 只对当时 advisory 有效；升级依赖后必须重跑 npm audit 并复核锁文件。
       - name: npm audit (root, 生产依赖 high+ 阻断)
         run: npm audit --omit=dev --audit-level=high
+
+      - name: npm audit (root, dev critical 阻断 / high 报告)
+        run: |
+          npm audit --audit-level=critical
+          echo "--- dev high 报告（不阻断）---"
+          npm audit --audit-level=high || true
 
       - name: Install Nest dependencies (audit)
         working-directory: backend
         run: npm ci
 
+      # backend 依赖即服务运行时依赖，策略保留 high+ 阻断；当前 0 high / 0 critical。
       - name: npm audit (nest, high+ 阻断)
         working-directory: backend
         run: npm audit --audit-level=high

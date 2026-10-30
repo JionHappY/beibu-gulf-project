@@ -173,8 +173,10 @@ jobs:
       # 现判据：`git ls-files backend/data backend/static` 出的每一件必须被 source-registry.json
       # 某组覆盖，否则 exit 1。**未覆盖项不挂在 guard:v3 的 GUARDS 里**（那是 tools/v3-guard/
       # 下的快集），故单列一步；本步不得加 `if:`（条件不成立时等于没挂强制点）。
-      # 已知边界：`provenanceStatus=pending` 目前**不参与**退出码 —— 是否改成当场红/到期红
-      # 是用户裁决项（工单 §四-2），执行方不得自行选边；在此之前本步只拦"未登记"。
+      # 2026-10-30（用户裁定「reviewBy 到期红」）：pending 组必须带 reviewBy（YYYY-MM-DD），
+      # 缺字段/格式错 ⇒ exit 1（新 pending 未设截止日当场红）；reviewBy < 今天（UTC 日期）
+      # ⇒ exit 1（到期红）；未到期只打印剩余天数与债务，不阻断。confirmed 组不要求 reviewBy。
+      # 本步仍只拦「未登记 + pending 违规」，不替用户确认来源。
       - name: Data provenance registry
         run: npm run audit:data
 
@@ -724,6 +726,58 @@ jobs:
             echo "::error::阶段 1.5（部署前置校验）失败：POSTGRES_PASSWORD 缺失或不可用，或 compose 解析失败（详见上方 ssh stderr）"
             exit 1
           fi
+          # 阶段 1.6（2026-10-30 新增，§8.21 用户裁定①「外部挂载 + 部署前哨」）：3D 资产前哨。
+          # qinzhou-port/ 与 bridges-city/ 是 gitignored 大资产（≈144 MB + 0.1 MB），只靠
+          # compose 宿主挂载分发；Docker 对缺失的宿主路径会**自动建成空目录** ⇒ 挂载"成功"
+          # 但 /static/... 404，前端逐 spec 的 try/catch 把它吞成 logger.warn
+          # （RouteAnalysisPage.vue:359-362）⇒ 线上静默缺图层。故在 compose pull/up **之前**
+          # 逐项 test -s：缺任一 tileset.json 即 exit 1，阶段二不执行 ⇒ 不拉镜像、不启新容器。
+          # 清单与 frontend/src/business/route-analysis/constants/beibu3dTiles.ts 的 5 条 URL
+          # 一一对应（漂移由 tools/deploy-assets.test.mjs 守）。
+          # 为什么不复用 preflight-deploy.sh：那是服务器上的本地脚本，旧副本没有这条检查；
+          # 判据随 CI 走才不会出现「服务器脚本版本 ≠ 门禁口径」的漂移。
+          ssh_assets() {
+            local attempt_exit=0 out="" err_file
+            err_file="$(mktemp)"
+            for attempt in 1 2 3; do
+              attempt_exit=0
+              out="$(ssh -o StrictHostKeyChecking=no -o ConnectTimeout=15 -p "$SSH_PORT" \
+                "$SERVER_USER@$SERVER_HOST" "$1" 2>"$err_file")" || attempt_exit=$?
+              [ "$attempt_exit" -eq 0 ] && break
+              if [ "$attempt_exit" -ne 255 ]; then
+                echo "::error::3D 资产前哨：远端检查命令失败(exit ${attempt_exit}) stderr: $(head -c 500 "$err_file")" >&2
+                rm -f "$err_file"
+                return "$attempt_exit"
+              fi
+              echo "::warning::SSH 连接失败(exit 255)（第 ${attempt}/3 次，10 秒后重试）" >&2
+              [ "$attempt" -lt 3 ] && sleep 10
+            done
+            rm -f "$err_file"
+            [ "$attempt_exit" -eq 0 ] && printf '%s' "$out"
+            return "$attempt_exit"
+          }
+          # 远端恒 exit 0：缺项走 stdout（路径逐行），连接/命令失败才非零——两者混在
+          # 一个退出码里会把「资产缺失」误报成「SSH 故障」，排查方向会被带偏。
+          if ! MISSING_ASSETS="$(ssh_assets "cd /opt/beibu-gulf || exit 1; \
+            for f in \
+              backend/static/qinzhou-port/tiles/tileset.json \
+              backend/static/qinzhou-port/rebuilt/tileset.json \
+              backend/static/qinzhou-port/rebuilt/roads/tileset.json \
+              backend/static/qinzhou-port/rebuilt/ground/tileset.json \
+              backend/static/bridges-city/tileset.json; do \
+              test -s \"\$f\" || echo \"\$f\"; \
+            done; exit 0")"; then
+            echo "::error::阶段 1.6（3D 资产部署前哨）无法执行：SSH/远端命令失败，已中止——未触发 compose pull/up"
+            exit 1
+          fi
+          if [ -n "$MISSING_ASSETS" ]; then
+            while IFS= read -r asset; do
+              [ -n "$asset" ] && echo "::error::3D 资产缺失: ${asset}（见 docs/3dtiles-改造任务表.md §8.21）"
+            done <<< "$MISSING_ASSETS"
+            echo "::error::阶段 1.6（3D 资产部署前哨）失败：宿主缺 3D Tiles 资产，已中止部署——未触发 compose pull/up"
+            exit 1
+          fi
+          echo "3D 资产前哨：5 个 tileset.json 均在位"
           # 阶段二（短会话）：触发后台「拉镜像 + 启动」即返回。镜像由 CI 构建推送
           # GHCR（build-push-images job），服务器只 pull 不 build——内存峰值从 3-5G
           # 降到解包级（1G 内），OOM 卡死根除；pull/up 仍可能跨 G 分钟，故继续

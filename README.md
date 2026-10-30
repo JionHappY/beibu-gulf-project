@@ -111,6 +111,10 @@ npm --prefix backend run start:dev   # 后端 NestJS
 数据来源与许可登记在 `tools/data-audit/source-registry.json`（含 pending 项，再分发前必须核）。
 可选大资产（真地形 `backend/static/terrain/**`、`qinzhou-port/`、`bim-hub/`）不入库：缺失时 3D 地形
 自动降级为平坦椭球、对应图层不加载，其余功能不受影响。
+**生产部署**：`qinzhou-port/` 与 `bridges-city/` 不受版本控制，须先把整目录放到服务器
+`/opt/beibu-gulf/backend/static/`（scp/rsync，≈144 MB + 0.1 MB），再由 CI 部署；`.github/workflows/ci.yml`
+的 deploy 在 `docker compose pull/up` 之前逐项 `test -s` 五个 `tileset.json`，缺任一即 `exit 1` 且不启动
+新容器（原因与验收见 `docs/3dtiles-改造任务表.md` §8.21）。
 
 访问 <http://localhost:5173>。NestJS 启动时读可选的本地 env 文件（模板 `backend/.env.example`，真实文件按设计不入库）；必填项缺失时当前行为是**打印错误后继续挂载**，不是 fail fast——这是在册缺口（`validateEnv` 名为校验实不阻断），修它之前请勿把它当作已存在的保护。
 

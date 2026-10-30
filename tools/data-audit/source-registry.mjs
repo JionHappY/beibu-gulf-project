@@ -12,10 +12,11 @@
  * 1. `git ls-files backend/data backend/static` 取**受版本控制的数据资产全集**（派生，不手写清单）；
  * 2. 与 `source-registry.json` 的组逐一对齐：每个文件必须被至少一组覆盖；
  * 3. 有任何文件没被覆盖 ⇒ 非零退出（新增资产忘登记即红）；
- * 4. 同时输出 `provenanceStatus=pending` 的组数——**未确认的来源是要还的债**，不许静默。
+ * 4. `pending` 组必须设 `reviewBy`（YYYY-MM-DD）：缺字段/格式错/已到期 ⇒ 非零退出；
+ *    未到期只打印剩余天数——**未确认的来源是要还的债**，不许静默，也不许无限期挂着。
  *
  * 用法：
- *   node tools/data-audit/source-registry.mjs            # 核对（缺登记即 exit 1）
+ *   node tools/data-audit/source-registry.mjs            # 核对（缺登记/到期 pending 即 exit 1）
  *   node tools/data-audit/source-registry.mjs --json     # 机器可读输出
  */
 import { spawnSync } from 'node:child_process'
@@ -78,6 +79,55 @@ export function validateRegistry(registry) {
   return problems
 }
 
+/** UTC 日期 YYYY-MM-DD：判据与运行机器的时区无关（CI 在 UTC，本机在 +08） */
+export function utcDate(d = new Date()) {
+  return d.toISOString().slice(0, 10)
+}
+
+/** 严格 `YYYY-MM-DD`：Date.parse('2026-02-30') 会滚到 03-02，必须回比字符串才算合法 */
+export function isIsoDate(s) {
+  if (typeof s !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(s)) return false
+  const d = new Date(s + 'T00:00:00Z')
+  return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === s
+}
+
+/**
+ * pending 组的复查截止日判据（纯函数；today 由调用方注入，测试不受系统时钟摆布）。
+ *
+ * - 缺 `reviewBy` / 格式非法 ⇒ problem（新 pending 未设截止日 = 当场红）
+ * - `reviewBy` < today（UTC 日期比较）⇒ problem（到期红）
+ * - 未到期 ⇒ 进 upcoming（带剩余天数，只报告债务，不参与退出码）
+ * - `confirmed` 组不要求 `reviewBy`；即使带了也不报错（普通字段，不是判据面）
+ */
+export function checkReviewBy(groups, today) {
+  const problems = []
+  const upcoming = []
+  for (const g of groups ?? []) {
+    if (g.provenanceStatus !== 'pending') continue
+    if (!g.reviewBy) {
+      problems.push((g.id ?? '?') + ' 缺 reviewBy（pending 组必须设复查截止日 YYYY-MM-DD）')
+      continue
+    }
+    if (!isIsoDate(g.reviewBy)) {
+      problems.push(
+        (g.id ?? '?') + ' reviewBy 格式非法：' + g.reviewBy + '（须为真实日期 YYYY-MM-DD）'
+      )
+      continue
+    }
+    const days = Math.round(
+      (Date.parse(g.reviewBy + 'T00:00:00Z') - Date.parse(today + 'T00:00:00Z')) / 86400000
+    )
+    if (days < 0) {
+      problems.push(
+        g.id + ' reviewBy 已到期：' + g.reviewBy + '（逾期 ' + -days + ' 天；须结清来源或改期）'
+      )
+    } else {
+      upcoming.push({ id: g.id, reviewBy: g.reviewBy, days })
+    }
+  }
+  return { problems, upcoming }
+}
+
 function trackedDataFiles() {
   const r = spawnSync('git', ['-c', 'core.quotepath=false', 'ls-files', ...SCAN_ROOTS], {
     cwd: ROOT,
@@ -94,11 +144,21 @@ function main() {
   const files = trackedDataFiles()
   const { gaps, counts } = computeCoverage(files, registry.groups)
   const pending = registry.groups.filter((g) => g.provenanceStatus === 'pending')
+  const today = utcDate()
+  const review = checkReviewBy(registry.groups, today)
+  problems.push(...review.problems)
 
   if (asJson) {
     console.log(
       JSON.stringify(
-        { files: files.length, gaps, counts, problems, pending: pending.map((g) => g.id) },
+        {
+          files: files.length,
+          gaps,
+          counts,
+          problems,
+          pending: pending.map((g) => g.id),
+          review: { today, upcoming: review.upcoming },
+        },
         null,
         2
       )
@@ -111,9 +171,17 @@ function main() {
         registry.groups.length +
         ' 组'
     )
+    const reviewById = new Map(review.upcoming.map((u) => [u.id, u]))
     for (const g of registry.groups) {
       const mark = g.provenanceStatus === 'pending' ? '⚠️ 来源未确认' : '✅'
-      console.log('  ' + mark + ' ' + g.id + '：' + counts[g.id] + ' 件 — ' + g.title)
+      const due =
+        g.provenanceStatus === 'pending' && g.reviewBy
+          ? ' [reviewBy ' +
+            g.reviewBy +
+            (reviewById.has(g.id) ? '，剩 ' + reviewById.get(g.id).days + ' 天' : '，已到期') +
+            ']'
+          : ''
+      console.log('  ' + mark + ' ' + g.id + '：' + counts[g.id] + ' 件 — ' + g.title + due)
     }
     if (problems.length) {
       console.error('[source-registry] 登记表自检失败：')
@@ -132,7 +200,13 @@ function main() {
       ? '；待还债：' +
         pending.length +
         ' 组来源未确认（' +
-        pending.map((g) => g.id).join('、') +
+        pending
+          .map((g) =>
+            reviewById.has(g.id)
+              ? g.id + ' 剩 ' + reviewById.get(g.id).days + ' 天'
+              : g.id + ' 已到期/缺截止日'
+          )
+          .join('、') +
         '）'
       : ''
     console.log(

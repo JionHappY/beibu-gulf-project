@@ -1,5 +1,5 @@
 {
-  "_comment": "数据来源与许可登记（W9 权威源，机器读）。tools/data-audit/source-registry.mjs 用它核对backend/data/** 与 backend/static/** 下**每一个 tracked 文件**是否被某组覆盖：缺登记即非零退出。字段口径：source=来源（可引证到具体机构/脚本；引不到就写「未确认」并把 provenanceStatus 置 pending）；license=许可或使用约束；fetchedAt=取数时间（YYYY-MM-DD 或 脚本+提交）；coverage=覆盖范围；quality=可复跑的判据命令。⚠️ 本表是**唯一权威源**：新增数据资产必须在此登记，否则守卫会红。",
+  "_comment": "数据来源与许可登记（W9 权威源，机器读）。tools/data-audit/source-registry.mjs 用它核对backend/data/** 与 backend/static/** 下**每一个 tracked 文件**是否被某组覆盖：缺登记即非零退出。字段口径：source=来源（可引证到具体机构/脚本；引不到就写「未确认」并把 provenanceStatus 置 pending）；license=许可或使用约束；fetchedAt=取数时间（YYYY-MM-DD 或 脚本+提交）；coverage=覆盖范围；quality=可复跑的判据命令；reviewBy=pending 组的复查截止日（YYYY-MM-DD；缺字段/格式错/到期 ⇒ CI 红，未到期只报告剩余天数）。⚠️ 本表是**唯一权威源**：新增数据资产必须在此登记，否则守卫会红。",
   "groups": [
     {
       "id": "forecast-official-monthly",
@@ -65,7 +65,8 @@
       "fetchedAt": "未确认",
       "coverage": "洪涝演算的预计算输入（水位档位/地形剖面/设施点/统计）",
       "quality": "node tools/flood/flood-levels-to-pg.mjs（水位档位链可复跑）",
-      "provenanceStatus": "pending"
+      "provenanceStatus": "pending",
+      "reviewBy": "2026-11-30"
     },
     {
       "id": "flood-dem-placeholder",
@@ -87,7 +88,8 @@
       "fetchedAt": "未确认（与切片脚本提交时间对齐）",
       "coverage": "Cesium 真地形瓦片 z0–z14",
       "quality": "git ls-files backend/static/dem | wc -l（数量口径）",
-      "provenanceStatus": "pending"
+      "provenanceStatus": "pending",
+      "reviewBy": "2026-11-30"
     },
     {
       "id": "pinglu-3dtiles",

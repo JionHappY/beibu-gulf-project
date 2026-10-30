@@ -21,19 +21,27 @@ node tools/data-audit/source-registry.mjs --json   # 机器可读
 ```
 
 **新增数据资产时**：先在 `source-registry.json` 里登记，否则守卫红。
-**来源一时查不清时**：把该组 `provenanceStatus` 置 `"pending"`，守卫会把它当**要还的债**打印出来
-（当前 2 组待还：`flood-precomputed`、`terrain-tiles`）——**不允许静默留空**。
+**来源一时查不清时**：把该组 `provenanceStatus` 置 `"pending"`，并**同时**写 `reviewBy`
+（`YYYY-MM-DD`）——它是这笔债的复查截止日，不是"以后再说"的占位：
+
+- 缺 `reviewBy` / 格式不是真实日期 ⇒ `exit 1`（新 pending 当场红）；
+- `reviewBy` < 今天（UTC 日期）⇒ `exit 1`，点名该组与逾期天数（到期红）；
+- 未到期 ⇒ 只打印 `剩 N 天`，`exit 0`。
+
+`confirmed` 组不要求 `reviewBy`；带了也只当普通字段，不参与判据。当前 2 组待还：
+`flood-precomputed`、`terrain-tiles`（`reviewBy` 均为 `2026-11-30`）。
 
 ## 字段口径
 
-| 字段               | 含义                                                                  |
-| ------------------ | --------------------------------------------------------------------- |
-| `source`           | 来源（能引证到机构/脚本；引不到就写「未确认」并把 status 置 pending） |
-| `license`          | 许可或使用约束（发表/开源前必须逐条核）                               |
-| `fetchedAt`        | 取数时间或"由哪条命令生成"                                            |
-| `coverage`         | 覆盖范围（时间/空间/粒度）                                            |
-| `quality`          | 可复跑的判据命令（不是形容词）                                        |
-| `provenanceStatus` | `confirmed` / `pending`（pending = 债）                               |
+| 字段               | 含义                                                                    |
+| ------------------ | ----------------------------------------------------------------------- |
+| `source`           | 来源（能引证到机构/脚本；引不到就写「未确认」并把 status 置 pending）   |
+| `license`          | 许可或使用约束（发表/开源前必须逐条核）                                 |
+| `fetchedAt`        | 取数时间或"由哪条命令生成"                                              |
+| `coverage`         | 覆盖范围（时间/空间/粒度）                                              |
+| `quality`          | 可复跑的判据命令（不是形容词）                                          |
+| `provenanceStatus` | `confirmed` / `pending`（pending = 债）                                 |
+| `reviewBy`         | 仅 `pending` 组必填：复查截止日 `YYYY-MM-DD`（缺/格式错/到期 ⇒ exit 1） |
 
 ## 质量检查（`quality-check.mjs`）
 

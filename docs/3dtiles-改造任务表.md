@@ -935,7 +935,7 @@ node tools/diag/probe-3dtiles-runtime.cjs --url http://127.0.0.1:5174/route-anal
 # 期望: sel=6 / 6 块 modelReady；diff none↔on ≈ 5.46%（30466 px）、on↔off ≈ 0.07%（400 px）
 ```
 
-### 8.21 【发布通道】港区/城区桥两组 3D Tiles 线上无到达路径（待裁）· 2026-10-04 19:3x
+### 8.21 【发布通道】港区/城区桥两组 3D Tiles 线上无到达路径（2026-10-30 已裁：① 外部挂载 + 部署前哨）· 2026-10-04 19:3x
 
 **结论**：前端读的 5 条 URL（`beibu3dTiles.ts:259/282/296/311/323`）在生产编排里没有任何到达路径——
 `qinzhou-port/`（作业区交付包 + 自建道路/地面）与 `bridges-city/` 既被 `.gitignore:192/231` 整树排除
@@ -965,7 +965,7 @@ CI 从干净 checkout 构建（`ci.yml:443-467`）⇒ 按当前编排部署后�
 **连带**：`static/terrain` 是"构建不覆盖"的卷（`docker-compose.yml:40`）⇒ 地形产物更新
 （含 07c 幽灵声明修复 `be335c7e`）也要手动同步到服务器卷，`git pull` 不会覆盖卷内容。
 
-**待裁（三选一，不自行选边——属部署面变更）**：
+**待裁（三选一；2026-10-30 用户裁定 ①「外部挂载 + 部署前哨」，落地见本节末）**：
 
 | 选项         | 动作                                                                                                                | 代价                                             |
 | ------------ | ------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ |
@@ -1023,6 +1023,48 @@ curl.exe -sk -o NUL -w '%{http_code}\n' https://112.74.32.206/static/qinzhou-por
   ③ 三条仍 404 但页面出现降级提示（截图/探针），且 `nginx.conf` 注释与 Dockerfile 一致。
   **复算**：`git ls-files backend/static/qinzhou-port backend/static/bridges-city | wc -l`（现 0）、
   `docker compose config | grep -c "static/qinzhou-port"`（选①/②后 ≥2）。
+
+**2026-10-30 裁定与落地（用户选①「外部挂载 + 部署前哨」；不入库、不改资产目录、不改 nginx）**：
+
+- **落点 1｜部署前哨（判据本体）**：`.github/workflows/ci.yml` deploy job 的「阶段 1.6」，
+  位置在 `scripts/preflight-deploy.sh`（阶段 1.5）之后、`docker compose pull`（阶段二）之前。
+  远端 `cd /opt/beibu-gulf` 后逐项 `test -s` 下列 5 件；缺任一 ⇒ 该步骤 `exit 1`，阶段二不执行
+  ⇒ 不拉镜像、不启新容器（旧容器继续服役，线上维持原状而不是「新容器 + 空资产目录」）。
+  5 条与 `beibu3dTiles.ts:299/328/342/357/369` 的 URL 一一对应：
+  `backend/static/qinzhou-port/tiles/tileset.json`、
+  `backend/static/qinzhou-port/rebuilt/tileset.json`、
+  `backend/static/qinzhou-port/rebuilt/roads/tileset.json`、
+  `backend/static/qinzhou-port/rebuilt/ground/tileset.json`、
+  `backend/static/bridges-city/tileset.json`。
+  缺项输出 `::error::3D 资产缺失: <path>（见 docs/3dtiles-改造任务表.md §8.21）`，逐件一行。
+  清单漂移（前端新增第 6 条 URL 而 CI 没跟）由 `tools/deploy-assets.test.mjs` 比对两侧集合，少一条即红。
+- **落点 2｜挂载**：`docker-compose.yml:46-47` 保留两条宿主挂载（2026-10-05 已落），
+  同段注释补指路：前哨在 CI deploy 步骤，缺文件 fail-loud。
+- **落点 3｜放资产步骤**：服务器 `/opt/beibu-gulf/backend/static/` 下须有 `qinzhou-port/`
+  与 `bridges-city/` 两个目录（scp/rsync 上传，≈144 MB + 0.1 MB；仓库与镜像都不含）。
+  顺序仍是「先放目录 → 再触发部署」；前哨把顺序错误的后果从「静默 404」变成「部署红」。
+- **红样（2026-10-30 实跑，临时目录复刻同一段循环；`mktemp -d` 下建 5 件，逐次删/补）**：
+
+  ```text
+  === ① 缺 bridges-city/tileset.json ===
+  ::error::3D 资产缺失: backend/static/bridges-city/tileset.json（见 docs/3dtiles-改造任务表.md §8.21）
+  ::error::阶段 1.6（3D 资产部署前哨）失败：宿主缺 3D Tiles 资产，已中止部署——未触发 compose pull/up
+  RC=1
+  === ② 补齐后 ===
+  3D 资产前哨：5 个 tileset.json 均在位
+  RC=0
+  === ③ 再删一件（rebuilt/tileset.json）===
+  ::error::3D 资产缺失: backend/static/qinzhou-port/rebuilt/tileset.json（见 docs/3dtiles-改造任务表.md §8.21）
+  ::error::阶段 1.6（3D 资产部署前哨）失败：宿主缺 3D Tiles 资产，已中止部署——未触发 compose pull/up
+  RC=1
+  ```
+
+  归档型红样（零字节文件不算在位）：`truncate -s 0 .../bridges-city/tileset.json` ⇒ `test -s` 失败、RC=1。
+
+- **失效条件**：① 资产改为入库（选项②）或改走对象存储/CDN 分发 ⇒ 前哨的路径清单失效，须同步改；
+  ② 前哨只证明「文件在且非空」，**不证明 tileset 结构可解析**——结构问题仍由
+  `tools/v3-guard/tiles3d-check.mjs`（仅 pinglu）与运行时探针兜底，二者都未覆盖 qinzhou/bridges；
+  ③ 服务器上资产被删但容器已在跑时，前哨只在**下一次部署**报红，不改变已运行容器的挂载视图。
 
 ### 8.22 【实测+已修】首屏预热：按原始清单 150.18 MB → 派生感知 31.98 MB · 2026-10-04 20:4x / 23:5x
 

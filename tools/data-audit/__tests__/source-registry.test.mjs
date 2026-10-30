@@ -10,8 +10,10 @@ import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 
 import {
+  checkReviewBy,
   computeCoverage,
   groupCovers,
+  isIsoDate,
   matchesGlob,
   SCAN_ROOTS,
   validateRegistry,
@@ -133,6 +135,63 @@ describe('validateRegistry：登记表自检', () => {
   })
 })
 
+describe('checkReviewBy：pending 的复查截止日', () => {
+  const TODAY = '2026-10-30'
+  const pending = (extra = {}) => ({ id: 'p', provenanceStatus: 'pending', ...extra })
+
+  it('缺 reviewBy ⇒ problem（新 pending 未设截止日即红）', () => {
+    const r = checkReviewBy([pending()], TODAY)
+    expect(r.problems.join(' ')).toContain('缺 reviewBy')
+    expect(r.upcoming).toEqual([])
+  })
+
+  it('格式非法 ⇒ problem（含 2026-02-30 这类会被 Date 滚动的假日期）', () => {
+    for (const bad of ['2026/11/30', '20261130', '2026-13-01', '2026-02-30']) {
+      const r = checkReviewBy([pending({ reviewBy: bad })], TODAY)
+      expect(r.problems.join(' '), bad).toContain('格式非法')
+    }
+  })
+
+  it('已到期 ⇒ problem 且点名逾期天数', () => {
+    const r = checkReviewBy([pending({ reviewBy: '2026-10-01' })], TODAY)
+    expect(r.problems.join(' ')).toContain('已到期')
+    expect(r.problems.join(' ')).toContain('逾期 29 天')
+    expect(r.upcoming).toEqual([])
+  })
+
+  it('当天到期不算逾期（>= today 只报告剩余 0 天）', () => {
+    const r = checkReviewBy([pending({ reviewBy: TODAY })], TODAY)
+    expect(r.problems).toEqual([])
+    expect(r.upcoming).toEqual([{ id: 'p', reviewBy: TODAY, days: 0 }])
+  })
+
+  it('未到期 ⇒ 只报告剩余天数，不产生 problem', () => {
+    const r = checkReviewBy([pending({ reviewBy: '2026-11-30' })], TODAY)
+    expect(r.problems).toEqual([])
+    expect(r.upcoming).toEqual([{ id: 'p', reviewBy: '2026-11-30', days: 31 }])
+  })
+
+  it('confirmed 组不要求 reviewBy；带了也不报错（普通字段）', () => {
+    const groups = [
+      { id: 'c1', provenanceStatus: 'confirmed' },
+      { id: 'c2', provenanceStatus: 'confirmed', reviewBy: '2026-01-01' },
+      { id: 'c3', provenanceStatus: 'confirmed', reviewBy: 'not-a-date' },
+    ]
+    expect(checkReviewBy(groups, TODAY)).toEqual({ problems: [], upcoming: [] })
+  })
+})
+
+describe('isIsoDate：严格日期', () => {
+  it('真实日期通过，溢出日期与其它写法拒绝', () => {
+    expect(isIsoDate('2026-11-30')).toBe(true)
+    expect(isIsoDate('2028-02-29')).toBe(true)
+    expect(isIsoDate('2026-02-29')).toBe(false)
+    expect(isIsoDate('2026-02-30')).toBe(false)
+    expect(isIsoDate('2026-1-1')).toBe(false)
+    expect(isIsoDate(undefined)).toBe(false)
+  })
+})
+
 describe('真实仓库：数据资产零缺口', () => {
   it('git ls-files 出的每一件都被登记（集成断言）', () => {
     const r = spawnSync('git', ['ls-files', ...SCAN_ROOTS], {
@@ -144,5 +203,12 @@ describe('真实仓库：数据资产零缺口', () => {
     expect(files.length).toBeGreaterThan(0)
     const reg = JSON.parse(fs.readFileSync(REGISTRY_PATH, 'utf8'))
     expect(computeCoverage(files, reg.groups).gaps).toEqual([])
+  })
+
+  it('pending 组都带合法 reviewBy（是否到期由 audit:data 当期判，不在测试里钉死时钟）', () => {
+    const reg = JSON.parse(fs.readFileSync(REGISTRY_PATH, 'utf8'))
+    const pend = reg.groups.filter((g) => g.provenanceStatus === 'pending')
+    expect(pend.length).toBeGreaterThan(0)
+    for (const g of pend) expect(isIsoDate(g.reviewBy), `${g.id} 缺/错 reviewBy`).toBe(true)
   })
 })

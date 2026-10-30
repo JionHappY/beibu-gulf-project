@@ -489,10 +489,21 @@ export const pingluImageryIndexSchema = z.looseObject({
 export type PingluImageryIndexParsed = z.infer<typeof pingluImageryIndexSchema>
 
 // ⑲ /api/favorites（全局收藏；同用户下 itemType + itemId 全局唯一，幂等添加）
+
+/**
+ * 收藏类型的前端运行期副本（zod 需要运行期元组）。
+ *
+ * 权威源是后端 `FAVORITE_ITEM_TYPES`（`backend/src/modules/favorites/dto/favorites.dto.ts`）。
+ * 本文件属 L0 类型层，不得运行时引后端（dependency-cruiser `types-not-import-backend-runtime`），
+ * 故保留这一份**被断言约束**的副本：`__tests__/favoriteItemType.test.ts` 直接 import 后端数组
+ * 逐项比对，改任一侧即红。
+ */
+export const FAVORITE_ITEM_TYPES = ['xiaoqu', 'facility'] as const
+
 export const favoriteItemSchema = z.object({
   id: z.string(),
   userId: z.string(),
-  itemType: z.enum(['xiaoqu', 'facility']),
+  itemType: z.enum(FAVORITE_ITEM_TYPES),
   itemId: z.string(),
   name: z.string(),
   // 缺失坐标 null 透传（(0,0) 哨兵禁令——伪坐标会污染地图定位；消费方过滤非有限值）

@@ -74,8 +74,16 @@ export interface ConfidenceThresholds {
 
 // ===== 全局收藏（用户数据，后端 favorites.json 持久化） =====
 
-/** 收藏对象类型：选址小区 / 浸没设施 */
-export type FavoriteItemType = 'xiaoqu' | 'facility'
+/**
+ * 收藏对象类型：选址小区 / 浸没设施。
+ *
+ * 权威源是后端 `FAVORITE_ITEM_TYPES` 数组：此处只做 type-only 派生，
+ * 不再手写联合——新增类型只改后端一处，前端漏改会在类型检查/跨端对照测试处红。
+ * 注意：re-export 不引入本地作用域，下面的 FavoriteAddInput 需要显式 import。
+ */
+import type { FavoriteItemType } from '@backend/modules/favorites/dto/favorites.dto'
+
+export type { FavoriteItemType }
 
 /** 全局收藏项：字段以 favoriteItemSchema 为唯一契约（savedAt 可空） */
 export type FavoriteItem = FavoriteItemParsed

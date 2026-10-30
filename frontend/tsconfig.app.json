@@ -13,6 +13,9 @@
     "moduleDetection": "force",
     "noEmit": true,
     "jsx": "preserve",
+    /* 跨端 type-only 引后端 DTO 会把这些文件拉进前端 program：
+       后端 Nest 的 @ApiProperty 是 legacy 装饰器，前端 program 必须同开此开关才能解析。 */
+    "experimentalDecorators": true,
 
     /* JavaScript 支持 */
     "allowJs": true,

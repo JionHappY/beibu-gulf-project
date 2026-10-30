@@ -4,6 +4,8 @@
  */
 import { z } from 'zod'
 
+import type { TaskDomain, TaskStatus } from '@backend/modules/task/types/task'
+
 /** [lng, lat] 坐标对（route path / water area / route 响应共用的单一形状） */
 const lngLatSchema = z.tuple([z.number(), z.number()])
 
@@ -592,9 +594,13 @@ export const TASK_STATUSES = [
   'done',
   'failed',
   'cancelled',
-] as const
+] as const satisfies readonly TaskStatus[]
 
-export const TASK_DOMAINS = ['flood-areas', 'route-path', 'site-suitability-map'] as const
+export const TASK_DOMAINS = [
+  'flood-areas',
+  'route-path',
+  'site-suitability-map',
+] as const satisfies readonly TaskDomain[]
 
 // ⑯ /task 三个端点（提交 / 查询 / 取消）的响应契约。
 //

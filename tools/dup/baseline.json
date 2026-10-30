@@ -1,14 +1,14 @@
 {
   "generatedFrom": "tools/dup/scan.mjs",
   "minTokens": 12,
-  "totalGroups": 94,
-  "totalRedundantTokens": 1470,
+  "totalGroups": 95,
+  "totalRedundantTokens": 1484,
   "callSiteGroups": 11,
   "callSiteTokens": 408,
   "moduleDeclGroups": 1,
   "moduleDeclTokens": 24,
   "byModule": {
-    "跨模块": 102,
+    "跨模块": 116,
     "frontend/src/business": 158,
     "frontend/src/core": 607,
     "frontend/src/types": 86,
@@ -852,9 +852,17 @@
       "files": ["frontend/src/shared/composables/useApiRequest.ts"],
       "redundantTokens": 0,
       "kind": "call-site"
+    },
+    {
+      "text": "[ 'pending' , 'running' , 'retrying' , 'done' , 'failed' , 'cancelled' , ]",
+      "tokenCount": 14,
+      "count": 2,
+      "files": ["backend/src/modules/task/types/task.ts", "frontend/src/types/schemas.ts"],
+      "redundantTokens": 14,
+      "kind": "block"
     }
   ],
-  "updatedAt": "2026-10-27",
+  "updatedAt": "2026-10-30",
   "history": [
     {
       "at": "2026-10-17",
@@ -946,6 +954,13 @@
       "totalRedundantTokens": 1470,
       "kind": "未标注",
       "note": "TASK_DOMAINS_状态机切后端权威源前端删副本"
+    },
+    {
+      "at": "2026-10-30",
+      "totalGroups": 95,
+      "totalRedundantTokens": 1484,
+      "kind": "口径调整",
+      "note": "z186：types 层不得运行时引后端；types/schemas.ts 的 zod 运行期副本与后端 TASK_STATUSES 构成跨模块镜像（14 token）。副本由 taskConstants.test.ts 逐项断言，生产运行时值走 shared/task.ts。"
     }
   ]
 }

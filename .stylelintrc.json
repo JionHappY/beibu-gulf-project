@@ -13,9 +13,30 @@
     "custom-property-pattern": null,
     "keyframes-name-pattern": null,
     "media-feature-range-notation": null,
-    "function-no-unknown": [true, { "ignoreFunctions": ["v-bind"] }],
-    "value-keyword-case": ["lower", { "ignoreFunctions": ["v-bind"] }],
-    "selector-pseudo-class-no-unknown": [true, { "ignorePseudoClasses": ["deep"] }],
-    "color-no-hex": true
+    "function-no-unknown": [
+      true,
+      {
+        "ignoreFunctions": ["v-bind"]
+      }
+    ],
+    "value-keyword-case": [
+      "lower",
+      {
+        "ignoreFunctions": ["v-bind"]
+      }
+    ],
+    "selector-pseudo-class-no-unknown": [
+      true,
+      {
+        "ignorePseudoClasses": ["deep"]
+      }
+    ],
+    "color-no-hex": true,
+    "declaration-property-value-allowed-list": {
+      "/^(?:(?:padding|margin)(?:-(?:top|right|bottom|left))?|gap|row-gap|column-gap)$/": [
+        "/^(?:(?:0|0px|auto|-1px|-20px|2px|3px|4px|6px|8px|10px|12px|16px|18px|20px|\\d+(?:\\.\\d+)?%|var\\(--[\\w-]+\\)|v-bind\\([^()]*\\)|calc\\((?:[^()]|\\([^()]*\\))*\\)))(?:\\s+(?:(?:0|0px|auto|-1px|-20px|2px|3px|4px|6px|8px|10px|12px|16px|18px|20px|\\d+(?:\\.\\d+)?%|var\\(--[\\w-]+\\)|v-bind\\([^()]*\\)|calc\\((?:[^()]|\\([^()]*\\))*\\))))*$/"
+      ],
+      "z-index": ["/^var\\(--GCS-z-[\\w-]+(?:,\\s*\\d+)?\\)$/", "1", "2", "3", "5"]
+    }
   }
 }

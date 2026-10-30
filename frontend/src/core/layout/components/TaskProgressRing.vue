@@ -32,7 +32,8 @@
 
 import { computed } from 'vue'
 
-import { isActiveStatus, type TaskStatus } from '@/types/task'
+import { isActiveStatus } from '@/shared/task'
+import type { TaskStatus } from '@/types/task'
 
 interface Props {
   /** 尺寸（px），默认 44（套在 0.8 cell 按钮上） */

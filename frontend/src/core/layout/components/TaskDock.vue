@@ -12,7 +12,8 @@
 import { computed } from 'vue'
 
 import { AppIcon, type IconName } from '@/shared'
-import { isActiveStatus, type TaskStatus } from '@/types/task'
+import { isActiveStatus } from '@/shared/task'
+import type { TaskStatus } from '@/types/task'
 
 export interface TaskDockCard {
   taskId: string

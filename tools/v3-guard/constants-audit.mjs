@@ -28,14 +28,16 @@ const FRONTEND_CRS = 'frontend/src/shared/utils/crs.ts'
 const FLOOD_PY_REALIFY = 'tools/flood/flood_realify.py'
 // D29：tools 侧业务边界的**唯一来源**（工具脚本统一从这里取；权威仍是 backend GULF_BOUNDS）。
 const TOOLS_GULF_BOUNDS = 'tools/lib/gulf-bounds.mjs'
-const FRONTEND_TASK_TYPES = 'frontend/src/types/task.ts'
+const FRONTEND_TASK_SCHEMAS = 'frontend/src/types/schemas.ts'
 const BACKEND_TASK_TYPES = 'backend/src/modules/task/types/task.ts'
 // D4②：寻路权重口径。后端 MODE_WEIGHT 的键为权威；前端 types/route.ts 里 mode 的
 // 字面量联合是手抄（当前两处：RoutePathParams.mode 与 RoutePathResult.mode）。
 const BACKEND_ROUTE_MODES = 'backend/src/modules/route/repositories/route.repository.ts'
 const FRONTEND_ROUTE_TYPES = 'frontend/src/types/route.ts'
-// TASK_DOMAINS 权威源：后端 task.ts 是唯一权威（必要性审判），前端 task.ts re-export。
-// 守卫只断言后端有定义；前端同步由 @backend alias 编译期保证。
+// TASK_DOMAINS 权威源：后端 task.ts 是唯一权威。
+// 前端运行期值经 shared/task.ts 转出（L0 层不得运行时引后端），
+// zod 所需的数组副本落在 types/schemas.ts ⇒ 本守卫比对「后端权威 ↔ schemas 副本」，
+// 不再依赖「前端 task.ts re-export」这一已失效的前提（否则是空真守卫）。
 const BACKEND_TASK_DOMAINS = 'backend/src/modules/task/types/task.ts'
 // B1：跨端请求头名。前后端不共享模块，同一头名各写一份，改一侧另一侧不报错——
 // 后果是日志里搜不到对方写的头（rid 跨端断链 / 任务属主识别失效）。
@@ -505,15 +507,27 @@ const AUDITS = [
     },
   },
   {
-    // TASK_DOMAINS 权威源切换：后端 task.ts 是唯一权威源（必要性审判），
-    // 前端 task.ts 改为 re-export，不再手抄数组。守卫只断言后端有定义且非空；
-    // 前端通过 tsconfig/vite 的 @backend alias 直接 re-export，编译期即保证同步。
-    read: (f) => [parseStringArrayConst(f.backendTaskDomains ?? '', 'TASK_DOMAINS')],
-    valid: ([b]) => !!b?.length,
-    fail: ([b]) =>
-      `TASK_DOMAINS 后端权威源缺失：backend=${b === null ? 'null' : (b?.length ?? 0)} 项` +
-      `（后端 task.ts 必须定义 TASK_DOMAINS 数组）`,
-    compare: () => {},
+    // TASK_DOMAINS 权威源：后端 task.ts；前端唯一副本在 types/schemas.ts（zod 需要运行期元组）。
+    // 两侧都要有定义，且逐项同值——任一侧加/删/改名即红（「改一处必红」形态）。
+    read: (f) => [
+      parseStringArrayConst(f.backendTaskDomains ?? '', 'TASK_DOMAINS'),
+      parseStringArrayConst(f.frontendTaskSchemas ?? '', 'TASK_DOMAINS'),
+    ],
+    valid: ([b, fe]) => !!b?.length && !!fe?.length,
+    fail: ([b, fe]) =>
+      `TASK_DOMAINS 解析失败：backend=${b === null ? 'null' : (b?.length ?? 0)} 项 ` +
+      `frontend(schemas)=${fe === null ? 'null' : (fe?.length ?? 0)} 项` +
+      '（后端 task.ts 与前端 types/schemas.ts 都必须定义 TASK_DOMAINS 数组）',
+    compare: ([b, fe], bad) => {
+      const missing = b.filter((x) => !fe.includes(x))
+      const extra = fe.filter((x) => !b.includes(x))
+      if (missing.length || extra.length) {
+        bad(
+          `TASK_DOMAINS 跨端漂移：缺 [${missing.join(',')}] 多 [${extra.join(',')}]` +
+            '（后端 task.ts 为权威，前端 types/schemas.ts 必须同步）'
+        )
+      }
+    },
   },
   {
     // D29/A1 flood 风险分段跨语言：TS RISK_LEVEL_BANDS 为权威；PY 的 RISK_BANDS 逐档手抄，
@@ -820,6 +834,7 @@ function main() {
     backendRoute: read(BACKEND_ROUTE_MODES),
     frontendRoute: read(FRONTEND_ROUTE_TYPES),
     backendTaskDomains: read(BACKEND_TASK_DOMAINS),
+    frontendTaskSchemas: read(FRONTEND_TASK_SCHEMAS),
     floodPy: read(FLOOD_PY_REALIFY),
     toolsGulfBounds: read(TOOLS_GULF_BOUNDS),
     localBoundDefs: scanLocalGulfBoundsDefs(ROOT),

@@ -129,6 +129,18 @@ module.exports = {
       to: { path: '^frontend/src/shared/' },
     },
     {
+      name: 'types-not-import-backend-runtime',
+      comment:
+        'types/ 是 L0 纯类型层，只允许 type-only 引后端（值/谓词经 shared/task 转出）。' +
+        '此前 types/task.ts 直接 re-export 后端常量与谓词，使 L0 层对后端实现产生静态依赖，' +
+        '`import type` 不再能安全剥离（审查专项6 R02）。' +
+        '判据依赖 tsPreCompilationDeps + dependencyTypes 的 type-only 标记：' +
+        '`import type` / `export type` 放行，值导入与值 re-export 即红。',
+      severity: 'error',
+      from: { path: '^frontend/src/types/' },
+      to: { path: '^backend/', dependencyTypesNot: ['type-only'] },
+    },
+    {
       name: 'services-not-import-core',
       comment:
         '分层契约：services 禁止 import core。唯一例外为叶子配置 core/config/map' +

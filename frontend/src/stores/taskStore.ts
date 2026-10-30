@@ -4,13 +4,8 @@ import { ref } from 'vue'
 import { useTaskApi } from '@/shared/composables/useTaskApi'
 import { showError, showWarning } from '@/shared/utils/errorHandler'
 import { logger } from '@/shared/utils/logger'
-import {
-  isActiveStatus,
-  isTerminalStatus,
-  type TaskDomain,
-  type TaskSlot,
-  type TaskView,
-} from '@/types/task'
+import { isActiveStatus, isTerminalStatus } from '@/shared/task'
+import type { TaskDomain, TaskSlot, TaskView } from '@/types/task'
 
 /**
  * 任务状态托管（v4 系统 B / 不变式 I8）。

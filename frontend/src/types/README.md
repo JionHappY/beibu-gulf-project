@@ -20,3 +20,6 @@ types/
 - 无 I/T 前缀，业务语义优先（`MapRenderer`、`SuitabilityQuery`）
 - HTTP 响应类型从 schema `z.infer` 派生（与 `services/` 的边界校验同源，不手写第二份）
 - `types/` 不得出现 `import from '@/shared'` 等运行时依赖
+- `types/` 可 `import type` / `export type` 引 `@backend/**`（仅类型，编译期整体擦除）；
+  后端**运行期**值/谓词一律走 `shared/task.ts` 等边界模块，不得在 L0 层 re-export
+  （守卫：`.dependency-cruiser.cjs` 的 `types-not-import-backend-runtime`）

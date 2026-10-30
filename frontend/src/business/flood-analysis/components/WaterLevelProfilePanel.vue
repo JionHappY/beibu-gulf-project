@@ -49,7 +49,7 @@ import {
 import { useGCS } from '@/shared'
 import { perfTimeFn } from '@/shared'
 import { useFloodStore, useTaskStore } from '@/stores'
-import { isActiveStatus } from '@/types/task'
+import { isActiveStatus } from '@/shared/task'
 import { applyChartOption } from '@/visualization'
 
 import type { FloodAnalysisPayload } from '../composables/useFloodRequest'

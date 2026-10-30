@@ -5,7 +5,9 @@ import { fileURLToPath } from 'node:url'
 import ts from 'typescript'
 import { describe, expect, it } from 'vitest'
 
-import { isActiveStatus, isTerminalStatus, TASK_STATUSES } from '../task'
+import { isActiveStatus, isTerminalStatus } from '@/shared/task'
+
+import { TASK_STATUSES } from '../schemas'
 
 /**
  * 任务状态判据单源守卫（必要性审判波次二·单元 H）
@@ -14,8 +16,11 @@ import { isActiveStatus, isTerminalStatus, TASK_STATUSES } from '../task'
  * `isActive`、`task-registry.ts` 的 `activeCount` 内联与 `TERMINAL_STATUSES` 集合，
  * 前端三个 core 组件（TaskDock / TaskPanelSlot / TaskProgressRing）。改一处漏四处。
  *
- * 判据域：`frontend/src` + `backend/src` 的 .ts/.vue，排除两个权威源文件
- * （`frontend/src/types/task.ts`、`backend/src/modules/task/types/task.ts`）。
+ * 判据域：`frontend/src` + `backend/src` 的 .ts/.vue，排除权威源文件
+ * （`backend/src/modules/task/types/task.ts`）与判据自身。
+ *
+ * 前端运行期值已迁至 `shared/task.ts`（只 re-export，无字面量），
+ * `types/schemas.ts` 持有 zod 所需的数组副本——两份都不含「活跃/终态」集合比较，故无需豁免。
  * 只咬「集合恰为活跃/终态」的状态字面量比较，不咬单个字面量（大量无关同名 pending）。
  */
 
@@ -23,7 +28,6 @@ const HERE = path.dirname(fileURLToPath(import.meta.url))
 const FRONTEND_SRC = path.resolve(HERE, '..', '..')
 const BACKEND_SRC = path.resolve(HERE, '..', '..', '..', '..', 'backend', 'src')
 const AUTHORITY = new Set([
-  'frontend/src/types/task.ts',
   'backend/src/modules/task/types/task.ts',
   // 判据自身必须声明活跃/终态两个集合，否则无法判「恰为集合」——登记为豁免面
   'frontend/src/types/__tests__/taskStatus.test.ts',
@@ -246,7 +250,7 @@ describe('任务状态判据单源守卫', () => {
     expect(scanStatusLiterals(NEAR_MISS_SAMPLE)).toEqual([])
   })
 
-  it('豁免面不得过期（三个权威/判据文件必须真实存在）', () => {
+  it('豁免面不得过期（权威/判据文件必须真实存在）', () => {
     const root = path.resolve(HERE, '..', '..', '..', '..')
     for (const rel of AUTHORITY) {
       expect(fs.existsSync(path.join(root, rel)), `${rel} 不存在：豁免过期`).toBe(true)

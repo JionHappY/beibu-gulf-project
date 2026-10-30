@@ -6,15 +6,15 @@ import { describe, expect, it } from 'vitest'
 
 import {
   auditSharedConstants,
+  parseAliasTarget,
   parseBackendBizCodes,
   parseEnvPort,
   parseFrontendBizCodes,
   parseNumericConst,
   parseNumericLiterals,
-  parseAliasTarget,
+  parsePortMaps,
   parsePyRiskBands,
   parseRiskBands,
-  parsePortMaps,
   parseStorageKeys,
   parseTsconfigAlias,
   parseViteProxyPorts,
@@ -180,7 +180,7 @@ const base = {
   backendRoute: BACKEND_ROUTE,
   frontendRoute: FRONTEND_ROUTE,
   backendTaskDomains: BACKEND_TASK_DOMAINS,
-  frontendTaskDomains: FRONTEND_TASK_DOMAINS,
+  frontendTaskSchemas: FRONTEND_TASK_DOMAINS,
   floodPy: FLOOD_PY,
   toolsGulfBounds: TOOLS_GULF,
   // 唯一来源判据的输入集合：正常仓库 = 无第二份手抄（扫到的都是合法派生）
@@ -283,6 +283,19 @@ describe('auditSharedConstants — 跨进程常量一致性', () => {
       ),
     })
     expect(problems.some((p) => p.includes('寻路 mode') && p.includes('多 [walk]'))).toBe(true)
+  })
+
+  it('@guard-red-sample 前端 TASK_DOMAINS 多一个域 ⇒ 必红（副本不得漂移）', () => {
+    const problems = auditSharedConstants({
+      ...base,
+      frontendTaskSchemas: FRONTEND_TASK_DOMAINS.replace(
+        "'site-suitability-map']",
+        "'site-suitability-map', 'billing']"
+      ),
+    })
+    expect(
+      problems.some((p) => p.includes('TASK_DOMAINS 跨端漂移') && p.includes('多 [billing]'))
+    ).toBe(true)
   })
 
   it('@guard-red-sample 后端 TASK_DOMAINS 删空 ⇒ 必红（权威源必须有定义）', () => {

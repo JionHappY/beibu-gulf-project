@@ -4,8 +4,6 @@
  */
 import { z } from 'zod'
 
-import { TASK_DOMAINS, TASK_STATUSES } from './task'
-
 /** [lng, lat] 坐标对（route path / water area / route 响应共用的单一形状） */
 const lngLatSchema = z.tuple([z.number(), z.number()])
 
@@ -578,6 +576,25 @@ export const poiSearchResponseSchema = z.array(poiSearchItemSchema)
 export type PoiSearchItemParsed = z.infer<typeof poiSearchItemSchema>
 
 export type PoiSearchResponseParsed = z.infer<typeof poiSearchResponseSchema>
+
+/**
+ * 任务状态/域的前端运行期副本（zod 需要运行期元组）。
+ *
+ * 权威源是后端 `backend/src/modules/task/types/task.ts`；本文件属 L0 类型层，
+ * 不得运行时引后端，故保留这份**被断言约束**的副本——`__tests__/taskConstants.test.ts`
+ * 直接 import 后端数组逐项比对，改任一侧即红。生产代码的运行时值/谓词走
+ * `shared/task.ts`（type-only 之外的另一条通道），不从这里取。
+ */
+export const TASK_STATUSES = [
+  'pending',
+  'running',
+  'retrying',
+  'done',
+  'failed',
+  'cancelled',
+] as const
+
+export const TASK_DOMAINS = ['flood-areas', 'route-path', 'site-suitability-map'] as const
 
 // ⑯ /task 三个端点（提交 / 查询 / 取消）的响应契约。
 //

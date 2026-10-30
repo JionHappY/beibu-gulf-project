@@ -1,27 +1,23 @@
 /**
  * v4 异步任务的前端类型。
  *
- * 🔴 权威源切换（必要性审判）：运行期常量与状态/域类型以
- * `backend/src/modules/task/types/task.ts` 为唯一权威源，前端从此处 re-export。
+ * 🔴 权威源：类型以 `backend/src/modules/task/types/task.ts` 为唯一权威源，
+ * 本文件只做 **type-only** re-export —— L0 类型层不得承载后端运行时值/谓词
+ * （`TASK_STATUSES` / `TASK_DOMAINS` / `isActiveStatus` / `isTerminalStatus` 已迁至
+ * `shared/task.ts`，由生产消费者从那里取）。
  * 前端只保留运行时无关的接口（TaskError 内嵌 TaskView/TaskSlot、TaskSlot 槽位结构）。
  * 改动后端 TaskView 字段时，本文件的 TaskView 镜像需同步（字段漂移会导致 GET /task/:id 的 result 静默取不到）。
  */
 
-// ── 权威源 re-export（后端 task.ts 为唯一权威）─────────────────────────────
+// ── 权威源 type-only re-export（后端 task.ts 为唯一权威）────────────────────
 import type { TaskDomain, TaskStatus } from '@backend/modules/task/types/task'
 
-export {
-  TASK_STATUSES,
-  TASK_DOMAINS,
-  isActiveStatus,
-  isTerminalStatus,
-} from '@backend/modules/task/types/task'
 export type {
-  TaskStatus,
-  TaskPriority,
   TaskDomain,
-  TaskView,
+  TaskPriority,
+  TaskStatus,
   TaskSubmitResponse,
+  TaskView,
 } from '@backend/modules/task/types/task'
 
 // ── 前端独有类型 ──────────────────────────────────────────────────────────

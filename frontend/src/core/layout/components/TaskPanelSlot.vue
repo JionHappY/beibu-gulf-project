@@ -29,7 +29,8 @@
 
 import { computed } from 'vue'
 
-import { isActiveStatus, type TaskSlot } from '@/types/task'
+import { isActiveStatus } from '@/shared/task'
+import type { TaskSlot } from '@/types/task'
 
 import GCSPanel from './GCSPanel.vue'
 

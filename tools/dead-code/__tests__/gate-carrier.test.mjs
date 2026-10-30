@@ -48,7 +48,7 @@ describe('G 类门禁载体判别（从契约快照派生，不手抄名单）',
   // 整仓扫描是 IO 密集型：慢盘（CI 变体/容器挂载盘实测 11s）会撞 vitest 默认 5s 伪红，
   // 显式放宽到 30s；断言语义不变。
   it(
-    '真实仓库：三分类互斥且并集完整；G 类全部是 *Parsed 且在 schemas.ts',
+    '真实仓库：三分类互斥且并集完整；G 类均为契约配对名且在 schemas.ts',
     { timeout: 30_000 },
     () => {
       const { dead, redundantExport, gateCarrier } = scan()
@@ -60,10 +60,10 @@ describe('G 类门禁载体判别（从契约快照派生，不手抄名单）',
       // dead 与 G 判别互斥：凡被判"彻底没人用"的，不得同时命中契约配对谓词。
       // （孤儿 Parsed —— schema 已删 —— 落 dead 是对的：快照重生成后谓词不再命中它）
       expect(dead.every((e) => !p(e.name))).toBe(true)
-      // 本体 `*Schema` 与配对 `*Parsed` 都在 G 类；`*Schema` 本体原先被 hits>1 归进
-      // redundantExport（账上恒 3 项），本笔把它纳入 G 类 ⇒ 冗余导出账 3 → 0。
+      // 本体 `*Schema` 与配对 `*Parsed` 都可能进 G 类；但 `*Schema` 一旦被任一外部文件
+      // 消费（如新增契约测试 import），就不再是「零外部引用」候选，Schema 计数可合法为 0。
+      // 因此只断言「进 G 类的名字必须是契约配对形状」，不强制 Schema 计数 > 0。
       expect(gateCarrier.every((e) => /(Parsed|Schema)$/i.test(e.name))).toBe(true)
-      expect(gateCarrier.filter((e) => /Schema$/i.test(e.name)).length).toBeGreaterThan(0)
       expect(gateCarrier.every((e) => e.file === 'frontend/src/types/schemas.ts')).toBe(true)
     }
   )

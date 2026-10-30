@@ -1,3 +1,93 @@
+const fs = require('node:fs')
+const path = require('node:path')
+
+/**
+ * z187：后端 feature 间深引用规则域。
+ *
+ * 规则集合**由 `backend/src/modules` 实际目录派生**（每域一条 `nest-cross-feature-<域>`），
+ * 不手写域名清单——新增域未建规则会被 `tools/v3-guard/cruise-coverage.mjs` 判红。
+ *
+ * 表达力边界：dependency-cruiser 的 path 规则无法表达「to 的域 ≠ from 的域」，也无法在
+ * 同一条规则里表达「仅这一对 (源文件, 目标文件) 放行」。故：
+ *   ① 每域一条规则：from 整域 → 其它域的 modules 内文件（同域、`*.module.ts` 装配除外）；
+ *   ② 显式豁免按**源文件**分组，另生成 `nest-cross-feature-scoped-<域>-<n>`：
+ *      from 收敛到该源文件，to 只放行登记的目标——避免「整域放行某个源文件」的横切漏洞；
+ *   ③ 豁免条目由 `tools/v3-guard/nest-cross-feature-exemptions.json` 单源登记（含理由），
+ *      cruise-coverage 校验「被豁免的 import 仍存在」，删掉 import 后条目转红（防过期豁免）。
+ */
+const BACKEND_MODULES = 'backend/src/modules'
+const NEST_EXEMPTIONS = require('./tools/v3-guard/nest-cross-feature-exemptions.json')
+const NEST_MODULE_ASSEMBLY = '^backend/src/modules/[^/]+/[^/]+\\.module\\.ts$'
+
+function listBackendFeatures() {
+  return fs
+    .readdirSync(path.join(__dirname, BACKEND_MODULES), { withFileTypes: true })
+    .filter((e) => e.isDirectory() && e.name !== '__tests__')
+    .map((e) => e.name)
+    .sort()
+}
+
+const escapeRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+
+/** 从豁免源路径取 feature 名；取不到返回 ''（由 cruise-coverage 判为非法条目） */
+function featureOf(file) {
+  const m = /^backend\/src\/modules\/([^/]+)\//.exec(file || '')
+  return m ? m[1] : ''
+}
+
+const nestCrossFeatureRules = (() => {
+  const rules = []
+  for (const feature of listBackendFeatures()) {
+    const own = NEST_EXEMPTIONS.filter((e) => featureOf(e.from) === feature)
+    const groups = new Map()
+    for (const e of own) {
+      if (!groups.has(e.from)) groups.set(e.from, [])
+      groups.get(e.from).push(e)
+    }
+    const exemptSources = [...groups.keys()]
+    rules.push({
+      name: `nest-cross-feature-${feature}`,
+      comment:
+        `${feature} 域不得深引其它 feature（Nest 模块装配 \`*.module.ts\` 除外）。` +
+        `豁免 ${exemptSources.length} 个源文件，见 nest-cross-feature-scoped-${feature}-*。` +
+        '规则集合由 backend/src/modules 目录派生（z187）。',
+      severity: 'error',
+      from: {
+        path: `^${escapeRe(`${BACKEND_MODULES}/${feature}/`)}`,
+        ...(exemptSources.length ? { pathNot: exemptSources.map((f) => `^${escapeRe(f)}$`) } : {}),
+      },
+      to: {
+        path: `^${BACKEND_MODULES}/`,
+        pathNot: [`^${escapeRe(`${BACKEND_MODULES}/${feature}/`)}`, NEST_MODULE_ASSEMBLY],
+      },
+    })
+
+    let n = 0
+    for (const [fromFile, entries] of groups) {
+      n += 1
+      rules.push({
+        name: `nest-cross-feature-scoped-${feature}-${n}`,
+        comment:
+          `显式豁免（${entries.map((e) => e.id).join('、')}）：` +
+          `${entries.map((e) => e.reason).join(' ')}` +
+          ` 放行目标：${entries.map((e) => e.to).join('、')}。` +
+          '删除对应 import 后本条目须一并删除，cruise-coverage 会判「豁免过期」。',
+        severity: 'error',
+        from: { path: `^${escapeRe(fromFile)}$` },
+        to: {
+          path: `^${BACKEND_MODULES}/`,
+          pathNot: [
+            `^${escapeRe(`${BACKEND_MODULES}/${feature}/`)}`,
+            NEST_MODULE_ASSEMBLY,
+            ...entries.map((e) => `^${escapeRe(e.to)}$`),
+          ],
+        },
+      })
+    }
+  }
+  return rules
+})()
+
 /** @type {import('dependency-cruiser').IConfiguration} */
 module.exports = {
   forbidden: [
@@ -220,6 +310,10 @@ module.exports = {
       from: { path: '^backend/src/', pathNot: '(repositories/|infra/db/)' },
       to: { path: 'node_modules/pg' },
     },
+    // ===== 后端 feature 间边界（z187）=====
+    // 每条 `nest-cross-feature-<域>` / `nest-cross-feature-scoped-<域>-<n>` 由上方代码派生，
+    // 域名不在此手写；规则集合 == backend/src/modules 目录集合由 cruise-coverage 对账。
+    ...nestCrossFeatureRules,
   ],
   options: {
     doNotFollow: 'node_modules',

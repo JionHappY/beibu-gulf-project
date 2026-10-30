@@ -6,7 +6,14 @@ import { fileURLToPath } from 'node:url'
 
 import { describe, expect, it } from 'vitest'
 
-import { auditCoverage, auditLayerRules, parseRuleModules } from '../cruise-coverage.mjs'
+import {
+  auditCoverage,
+  auditExemptionLiveness,
+  auditLayerRules,
+  auditNestFeatureCoverage,
+  parseNestFeatureRules,
+  parseRuleModules,
+} from '../cruise-coverage.mjs'
 
 const HERE = path.dirname(fileURLToPath(import.meta.url))
 const GUARD = path.resolve(HERE, '../cruise-coverage.mjs')
@@ -134,6 +141,13 @@ describe('cruise-coverage：分层规则覆盖面（W61 M4：from.path 不许窄
       path.join(tmp, 'tools/v3-guard/lib/input-set.mjs')
     )
     fs.mkdirSync(path.join(tmp, 'frontend/src/business/flood-analysis'), { recursive: true })
+    // 守卫还会对账 backend feature（规则集合由目录派生）并读豁免登记表——
+    // 夹具必须同时给出最小 feature 目录与登记表，否则红的是「读不到目录」而非被测判据。
+    fs.mkdirSync(path.join(tmp, 'backend/src/modules/auth'), { recursive: true })
+    fs.copyFileSync(
+      path.join(path.dirname(GUARD), 'nest-cross-feature-exemptions.json'),
+      path.join(tmp, 'tools/v3-guard/nest-cross-feature-exemptions.json')
+    )
     // 变异：把 `.dependency-cruiser.cjs` 里 core-not-import-services 的 from.path 改窄。
     // 定位方式与探针不同——这里读的是**被测守卫读的那份配置**，按 name 行往下找第一个 from 行。
     const cruiseSrc = fs.readFileSync(path.join(ROOT, '.dependency-cruiser.cjs'), 'utf8')
@@ -295,5 +309,98 @@ describe('tsconfig.cruise.json：@backend 跨端别名必须让依赖进图（z1
     } finally {
       cleanup()
     }
+  })
+})
+
+describe('cruise-coverage：backend feature 规则域', () => {
+  const NEST_OK = {
+    forbidden: [
+      {
+        name: 'nest-cross-feature-auth',
+        from: { path: '^backend/src/modules/auth/' },
+        to: { path: '^backend/src/modules/' },
+      },
+      {
+        name: 'nest-cross-feature-task',
+        from: { path: '^backend/src/modules/task/' },
+        to: { path: '^backend/src/modules/' },
+      },
+    ],
+  }
+
+  it('域与规则一一对应时无问题', () => {
+    const { problems, domains } = auditNestFeatureCoverage(NEST_OK, ['auth', 'task'], [])
+    expect(problems).toEqual([])
+    expect(domains).toEqual(['auth', 'task'])
+  })
+
+  it('🔴 @guard-red-sample 新增 feature 未建规则必红（目录多一个）', () => {
+    const { problems } = auditNestFeatureCoverage(NEST_OK, ['auth', 'task', 'billing'], [])
+    expect(problems.some((p) => p.includes('backend feature billing 无 cross-feature 规则'))).toBe(
+      true
+    )
+  })
+
+  it('阳性对照：规则指向不存在的 feature 必红（幽灵规则）', () => {
+    const { problems } = auditNestFeatureCoverage(NEST_OK, ['auth'], [])
+    expect(problems.some((p) => p.includes('幽灵规则'))).toBe(true)
+  })
+
+  it('规则名与 from 路径不一致时抛错（命名约定被破坏）', () => {
+    const bad = {
+      forbidden: [
+        { name: 'nest-cross-feature-flood', from: { path: '^backend/src/modules/auth/' } },
+      ],
+    }
+    expect(() => parseNestFeatureRules(bad)).toThrow(/命名约定/)
+  })
+
+  it('scoped 规则数量与豁免源文件分组不一致必红', () => {
+    const withScoped = {
+      forbidden: [
+        ...NEST_OK.forbidden,
+        {
+          name: 'nest-cross-feature-scoped-auth-1',
+          from: { path: '^backend/src/modules/auth/a.ts$' },
+          to: { path: '^backend/src/modules/' },
+        },
+      ],
+    }
+    const { problems } = auditNestFeatureCoverage(withScoped, ['auth', 'task'], [])
+    expect(problems.some((p) => p.includes('scoped 规则 1 条 ≠ 豁免源文件分组 0 组'))).toBe(true)
+  })
+
+  it('🔴 @guard-red-sample 豁免过期：删掉被豁免的 import 后必红', () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'nest-exempt-'))
+    try {
+      const aDir = path.join(dir, 'backend/src/modules/a/services')
+      const bDir = path.join(dir, 'backend/src/modules/b/services')
+      fs.mkdirSync(aDir, { recursive: true })
+      fs.mkdirSync(bDir, { recursive: true })
+      fs.writeFileSync(path.join(bDir, 'b.service.ts'), 'export const b = 1\n')
+      const aFile = path.join(aDir, 'a.ts')
+      const entry = {
+        id: 'demo',
+        reason: '演示用',
+        from: 'backend/src/modules/a/services/a.ts',
+        to: 'backend/src/modules/b/services/b.service.ts',
+      }
+      const write = (body) => fs.writeFileSync(aFile, body)
+      write("import { b } from '../../b/services/b.service'\nexport const a = b\n")
+      expect(auditExemptionLiveness([entry], dir)).toEqual([])
+      // 变异：import 被删掉，条目还在 ⇒ 必须红（防过期豁免）
+      write('export const a = 1\n')
+      expect(auditExemptionLiveness([entry], dir).join('\n')).toContain('已过期')
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true })
+    }
+  })
+
+  it('豁免条目缺理由/缺目标必红（理由不是可选装饰）', () => {
+    const problems = auditExemptionLiveness(
+      [{ id: 'x', from: 'backend/src/modules/a/a.ts', to: 'backend/src/modules/b/b.ts' }],
+      ROOT
+    )
+    expect(problems.some((p) => p.includes('缺 from / to / reason'))).toBe(true)
   })
 })

@@ -136,6 +136,10 @@ describe('W58 空分母：0 输入不得报「全部满足」', () => {
       'tools/v3-guard/cruise-coverage.mjs': GUARD_SRC('cruise-coverage'),
       'tools/v3-guard/lib/input-set.mjs': LIB_SRC('input-set'),
       'frontend/src/business/flood-analysis/.keep': '',
+      // z187 起守卫还有第二个分母（backend feature）与豁免登记表：
+      // 阳性对照必须把这两个输入一起给全，否则红的是「缺输入」而非判据本身。
+      'backend/src/modules/flood/.keep': '',
+      'tools/v3-guard/nest-cross-feature-exemptions.json': '[]\n',
       '.dependency-cruiser.cjs':
         'module.exports = { forbidden: [{ name: "business-cross-import-flood-analysis",' +
         ' from: { path: "^frontend/src/business/flood-analysis/" } },' +
@@ -148,7 +152,9 @@ describe('W58 空分母：0 输入不得报「全部满足」', () => {
         // auditLayerRules 报「不在册」——本夹具是 W58 的阳性对照（证明红的
         // 是空分母不是装置），它必须随表一起长。
         '{ name: "business-root-not-deep-import-modules",' +
-        ' from: { path: "^frontend/src/business/[^/]+\\\\.ts$" } }] }\n',
+        ' from: { path: "^frontend/src/business/[^/]+\\\\.ts$" } },' +
+        '{ name: "nest-cross-feature-flood",' +
+        ' from: { path: "^backend/src/modules/flood/" } }] }\n',
     })
     const { code, output } = runGuard(r, 'cruise-coverage')
     expect(output).toContain('business 目录 1 个')

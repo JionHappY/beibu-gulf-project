@@ -1,9 +1,11 @@
 /**
- * 抽屉模式图表回归（2026-11-01）。
+ * 图表几何回归（2026-11-01，zcode 原 900px 单视口版扩到三档）。
  *
- * 判据：<960px 进入业务页 → 打开业务面板 → 图表容器与 canvas 均非 0 高。
+ * 判据：<960px 打开业务抽屉后 / ≥960px 直接在面板里，图表容器与 canvas 均非 0 高。
  * 治的失效：2026-10-31 手工动态测试发现 4 个页面在抽屉内图表塌缩为 0，
  * 而当时前端 1,098 条单测全绿——单测断言 DOM 存在，不测渲染后的几何尺寸。
+ * 2026-11-01 复查发现原版只钉了 900px 一档，而窄屏首页概览不可达恰恰只在 390px 复现；
+ * 三档（390 手机 / 900 平板抽屉 / 1440 桌面）各钉一遍，覆盖两种面板承载方式。
  * 后端一律 404 兜底：只验证布局链路，不依赖库/后端（与 smoke.spec 同口径）。
  */
 import { readFileSync } from 'node:fs'
@@ -44,28 +46,40 @@ const CASES = [
   { path: '/flood-analysis', chart: '.chart-container' },
 ]
 
-for (const item of CASES) {
-  test(`抽屉模式图表不塌缩：${item.path}`, async ({ page }) => {
-    await page.setViewportSize({ width: 900, height: 800 })
-    await stubBackend404(page)
-    if (item.path === '/site-suitability') {
-      await page.route('**/site-suitability/map**', (route) =>
-        route.fulfill({ status: 200, contentType: 'application/json', body: SITE_MAP_FIXTURE })
-      )
-    }
-    await page.goto(item.path)
+/** 960px 是抽屉模式断点（layoutTier），三档各钉一侧与断点上方的桌面承载 */
+const VIEWPORTS = [
+  { width: 390, height: 844 },
+  { width: 900, height: 800 },
+  { width: 1440, height: 900 },
+]
 
-    await page.getByRole('button', { name: '菜单' }).click()
+for (const vp of VIEWPORTS) {
+  for (const item of CASES) {
+    test(`${vp.width}px 图表不塌缩：${item.path}`, async ({ page }) => {
+      await page.setViewportSize({ width: vp.width, height: vp.height })
+      await stubBackend404(page)
+      if (item.path === '/site-suitability') {
+        await page.route('**/site-suitability/map**', (route) =>
+          route.fulfill({ status: 200, contentType: 'application/json', body: SITE_MAP_FIXTURE })
+        )
+      }
+      await page.goto(item.path)
 
-    const chart = page.locator(item.chart)
-    await expect(chart).toBeVisible()
-    const box = await chart.boundingBox()
-    expect(box?.height ?? 0).toBeGreaterThan(100)
+      // 抽屉档：图表在抽屉里，先打开；桌面档：图表直接在面板里，不点菜单
+      if (vp.width < 960) {
+        await page.getByRole('button', { name: '菜单' }).click()
+      }
 
-    const canvas = page.locator(`${item.chart} canvas`)
-    if ((await canvas.count()) > 0) {
-      const canvasBox = await canvas.first().boundingBox()
-      expect(canvasBox?.height ?? 0).toBeGreaterThan(100)
-    }
-  })
+      const chart = page.locator(item.chart)
+      await expect(chart).toBeVisible()
+      const box = await chart.boundingBox()
+      expect(box?.height ?? 0).toBeGreaterThan(100)
+
+      const canvas = page.locator(`${item.chart} canvas`)
+      if ((await canvas.count()) > 0) {
+        const canvasBox = await canvas.first().boundingBox()
+        expect(canvasBox?.height ?? 0).toBeGreaterThan(100)
+      }
+    })
+  }
 }

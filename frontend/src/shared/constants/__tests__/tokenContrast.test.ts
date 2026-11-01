@@ -4,6 +4,8 @@ import { fileURLToPath } from 'node:url'
 
 import { describe, expect, it } from 'vitest'
 
+import { PORT_FEATURE_COLOR } from '../colors'
+
 const HERE = dirname(fileURLToPath(import.meta.url))
 const css = readFileSync(resolve(HERE, '../../../style.css'), 'utf8')
 
@@ -77,6 +79,15 @@ describe('文本 token 对比度（WCAG AA）', () => {
   it('暗色 muted 在面板与浮层上 ≥4.5:1', () => {
     expectAA('--GCS-text-muted', '--GCS-bg-panel', dark)
     expectAA('--GCS-text-muted', '--GCS-bg-elevated', dark)
+  })
+
+  it('亮色主色承载反白文字 ≥4.5:1', () => {
+    expectAA('--GCS-text-inverse', '--GCS-color-primary')
+    expectAA('--GCS-text-inverse', '--GCS-color-primary-hover')
+  })
+
+  it('渲染色副本与 CSS 主色同值（改一处必红）', () => {
+    expect(rgb(PORT_FEATURE_COLOR)).toEqual(rgb(token(root, '--GCS-color-primary')))
   })
 
   it('error 与 danger 仍是两枚不同色值（保留语义分工）', () => {

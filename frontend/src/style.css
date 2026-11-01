@@ -18,13 +18,16 @@
    * =============================== */
 
   /* ===== 系统主色 =====
-   * 系统只有一个交互色：#409eff 蓝色。
+   * 系统只有一个交互色：品牌蓝。唯一字面量在此，渲染色副本与边框聚焦色都派生自它
+   * （`shared/constants/colors.ts` 的 COLOR_PRIMARY 由 tokenContrast 测试钉住同值）。
    * 语义状态色（error/success）统一在此定义，业务模块引用 var(--GCS-color-xxx)。 */
   --GCS-color-primary: rgb(
-    64 158 255
-  ); /* S7-30 已知豁免：白字对比度 2.78:1（暗色侧 6.67:1 达标）；品牌蓝提亮改档影响全站组件，登记豁免，redesign 时统一处理 */
+    33 114 202
+  ); /* 原 #409eff 白字 2.78:1 不过 AA，加深至白字 4.86:1（暗色侧橙块不动）；豁免已撤回 */
 
-  --GCS-color-primary-hover: rgb(102 177 255);
+  --GCS-color-primary-hover: rgb(
+    26 96 168
+  ); /* hover/按压同用此档；白字 6.31:1，兼作文本色时白底 6.31:1 */
 
   /* ===== 语义状态色 ===== */
   --GCS-color-error: rgb(217 45 32); /* 白底 4.83:1（AA）；与 danger 保留语义分工 */
@@ -66,7 +69,7 @@
   /* ===== 边框色系 ===== */
   --GCS-border-default: rgb(224 224 224); /* 默认边框（按钮、输入框、列表） */
   --GCS-border-light: rgb(235 238 245); /* 更淡的边框 */
-  --GCS-border-focus: rgb(64 158 255); /* 聚焦/激活态边框 */
+  --GCS-border-focus: var(--GCS-color-primary); /* 聚焦/激活态边框：派生自主色，不再手抄色值 */
 
   /* ===== 阴影系统 ===== */
   --GCS-shadow-sm: 0 2px 8px rgb(0 0 0 / 8%); /* 面板/按钮默认阴影 */

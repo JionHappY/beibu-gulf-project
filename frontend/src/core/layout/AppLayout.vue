@@ -413,6 +413,30 @@ function goBusiness(item: NavItem): void {
   height: 110px;
 }
 
+/* 浸没报告的内容区在桌面档用绝对定位钉在 2.8cell 的灰框里（宽高 top/left 都是内联算出来的）。
+   控制台里面板高度是 auto，绝对定位的内容不再为面板贡献高度 ⇒ 面板塌成标题那条、
+   报告行整块溢到下一块面板上。这里把它放回正常流，高度由行数决定。 */
+.console-body :deep(.flood-analysis-report-panel .report-content) {
+  position: static !important;
+  width: auto !important;
+  height: auto !important;
+  top: auto !important;
+  left: auto !important;
+}
+
+/* 个人中心是「占满 4×8 面板」写的：内容区 height:100% + 子块 flex:1 1 0。
+   控制台里面板高度变 auto 后，flex-basis 0 的子块会被算成 0 高、再被内容区的
+   overflow:hidden 裁掉，只剩顶上一条。这里让它们按内容展开。 */
+.console-body :deep(.profile-content) {
+  height: auto !important;
+  overflow: visible !important;
+}
+
+.console-body :deep(.profile-login),
+.console-body :deep(.profile-logged-in) {
+  flex: 0 0 auto !important;
+}
+
 /* 压缩：面板内的区块间距与字号整体收一档（目标是一屏放完，不靠滑） */
 .console-body :deep(.GCS-panel) {
   font-size: 11.5px;

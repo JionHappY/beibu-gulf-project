@@ -24,7 +24,8 @@ import {
   useOwnedLayers,
   useStackablePanels,
 } from '@/core'
-import { DEFAULT_LAYER_ORDER, isFiniteLngLat, loadStatic, logger, showToast } from '@/shared'
+import { DEFAULT_LAYER_ORDER, loadStatic, logger, showToast } from '@/shared'
+import { isFiniteLngLat } from '@/shared/utils/pointFeature'
 import { useMapStore, useTaskStore } from '@/stores'
 import type { MapRenderer, RoutePathResult } from '@/types'
 import { pingluImageryIndexSchema, tilesetJsonSchema } from '@/types/schemas'

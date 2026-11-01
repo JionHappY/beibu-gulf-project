@@ -20,6 +20,7 @@ import {
   tallyGroups,
   type TilesetJson,
   toDataUri,
+  useMapControls,
   useOwnedLayers,
   useStackablePanels,
 } from '@/core'
@@ -30,6 +31,7 @@ import type { TaskSlot } from '@/types/task'
 import { pingluImageryIndexSchema, tilesetJsonSchema } from '@/types/schemas'
 
 import RouteControlPanel from './components/RouteControlPanel.vue'
+import { fitViewForPath } from './composables/pathFit'
 import {
   ROUTE_ENDPOINT_LAYER_ID,
   ROUTE_PATH_LAYER_ID,
@@ -143,6 +145,7 @@ async function registerImageryLayers(): Promise<void> {
 
 const mapStore = useMapStore()
 const taskStore = useTaskStore()
+const { flyTo } = useMapControls()
 
 // 路径结果面板共用堆叠拖拽（与预测/选址/分流同一方法）
 const STACKABLE_PANELS = [{ id: 'result', label: '路径结果' }]
@@ -200,6 +203,13 @@ function handleQueryResult(payload: { segments: RoutePathResult[]; pointCount: n
     segCount: segments.length,
     totalWithSnapKm: (netM + snapM) / 1000,
   }
+  // 查询完成后把整条路径纳入视野：旧行为相机停在最后一次选点的终点（默认 5km 高度），
+  // 111km 路线只看得见末端。高度由 bbox 推导，2D 由渲染器按 heightToZoom 反推。
+  const view = fitViewForPath(
+    segments.flatMap((s) => s.coordinates),
+    netM
+  )
+  if (view) flyTo(view.center, { height: view.height })
   logger.debug(`[RouteAnalysis] 查询完成: ${segments.length} 段 / ${pointCount} 点`)
 }
 

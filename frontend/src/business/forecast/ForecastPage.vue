@@ -7,7 +7,7 @@
    */
 -->
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, watch } from 'vue'
+import { computed, onUnmounted, watch } from 'vue'
 
 import { AppLayout, GCSPanel, LayerControlPanel, StackSlot, useStackablePanels } from '@/core'
 import { DEFAULT_LAYER_ORDER, forecastLayerId, logger, useProfileSnapshot } from '@/shared'
@@ -89,15 +89,16 @@ function restoreForecastState(saved: ForecastSavedState): void {
   forecastState.restoreState(saved)
 }
 
-onMounted(() => {
-  // 跳登录返回优先恢复快照（不 reset，避免清掉刚恢复的状态）；无快照才走初始化
-  const savedState = forecastState.consumeState()
-  if (savedState) {
-    restoreForecastState(savedState)
-    return
-  }
+// 初始化必须先于取数触发：watch(immediate) 在 setup 阶段就会发请求，
+// 若 reset() 留在 onMounted（晚于 setup），会把刚发起的事务 ID 清零，
+// 响应回来被 isTransactionValid 判过期而丢弃 —— SPA 导航进预测页时图表恒空。
+// 跳登录返回优先恢复快照（不 reset，避免清掉刚恢复的状态）；无快照才走初始化。
+const savedState = forecastState.consumeState()
+if (savedState) {
+  restoreForecastState(savedState)
+} else {
   forecastState.reset()
-})
+}
 
 watch(
   () => mapStore.currentRenderer,

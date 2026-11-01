@@ -8,10 +8,15 @@ import { shallowMount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { useForecastStore, useMapStore } from '@/stores'
+
 const h = vi.hoisted(() => ({
   apiRequest: vi.fn(),
   runInTransaction: vi.fn((fn: () => unknown) => fn()),
-  startTransaction: vi.fn(() => 1),
+  startTransaction: vi.fn((): { transactionId: number; signal: AbortSignal } => ({
+    transactionId: 1,
+    signal: new AbortController().signal,
+  })),
   isTransactionValid: vi.fn(() => true),
   cancelAll: vi.fn(),
   updateForecastLayer: vi.fn(),
@@ -81,5 +86,25 @@ describe('ForecastPage 冒烟', () => {
     expect(h.startTransaction).not.toHaveBeenCalled() // currentRenderer 为 null ⇒ 编排器空转
     wrapper.unmount()
     expect(h.cancelAll).toHaveBeenCalled()
+  })
+
+  // 回归：SPA 导航进入时地图已就绪，immediate watch 会在 setup 阶段发请求；
+  // 若 reset() 仍留在 onMounted（晚于 setup），会把刚发起的事务 ID 清零，
+  // 响应回来被 isTransactionValid 判过期而丢弃 —— 表现为预测页两张图恒「暂无数据」。
+  it('渲染器已就绪时 SPA 进入：事务 ID 不被挂载后 reset 清零', async () => {
+    const mapStore = useMapStore()
+    const forecastState = useForecastStore()
+    mapStore.currentRenderer = {} as never
+    h.startTransaction.mockImplementation(() => ({
+      transactionId: forecastState.bumpTransactionId(),
+      signal: new AbortController().signal,
+    }))
+
+    const wrapper = shallowMount(ForecastPage)
+    await wrapper.vm.$nextTick()
+
+    expect(h.startTransaction).toHaveBeenCalled()
+    expect(forecastState.activeTransactionId).toBeGreaterThan(0)
+    wrapper.unmount()
   })
 })

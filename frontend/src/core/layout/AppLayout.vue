@@ -6,7 +6,7 @@
  * 抽屉模式（<960px）下抽屉同时承载业务面板（slot left/right）。
  */
 
-import { computed, defineAsyncComponent, inject, onUnmounted, ref, watch } from 'vue'
+import { computed, defineAsyncComponent, inject, nextTick, onUnmounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 import { MAP_CONFIG } from '@/core/config/map'
@@ -84,7 +84,17 @@ watch(sliderFocusActive, (act) => {
 // 手机档（<640）把地图压到上半屏：统一挂在 body 上，由 style.css 收 .unified-map-wrapper 高度。
 // 用 body class 而非媒体查询，断点仍只由 useGCS 的 layoutTierFor 一处判定。
 watch(navCompact, (on) => document.body.classList.toggle('layout-console', on), { immediate: true })
-onUnmounted(() => document.body.classList.remove('layout-console'))
+onUnmounted(() => {
+  // AppLayout 是页面级组件（HomePage/ProfilePage/业务页各自包一层），路由切换时
+  // 新实例先挂、旧实例后卸；此处若同步摘 class，会把新实例刚挂上的 layout-console
+  // 抹掉。真机复现：390 下从首页点「个人中心」，body 类名变空、地图撑回 844px
+  // （清零的是地图上沿高度，控制台还压在它上面）。延后一拍，等新布局已在 DOM 里
+  // 再判断是否真的没有任何 AppLayout 存活。
+  void nextTick(() => {
+    if (document.querySelector('.app-layout')) return
+    document.body.classList.remove('layout-console')
+  })
+})
 // 控制台底部让开 dock（dock 是 1 cell 高的 GCSPanel，同源取 cellPixel，不写死像素）
 const consoleStyle = computed(() => ({ bottom: `${Math.round(cellPixel.value * 1.7)}px` }))
 

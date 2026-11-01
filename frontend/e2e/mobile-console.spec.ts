@@ -109,3 +109,29 @@ test('控制台里的图表留足高度，双轴刻度不被挤/裁', async ({ p
   // 右轴 700,000 这类六位数被画布边缘裁掉；150px 仍重叠，170px 才干净
   for (const h of heights) expect(h).toBeGreaterThanOrEqual(160)
 })
+
+test('路由切换后手机档地图仍是上半屏（body 类名不被旧实例摘掉）', async ({ page }) => {
+  await page.goto('/', { waitUntil: 'networkidle' })
+  await expect(page.locator('.mobile-console')).toBeVisible()
+
+  // AppLayout 是页面级组件：新实例先挂、旧实例后卸。若旧实例同步摘 body 类，
+  // 新实例刚挂上的 layout-console 会被抹掉，地图撑回整屏、控制台压在上面。
+  await page.getByRole('button', { name: '个人中心' }).click()
+  await expect(page).toHaveURL(/\/profile$/)
+
+  const m = await page.evaluate(() => {
+    const wrap = document.querySelector('.unified-map-wrapper')!.getBoundingClientRect()
+    const cons = document.querySelector('.mobile-console')!.getBoundingClientRect()
+    return {
+      body: document.body.className,
+      mapH: Math.round(wrap.height),
+      consoleH: Math.round(cons.height),
+      viewportH: window.innerHeight,
+    }
+  })
+
+  expect(m.body).toContain('layout-console')
+  // 46vh 上限；留一点余量给 vh 取整
+  expect(m.mapH).toBeLessThan(m.viewportH * 0.55)
+  expect(m.consoleH).toBeGreaterThan(100)
+})

@@ -51,6 +51,12 @@ type CellProperties = { id: number; score: number } & Partial<
 const CANDIDATE_LIMIT = 60
 
 /**
+ * 格网总格数：候选名单只列前 60，面板上必须写清「总共多少格、取的是前多少」，
+ * 否则 15 页翻完会让人以为整个格网只有 60 个候选（截断不透明，见 data-audit 的口径要求）。
+ */
+const totalCells = computed(() => state.data?.features?.length ?? 0)
+
+/**
  * 候选格名单：复用共享 PaginatedListPanel（与旧版选址页的「小区名单」同一组件、同一视觉）。
  * 其 items 契约是「带坐标的评分点 + breakdown」，本页把格子按同一形状映射，
  * 五准则子分装进 breakdown（既满足契约也语义正确）。
@@ -190,21 +196,27 @@ onUnmounted(() => {
           draggable
           @drop="(z: HTMLElement) => onDrop('candidates', z)"
         >
-          <PaginatedListPanel
-            :items="candidates"
-            :page-size="4"
-            :loading="state.isRequesting"
-            title="候选格名单"
-            empty-text="暂无候选"
-            :show-favorite="false"
-            :fly-to="flyToCandidate"
-          >
-            <template #item="{ item, index }">
-              <span class="cell-rank">{{ index + 1 }}</span>
-              <span class="cell-name">{{ item.name }}</span>
-              <span class="cell-score">{{ item.score.toFixed(3) }}</span>
-            </template>
-          </PaginatedListPanel>
+          <div class="candidates-body">
+            <p v-if="totalCells" class="list-note" data-testid="candidate-total">
+              共 {{ totalCells.toLocaleString() }} 格 · 按得分取前 {{ candidates.length }} ·
+              点击行定位
+            </p>
+            <PaginatedListPanel
+              :items="candidates"
+              :page-size="4"
+              :loading="state.isRequesting"
+              title="候选格名单"
+              empty-text="暂无候选"
+              :show-favorite="false"
+              :fly-to="flyToCandidate"
+            >
+              <template #item="{ item, index }">
+                <span class="cell-rank">{{ index + 1 }}</span>
+                <span class="cell-name">{{ item.name }}</span>
+                <span class="cell-score">{{ item.score.toFixed(3) }}</span>
+              </template>
+            </PaginatedListPanel>
+          </div>
         </GCSPanel>
       </template>
       <template #right>
@@ -231,6 +243,27 @@ onUnmounted(() => {
 
 .ss-page :deep(.GCS-panel) {
   pointer-events: auto;
+}
+
+.candidates-body {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+/* 说明行是兄弟节点，列表要自己吃掉剩余高度：height:100% 会连带说明行溢出面板 */
+.candidates-body :deep(.paginated-list-panel) {
+  flex: 1 1 auto;
+  height: auto;
+  min-height: 0;
+}
+
+.list-note {
+  margin: 0;
+  padding: 6px 10px 0;
+  font-size: var(--GCS-font-size-xs);
+  color: var(--GCS-text-secondary);
 }
 
 /* 候选名单三列（对齐旧版选址页名单的排布：排名 / 名称 / 得分） */

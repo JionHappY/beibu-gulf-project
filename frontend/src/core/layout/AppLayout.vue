@@ -21,7 +21,7 @@ import GCSPanel from './components/GCSPanel.vue'
 import MobileDrawer from './components/MobileDrawer.vue'
 import NavButton from './components/NavButton.vue'
 import { businessNavItems, type NavItem } from './navConfig'
-import { GCS_TASK_CHIPS_KEY } from './taskChipsContext'
+import { GCS_TASK_CHIPS_KEY, type ChipDragPoint } from './taskChipsContext'
 import { useMobileDrawer } from './useMobileDrawer'
 import { useSliderFocus } from './useSliderFocus'
 
@@ -54,11 +54,11 @@ const taskChips = inject(GCS_TASK_CHIPS_KEY, undefined)
  */
 const railDragPoint = ref<{ x: number; y: number } | null>(null)
 
-function onRailDragMove(payload: { key: string; x: number; y: number }): void {
+function onRailDragMove(payload: ChipDragPoint): void {
   railDragPoint.value = { x: payload.x, y: payload.y }
 }
 
-function onRailDragEnd(payload: { key: string; x: number; y: number }): void {
+function onRailDragEnd(payload: ChipDragPoint): void {
   railDragPoint.value = null
   const target = document
     .elementFromPoint(payload.x, payload.y)

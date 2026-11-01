@@ -5,7 +5,7 @@
      靠近 dock 的 ＋ 时半圆展开（BottomNavBar 判距）→ 松手落在某个入口上就跳该分析页；
      结果图层本来就挂在 App 作用域，换路由后仍压在新页面的地图上。 -->
 <script setup lang="ts">
-import type { TaskChipView } from '../taskChipsContext'
+import type { ChipDragPoint, TaskChipView } from '../taskChipsContext'
 
 import { ref } from 'vue'
 
@@ -14,8 +14,8 @@ import TaskResultChip from './TaskResultChip.vue'
 defineProps<{ chips: TaskChipView[] }>()
 const emit = defineEmits<{
   (e: 'toggle', key: string): void
-  (e: 'dragmove', payload: { key: string; x: number; y: number }): void
-  (e: 'dragend', payload: { key: string; x: number; y: number }): void
+  (e: 'dragmove', payload: ChipDragPoint): void
+  (e: 'dragend', payload: ChipDragPoint): void
 }>()
 
 /** 位移超过它才算拖拽（手指比鼠标抖，比芯片自己的 6px 宽一点） */
@@ -25,6 +25,10 @@ const dragging = ref<string | null>(null)
 let originX = 0
 let originY = 0
 let pointerId: number | null = null
+
+function pointOf(key: string, event: PointerEvent): ChipDragPoint {
+  return { key, x: event.clientX, y: event.clientY }
+}
 
 function onDown(event: PointerEvent): void {
   originX = event.clientX
@@ -36,14 +40,14 @@ function onDown(event: PointerEvent): void {
 function onMove(event: PointerEvent, key: string): void {
   if (pointerId === null || event.pointerId !== pointerId) return
   if (dragging.value) {
-    emit('dragmove', { key, x: event.clientX, y: event.clientY })
+    emit('dragmove', pointOf(key, event))
     return
   }
   if (Math.hypot(event.clientX - originX, event.clientY - originY) < DRAG_THRESHOLD)
     return // 抢过捕获：芯片的 pointerup 不再触发，松手不会被当成「切换图层」
   ;(event.currentTarget as HTMLElement).setPointerCapture?.(event.pointerId)
   dragging.value = key
-  emit('dragmove', { key, x: event.clientX, y: event.clientY })
+  emit('dragmove', pointOf(key, event))
 }
 
 function onUp(event: PointerEvent, key: string): void {
@@ -53,7 +57,7 @@ function onUp(event: PointerEvent, key: string): void {
   pointerId = null
   if (!wasDragging) return
   ;(event.currentTarget as HTMLElement).releasePointerCapture?.(event.pointerId)
-  emit('dragend', { key, x: event.clientX, y: event.clientY })
+  emit('dragend', pointOf(key, event))
 }
 </script>
 

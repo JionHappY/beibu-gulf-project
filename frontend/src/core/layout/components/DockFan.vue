@@ -24,7 +24,7 @@ export default { name: 'GCSDockFan' }
  */
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 
-import { useGCS } from '@/shared'
+import { useEscapeClose, useGCS } from '@/shared'
 
 import type { NavItem } from '../navConfig'
 
@@ -81,20 +81,16 @@ function onDocPointerDown(e: PointerEvent): void {
   emit('close')
 }
 
-function onKeydown(e: KeyboardEvent): void {
-  if (e.key === 'Escape') emit('close')
-}
+useEscapeClose(() => emit('close'))
 
 onMounted(() => {
   window.addEventListener('resize', onWindowResize)
   document.addEventListener('pointerdown', onDocPointerDown, true)
-  document.addEventListener('keydown', onKeydown)
 })
 
 onBeforeUnmount(() => {
   window.removeEventListener('resize', onWindowResize)
   document.removeEventListener('pointerdown', onDocPointerDown, true)
-  document.removeEventListener('keydown', onKeydown)
 })
 
 /** 弧上各入口的视口坐标：180°（左）→ 0°（右），自左向右排 */

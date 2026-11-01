@@ -4,7 +4,7 @@
  * 复用 AppLayout 注入的 left/right slot（Vue 插槽）内容，内部 GCSPanel 的绝对定位
  * 由 style.css 全局规则强制改为正常流布局。role="dialog" + aria-modal，Esc/遮罩关闭。
  */
-import { onUnmounted, watch } from 'vue'
+import { useEscapeClose } from '@/shared'
 
 interface Props {
   open: boolean
@@ -12,20 +12,10 @@ interface Props {
 const props = defineProps<Props>()
 const emit = defineEmits<{ close: [] }>()
 
-function onKeydown(e: KeyboardEvent): void {
-  if (e.key === 'Escape') emit('close')
-}
-
-watch(
-  () => props.open,
-  (open) => {
-    if (open) document.addEventListener('keydown', onKeydown)
-    else document.removeEventListener('keydown', onKeydown)
-  },
-  { immediate: true }
+useEscapeClose(
+  () => emit('close'),
+  () => props.open
 )
-
-onUnmounted(() => document.removeEventListener('keydown', onKeydown))
 </script>
 
 <template>

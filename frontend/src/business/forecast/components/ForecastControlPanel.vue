@@ -125,12 +125,17 @@ function startNamedInterval(name: string, delay: number, fn: () => void): void {
   timers.set(name, () => clearInterval(handle))
 }
 
+/** 所有指标卡退出「选择中」并撤掉各自的确认计时器（切指标 / 切增速视图前统一收口） */
+function resetAllCells(): void {
+  for (const k of Object.keys(btnStates)) {
+    btnStates[k].selecting = false
+    clearTimer(k)
+  }
+}
+
 function toggleBtn(key: string) {
   if (key === GROWTH_CELL.key) {
-    Object.keys(btnStates).forEach((k) => {
-      btnStates[k].selecting = false
-      clearTimer(k)
-    })
+    resetAllCells()
     forecastState.setGrowthMode(!forecastState.growthMode)
     return
   }
@@ -140,10 +145,7 @@ function toggleBtn(key: string) {
   const s = btnStates[key]
   if (!s.selected) {
     // 取消其他按钮的 selecting 计时器并复位（selected 已派生，无需直写）
-    Object.keys(btnStates).forEach((k) => {
-      btnStates[k].selecting = false
-      clearTimer(k)
-    })
+    resetAllCells()
     forecastState.setActiveIndicator(key)
     s.selecting = true
     resetTimer(key)

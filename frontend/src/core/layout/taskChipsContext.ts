@@ -16,6 +16,13 @@ export interface TaskChipView {
   active: boolean
 }
 
+/** 中转带芯片被拖到某点：key 是芯片的图层 key，x/y 是视口坐标（判距 + 命中用） */
+export interface ChipDragPoint {
+  key: string
+  x: number
+  y: number
+}
+
 interface TaskChipsContext {
   chips: ComputedRef<TaskChipView[]>
   /** 上图 ⇄ 撤下的开关；参数是芯片 key（IR id） */

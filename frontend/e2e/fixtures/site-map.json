@@ -1,0 +1,214 @@
+{
+  "code": 200,
+  "data": {
+    "type": "FeatureCollection",
+    "features": [
+      {
+        "type": "Feature",
+        "geometry": {
+          "type": "Point",
+          "coordinates": [107.646932556413, 22.55559363758106]
+        },
+        "properties": {
+          "id": 314390,
+          "score": 0.5948,
+          "inundation": 1,
+          "terrain": 0.6922,
+          "land": 0.35,
+          "access": 0.1563,
+          "demand": 0.1007
+        }
+      },
+      {
+        "type": "Feature",
+        "geometry": {
+          "type": "Point",
+          "coordinates": [108.44913942708257, 22.5554677147583]
+        },
+        "properties": {
+          "id": 314542,
+          "score": 0.6413,
+          "inundation": 1,
+          "terrain": 1,
+          "land": 0.35,
+          "access": 0.2398,
+          "demand": 0.1673
+        }
+      },
+      {
+        "type": "Feature",
+        "geometry": {
+          "type": "Point",
+          "coordinates": [109.34536321615825, 22.553353817683515]
+        },
+        "properties": {
+          "id": 314734,
+          "score": 0.6051,
+          "inundation": 1,
+          "terrain": 0.8296,
+          "land": 0.35,
+          "access": 0.2558,
+          "demand": 0.0289
+        }
+      },
+      {
+        "type": "Feature",
+        "geometry": {
+          "type": "Point",
+          "coordinates": [109.89830183236793, 22.550978988554146]
+        },
+        "properties": {
+          "id": 314927,
+          "score": 0.5517,
+          "inundation": 1,
+          "terrain": 0.3925,
+          "land": 0.35,
+          "access": 0.1198,
+          "demand": 0.0202
+        }
+      },
+      {
+        "type": "Feature",
+        "geometry": {
+          "type": "Point",
+          "coordinates": [109.90041213401699, 22.0501518556165]
+        },
+        "properties": {
+          "id": 328301,
+          "score": 0.6062,
+          "inundation": 1,
+          "terrain": 0.8811,
+          "land": 0.35,
+          "access": 0.2197,
+          "demand": 0.0333
+        }
+      },
+      {
+        "type": "Feature",
+        "geometry": {
+          "type": "Point",
+          "coordinates": [109.34939502235649, 22.05107190344576]
+        },
+        "properties": {
+          "id": 328790,
+          "score": 0.6125,
+          "inundation": 1,
+          "terrain": 0.9516,
+          "land": 0.35,
+          "access": 0.2131,
+          "demand": 0.0391
+        }
+      },
+      {
+        "type": "Feature",
+        "geometry": {
+          "type": "Point",
+          "coordinates": [108.44368627134344, 22.064611100335952]
+        },
+        "properties": {
+          "id": 329236,
+          "score": 0.6266,
+          "inundation": 1,
+          "terrain": 0.9197,
+          "land": 0.35,
+          "access": 0.2279,
+          "demand": 0.1288
+        }
+      },
+      {
+        "type": "Feature",
+        "geometry": {
+          "type": "Point",
+          "coordinates": [107.64861569209845, 22.049653161936046]
+        },
+        "properties": {
+          "id": 329496,
+          "score": 0.587,
+          "inundation": 1,
+          "terrain": 0.6572,
+          "land": 0.35,
+          "access": 0.182,
+          "demand": 0.0559
+        }
+      },
+      {
+        "type": "Feature",
+        "geometry": {
+          "type": "Point",
+          "coordinates": [109.47644377727512, 21.405407706006645]
+        },
+        "properties": {
+          "id": 448522,
+          "score": 0.5571,
+          "inundation": 1,
+          "terrain": 1,
+          "land": 0,
+          "access": 0.172,
+          "demand": 0.1397
+        }
+      },
+      {
+        "type": "Feature",
+        "geometry": {
+          "type": "Point",
+          "coordinates": [109.90269024463001, 21.294135828570415]
+        },
+        "properties": {
+          "id": 448538,
+          "score": 0.648,
+          "inundation": 1,
+          "terrain": 1,
+          "land": 0.5,
+          "access": 0.2693,
+          "demand": 0.0059
+        }
+      },
+      {
+        "type": "Feature",
+        "geometry": {
+          "type": "Point",
+          "coordinates": [107.56810723434052, 21.362418498021725]
+        },
+        "properties": {
+          "id": 449087,
+          "score": 0.5809,
+          "inundation": 1,
+          "terrain": 0.7854,
+          "land": 0.35,
+          "access": 0,
+          "demand": 0.0737
+        }
+      },
+      {
+        "type": "Feature",
+        "geometry": {
+          "type": "Point",
+          "coordinates": [108.19447388116409, 21.55589448650468]
+        },
+        "properties": {
+          "id": 449305,
+          "score": 0.5858,
+          "inundation": 1,
+          "terrain": 1,
+          "land": 0,
+          "access": 0.3148,
+          "demand": 0.2166
+        }
+      }
+    ],
+    "metadata": {
+      "count": 12,
+      "weights": {
+        "inundation": 0.4299353738187694,
+        "terrain": 0.08451837333605325,
+        "land": 0.2059110006053473,
+        "access": 0.10971791699325936,
+        "demand": 0.16991733524657068
+      },
+      "weightsSource": "ahp-default",
+      "kdeP99": 6.08561061288239e-7,
+      "minLandFrac": 0.5,
+      "resolution": 0.9
+    }
+  }
+}

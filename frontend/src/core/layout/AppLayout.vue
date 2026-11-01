@@ -337,6 +337,10 @@ function goBusiness(item: NavItem): void {
   display: flex;
   flex-direction: column;
   gap: 4px;
+
+  /* 末端留白：最后一行（如年份刻度）贴到滚动区底边时会被 dock 上沿的
+     拖拽手柄压住半个字，实测 390×844 预测页 */
+  padding-bottom: 12px;
 }
 
 .console-card {

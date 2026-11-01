@@ -339,6 +339,12 @@ body {
   visibility: hidden;
 }
 
+/* 中转带是拖拽的起点：半圆展开（拖到一半）时它必须还看得见，
+   否则手指还按着、芯片先从屏上消失了。位置在控制台顶，压不到弧上。 */
+.dock-fan-open .mobile-console .console-rail {
+  visibility: visible;
+}
+
 /* 面板内滚动条统一走主题 token（暗色不再出现 UA 浅色条） */
 .GCS-panel * {
   scrollbar-width: thin;

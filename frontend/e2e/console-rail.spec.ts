@@ -176,6 +176,8 @@ test('手机档：把芯片拖到 ＋ 上，半圆自动展开，落在弧上即
   const fan = page.locator('.dock-fan')
   await expect(fan).toBeVisible()
   await expect(page.locator('.dock-fan [data-dock-route]')).toHaveCount(5)
+  // 逐项 25ms 错峰的入场动画：截图/断言前等它落定，否则拍到半透明的小方块
+  await page.waitForTimeout(450)
   await page.screenshot({ path: '.local/design-shots/rail-390-drag-fan.png' })
 
   // 落在「预测分析」上

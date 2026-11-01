@@ -336,6 +336,51 @@ describe('公开面收窄 — FORECAST_ORCHESTRATOR_KEY 不得再导出', () => 
  * 「不要用左右阅读的，没有四个按钮，你就在业务里凑出来第四个指标用来做按钮」——
  * 四格两列自上而下；第四格是同比增速视图（不是第四个数据指标）。
  */
+describe('自动播放与后台标签页', () => {
+  let originalWidth = 0
+  beforeEach(async () => {
+    setActivePinia(createPinia())
+    router = createRouter({ history: createMemoryHistory(), routes: [] })
+    await router.push('/')
+    await router.isReady()
+    originalWidth = window.innerWidth
+    Object.defineProperty(window, 'innerWidth', { value: 800, writable: true, configurable: true })
+    vi.useFakeTimers()
+  })
+  afterEach(() => {
+    vi.useRealTimers()
+    Object.defineProperty(window, 'innerWidth', {
+      value: originalWidth,
+      writable: true,
+      configurable: true,
+    })
+    Object.defineProperty(document, 'hidden', { value: false, configurable: true })
+  })
+
+  it('标签页隐藏时不推进时间轴（每推进一帧就发一次请求）', () => {
+    Object.defineProperty(document, 'hidden', { value: true, configurable: true })
+    const wrapper = mountPanel()
+    const store = useForecastStore()
+    vi.advanceTimersByTime(200)
+    const before = store.currentTime
+    vi.advanceTimersByTime(2000)
+    expect(store.currentTime).toBe(before)
+    expect(store.isPlaying).toBe(true)
+    wrapper.unmount()
+  })
+
+  it('阳性对照：可见时同一时间段内会推进', () => {
+    Object.defineProperty(document, 'hidden', { value: false, configurable: true })
+    const wrapper = mountPanel()
+    const store = useForecastStore()
+    vi.advanceTimersByTime(200)
+    const before = store.currentTime
+    vi.advanceTimersByTime(2000)
+    expect(store.currentTime).not.toBe(before)
+    wrapper.unmount()
+  })
+})
+
 describe('ForecastControlPanel 指标卡（2×2 四格）', () => {
   beforeEach(async () => {
     setActivePinia(createPinia())

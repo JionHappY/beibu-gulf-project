@@ -301,6 +301,9 @@ function startPlayback() {
       stopPlayback()
       return
     }
+    // 后台标签页不推进：推一帧就发一次 forecast 请求，切走后继续推等于空烧后端
+    // （浏览器只把 setInterval 节流到秒级，不会停）。回到前台自动续上，位置不丢。
+    if (document.hidden) return
     forecastState.setCurrentTime(stepToTime(currentStep.value + 1))
   })
 }

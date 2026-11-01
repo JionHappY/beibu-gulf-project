@@ -48,11 +48,12 @@ vi.mock('@/services/mapDataService', () => ({
 
 import DiversionPage from '../../DiversionPage.vue'
 
-/** 真实 AppLayout 依赖路由/地图/store：以渲染 left/right 命名插槽的替身承接布局骨架 */
+/** 真实 AppLayout 依赖路由/地图/store：以渲染 left/right/layers 命名插槽的替身承接布局骨架 */
 const AppLayoutStub = defineComponent({
   name: 'AppLayout',
   setup(_, { slots }) {
-    return () => h('div', { class: 'stub-app-layout' }, [slots.left?.(), slots.right?.()])
+    return () =>
+      h('div', { class: 'stub-app-layout' }, [slots.left?.(), slots.right?.(), slots.layers?.()])
   },
 })
 

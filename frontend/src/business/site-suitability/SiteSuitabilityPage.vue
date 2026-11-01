@@ -211,6 +211,8 @@ onUnmounted(() => {
         <GCSPanel v-bind="placements.control">
           <SiteSuitabilityControlPanel />
         </GCSPanel>
+      </template>
+      <template #layers>
         <GCSPanel v-bind="placements.layers">
           <LayerControlPanel />
         </GCSPanel>

@@ -492,6 +492,8 @@ onUnmounted(() => {
           @cleared="handleCleared"
           @dock="handleDock"
         />
+      </template>
+      <template #layers>
         <GCSPanel :w="4" :h="4" anchor="top-right" :offset-x="0" :offset-y="5.5">
           <LayerControlPanel
             :layer-order="[...DEFAULT_LAYER_ORDER, ROUTE_PATH_LAYER_ID]"

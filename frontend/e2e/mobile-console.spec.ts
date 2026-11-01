@@ -135,3 +135,20 @@ test('路由切换后手机档地图仍是上半屏（body 类名不被旧实例
   expect(m.mapH).toBeLessThan(m.viewportH * 0.55)
   expect(m.consoleH).toBeGreaterThan(100)
 })
+
+test('控制台阅读顺序：参数 → 结果 → 图层（图层排在最后）', async ({ page }) => {
+  await page.goto('/site-suitability', { waitUntil: 'networkidle' })
+  await expect(page.locator('.console-body')).toBeVisible()
+
+  const order = await page.$$eval('.console-body > *', (els) =>
+    els.map((el) => {
+      if (el.querySelector('.layer-panel')) return 'layers'
+      if (el.querySelector('input[type="range"], .ssc, .slider-select-card')) return 'input'
+      return 'result'
+    })
+  )
+
+  // 参数（准则权重）在最前，结果（雷达/名单）居中，图层控制压尾
+  expect(order[0]).toBe('input')
+  expect(order[order.length - 1]).toBe('layers')
+})

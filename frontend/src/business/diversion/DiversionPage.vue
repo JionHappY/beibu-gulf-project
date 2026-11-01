@@ -286,7 +286,9 @@ onUnmounted(() => {
             </p>
           </div>
         </GCSPanel>
-        <!-- 右下 4×4：图层控制面板（本页域图层 = 运河线位 + 三弧；三弧收进「分流弧线」组行） -->
+      </template>
+      <template #layers>
+        <!-- 图层控制面板（本页域图层 = 运河线位 + 三弧；三弧收进「分流弧线」组行） -->
         <GCSPanel v-bind="placements.layers">
           <LayerControlPanel
             :layer-order="[...DEFAULT_LAYER_ORDER, DIVERSION_CANAL_LAYER_ID, ...ARC_LAYER_IDS]"

@@ -180,6 +180,9 @@ function goBusiness(item: NavItem): void {
             <LayerControlPanel />
           </GCSPanel>
         </slot>
+        <!-- 图层控制单独一口：桌面档按 placements 绝对定位，位置与在 #right 里无差别；
+             手机档控制台按「参数 → 结果 → 图层」排阅读顺序，必须能把它排到最后 -->
+        <slot name="layers" />
       </div>
     </template>
 
@@ -226,6 +229,8 @@ function goBusiness(item: NavItem): void {
         <template v-else>
           <slot name="right" />
           <slot name="left" />
+          <!-- 图层控制放最后：控制台是按 DOM 顺序自上而下读的 -->
+          <slot name="layers" />
         </template>
       </div>
     </section>

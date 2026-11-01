@@ -570,7 +570,8 @@ onUnmounted(() => {
         >
           <WaterLevelProfilePanel ref="waterPanelRef" :state-restored="stateRestored" />
         </TaskPanelSlot>
-
+      </template>
+      <template #layers>
         <GCSPanel :w="4" :h="4" anchor="top-right" :offset-x="0" :offset-y="5.5">
           <LayerControlPanel
             :layer-order="[

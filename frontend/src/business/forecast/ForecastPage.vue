@@ -205,6 +205,8 @@ onUnmounted(() => {
         <GCSPanel :w="4" :h="4" anchor="top-right" :offset-x="0" :offset-y="1.25">
           <ForecastControlPanel />
         </GCSPanel>
+      </template>
+      <template #layers>
         <GCSPanel :w="4" :h="4" anchor="top-right" :offset-x="0" :offset-y="5.5">
           <LayerControlPanel :layer-order="[...DEFAULT_LAYER_ORDER, ...FORECAST_PANEL_ORDER]" />
         </GCSPanel>

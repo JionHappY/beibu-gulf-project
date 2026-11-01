@@ -334,15 +334,11 @@ body {
   inset: auto 0;
 }
 
-/* 手机档 dock 半圆展开时收起控制台：两层按钮叠在一起就谁也读不清了 */
-.dock-fan-open .mobile-console {
+/* 手机档 dock 半圆展开时收起控制台：两层按钮叠在一起就谁也读不清了。
+   中转带是例外——它是拖拽的起点，手指还按着时芯片不能先从屏上消失；
+   位置在控制台顶，压不到弧上。 */
+.dock-fan-open .mobile-console > :not(.console-rail) {
   visibility: hidden;
-}
-
-/* 中转带是拖拽的起点：半圆展开（拖到一半）时它必须还看得见，
-   否则手指还按着、芯片先从屏上消失了。位置在控制台顶，压不到弧上。 */
-.dock-fan-open .mobile-console .console-rail {
-  visibility: visible;
 }
 
 /* 面板内滚动条统一走主题 token（暗色不再出现 UA 浅色条） */

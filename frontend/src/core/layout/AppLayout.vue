@@ -413,6 +413,27 @@ function goBusiness(item: NavItem): void {
   height: 110px;
 }
 
+/* 图层控制在控制台里收成三列紧凑排：组件的 2 列 × 0.8cell 行高在 390 宽下占 262px
+   （约四分之一屏），六项图标+文字挤成竖排。图标文字同行、行高 44px，正好两行。 */
+.console-body :deep(.layer-grid) {
+  grid-template-columns: repeat(3, 1fr);
+  grid-auto-rows: 44px;
+  gap: 4px;
+  height: auto;
+  overflow: visible;
+}
+
+.console-body :deep(.layer-btn) {
+  flex-direction: row;
+  gap: 4px;
+  padding: 0 4px;
+  font-size: 11px;
+}
+
+.console-body :deep(.layer-icon) {
+  font-size: 13px;
+}
+
 /* 浸没报告的内容区在桌面档用绝对定位钉在 2.8cell 的灰框里（宽高 top/left 都是内联算出来的）。
    控制台里面板高度是 auto，绝对定位的内容不再为面板贡献高度 ⇒ 面板塌成标题那条、
    报告行整块溢到下一块面板上。这里把它放回正常流，高度由行数决定。 */

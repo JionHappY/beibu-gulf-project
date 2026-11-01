@@ -54,3 +54,43 @@ test('个人中心：登录表单在控制台里按内容展开，不被裁成�
   await expect(page.locator('.console-body .login-panel input').first()).toBeVisible()
   await expect(page.getByRole('button', { name: '注册' })).toBeVisible()
 })
+
+test('图层面板在控制台里收成三列紧凑排，桌面档仍是两列竖排', async ({ page }) => {
+  await page.goto('/site-suitability', { waitUntil: 'networkidle' })
+
+  const grid = page.locator('.console-body .layer-grid')
+  await expect(grid).toHaveCount(1)
+
+  const compact = await grid.evaluate((el) => {
+    const btn = el.querySelector('.layer-btn')!
+    return {
+      cols: getComputedStyle(el).gridTemplateColumns.split(' ').length,
+      height: Math.round(el.getBoundingClientRect().height),
+      rowDir: getComputedStyle(btn).flexDirection,
+      clipped: [...el.querySelectorAll('.layer-btn')].some(
+        (b) => b.scrollWidth > b.clientWidth + 1
+      ),
+    }
+  })
+  // 组件原本 2 列 × 0.8cell（390 宽下 262px、按钮竖排图标+文字），控制台里压成
+  // 3 列 × 44px 两行：高度砍一半以上，且文字不能被省略号吃掉
+  expect(compact.cols).toBe(3)
+  expect(compact.height).toBeLessThan(150)
+  expect(compact.rowDir).toBe('row')
+  expect(compact.clipped).toBe(false)
+
+  // 桌面档不受影响：同一组件在固定高度面板里仍是 2 列、竖排
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await page.waitForTimeout(400)
+  const desktop = await page.evaluate(() => {
+    const el = document.querySelector('.layer-grid')!
+    return {
+      cols: getComputedStyle(el).gridTemplateColumns.split(' ').length,
+      rowDir: getComputedStyle(el.querySelector('.layer-btn')!).flexDirection,
+      inConsole: !!el.closest('.console-body'),
+    }
+  })
+  expect(desktop.inConsole).toBe(false)
+  expect(desktop.cols).toBe(2)
+  expect(desktop.rowDir).toBe('column')
+})

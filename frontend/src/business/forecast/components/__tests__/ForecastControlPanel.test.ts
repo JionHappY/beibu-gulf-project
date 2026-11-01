@@ -16,6 +16,12 @@ import { defineComponent, effectScope, h, nextTick } from 'vue'
 import { createMemoryHistory, createRouter, type Router } from 'vue-router'
 
 import { useSliderFocus } from '@/core'
+import { showToast } from '@/shared'
+
+vi.mock('@/shared', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/shared')>()
+  return { ...actual, showToast: vi.fn() }
+})
 import { useForecastStore } from '@/stores'
 
 import { provideForecastOrchestrator } from '../../composables/useForecastOrchestrator'
@@ -76,7 +82,7 @@ describe('ForecastControlPanel 时间轴（裸露滑块）', () => {
     expect(sliders[0].attributes('min')).toBe('0')
     expect(sliders[0].attributes('max')).toBe('131')
     expect(sliders[0].attributes('step')).toBe('1')
-    expect(wrapper.find('.time-now').text()).toBe('2026年06月')
+    expect(wrapper.find('.time-bubble').text()).toBe('2026年06月')
 
     wrapper.unmount()
   })
@@ -88,38 +94,7 @@ describe('ForecastControlPanel 时间轴（裸露滑块）', () => {
     await timeRange(wrapper).setValue('12')
 
     expect(store.currentTime).toBe('2022-01')
-    expect(wrapper.find('.time-now').text()).toBe('2022年01月')
-
-    wrapper.unmount()
-  })
-
-  it('年粒度切换：步值与上界切到年基（换算行为不变）', async () => {
-    const wrapper = mountPanel()
-    const store = useForecastStore()
-
-    await wrapper.find('.gr-toggle input').setValue(true)
-
-    expect(store.timeGranularity).toBe('year')
-    const slider = timeRange(wrapper)
-    expect(slider.attributes('max')).toBe('10')
-    expect((slider.element as HTMLInputElement).value).toBe('5')
-
-    await slider.setValue('10')
-    expect(store.currentTime).toBe('2031')
-    expect(wrapper.find('.time-now').text()).toBe('2031年')
-
-    wrapper.unmount()
-  })
-
-  it('年模式点击刻度写入 YYYY（不再混入 -01）', async () => {
-    const wrapper = mountPanel()
-    const store = useForecastStore()
-
-    await wrapper.find('.gr-toggle input').setValue(true)
-    await wrapper.findAll('.t-tick.clickable')[2].trigger('click')
-
-    expect(store.currentTime).toBe('2031')
-    expect(wrapper.find('.time-now').text()).toBe('2031年')
+    expect(wrapper.find('.time-bubble').text()).toBe('2022年01月')
 
     wrapper.unmount()
   })
@@ -153,6 +128,27 @@ describe('ForecastControlPanel 时间轴（裸露滑块）', () => {
 
     wrapper.unmount()
     scope.stop()
+  })
+
+  it('时间气泡：文案=当前时间，位置随滑块变化（不常驻：显示与否由 CSS 悬停/聚焦控制）', async () => {
+    const wrapper = mountPanel()
+
+    expect(wrapper.find('.time-now').exists()).toBe(false)
+    const bubble = wrapper.find('.time-bubble')
+    expect(bubble.exists()).toBe(true)
+    expect(bubble.text()).toBe('2026年06月')
+    const before = (wrapper.find('.time-card').element as HTMLElement).style.getPropertyValue(
+      '--pos'
+    )
+
+    await timeRange(wrapper).setValue('12')
+    expect(wrapper.find('.time-bubble').text()).toBe('2022年01月')
+    const after = (wrapper.find('.time-card').element as HTMLElement).style.getPropertyValue(
+      '--pos'
+    )
+    expect(after).not.toBe(before)
+
+    wrapper.unmount()
   })
 
   it('▶ 开始键已撤：面板内不存在播放按钮/播放按钮容器', () => {
@@ -285,30 +281,39 @@ describe('ForecastControlPanel 运河情景芯片（F4）', () => {
 })
 // W17：热力散射点的空间分布是示意性插值（每港 40 点按距离衰减铺在港口周围），
 // 此前只在后端 forecast-engine.ts 的注释里说明，UI 零披露 ⇒ 用户会把热力面读成实测点位。
-describe('ForecastControlPanel 空间口径披露（W17）', () => {
+describe('ForecastControlPanel 空间口径披露（W17，改为 toast）', () => {
   beforeEach(async () => {
     setActivePinia(createPinia())
     router = createRouter({ history: createMemoryHistory(), routes: [] })
     await router.push('/')
     await router.isReady()
+    sessionStorage.removeItem('gcs.forecast.hint')
+    vi.mocked(showToast).mockClear()
   })
 
-  it('面板披露「空间分布是示意性插值、非实测」，且不在按钮网格的滚动区内', () => {
+  it('进入面板即以 toast 披露「空间分布是示意性插值、非实测」，且不再常驻脚注', () => {
     const wrapper = mountPanel()
 
-    const note = wrapper.find('.forecast-note')
-    expect(note.exists()).toBe(true)
-    // 只钉承重三段：披露对象（空间分布）、性质（示意）、否定项（非实测）——
-    // 不钉整句措辞，措辞是等价可改的（AGENTS §5.3 第三式）。
-    const text = note.text()
-    expect(text).toContain('空间分布')
-    expect(text).toContain('示意')
-    expect(text).toContain('非实测')
-    // 位置约束：脚注必须常驻可见。落进 .btn-grid 会被 overflow-y:auto 滚走，
-    // 那时披露等于没有（.btn-grid 是 flex:1 的可滚区，见 panelOverflowExit 的容量出口判据）。
-    expect(wrapper.find('.btn-grid').element.contains(note.element)).toBe(false)
+    // 常驻脚注已撤（用户 2026-11-01：提示走 toast，别占位）
+    expect(wrapper.find('.forecast-note').exists()).toBe(false)
+
+    const texts = vi.mocked(showToast).mock.calls.map((c) => String(c[0]))
+    const hit = texts.find((t) => t.includes('空间分布'))
+    expect(hit).toBeTruthy()
+    // 只钉承重三段：披露对象、性质、否定项——不钉整句措辞（AGENTS §5.3 第三式）
+    expect(hit).toContain('示意')
+    expect(hit).toContain('非实测')
 
     wrapper.unmount()
+  })
+
+  it('同一会话只提示一次（sessionStorage 去重）', () => {
+    mountPanel().unmount()
+    const first = vi.mocked(showToast).mock.calls.length
+    expect(first).toBeGreaterThan(0)
+
+    mountPanel().unmount()
+    expect(vi.mocked(showToast).mock.calls.length).toBe(first)
   })
 })
 

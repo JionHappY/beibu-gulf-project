@@ -186,7 +186,7 @@ watch(
 onMounted(() => {
   document.addEventListener('click', handleGlobalClick)
   document.addEventListener('keydown', onKeydown)
-  hintSpaceOnce()
+  hintOnce()
 })
 onUnmounted(() => {
   document.removeEventListener('click', handleGlobalClick)
@@ -237,6 +237,14 @@ function jumpToYear(year: number) {
 const displayTime = computed(() => {
   const t = forecastState.currentTime
   return isYearMode.value ? t + '年' : t.replace('-', '年') + '月'
+})
+
+/** 气泡跟随滑块的点：按当前步在轨道上的百分比定位（首尾各留半个拇指宽由 translateX(-50%) 抵） */
+const bubblePosCss = computed(() => {
+  const max = maxSteps.value
+  if (max <= 0) return '0%'
+  const pct = (currentStep.value / max) * 100
+  return `${Math.min(100, Math.max(0, pct))}%`
 })
 
 // ===== 播放 =====
@@ -291,11 +299,16 @@ function onKeydown(e: KeyboardEvent) {
   togglePlay()
 }
 
-/** 一次性提示：撤掉 ▶ 键后，用户需要知道怎么控制播放 */
-function hintSpaceOnce() {
-  if (sessionStorage.getItem('gcs.forecast.spaceHint')) return
-  sessionStorage.setItem('gcs.forecast.spaceHint', '1')
+/**
+ * 一次性提示（走 toast，不常驻占位）：
+ * ①撤掉 ▶ 键后怎么控制播放；②热力点的空间分布是示意性插值（原常驻脚注，W17 口径不减，
+ * 只是不再占面板位置）。
+ */
+function hintOnce() {
+  if (sessionStorage.getItem('gcs.forecast.hint')) return
+  sessionStorage.setItem('gcs.forecast.hint', '1')
   showToast('空格键 播放/暂停')
+  showToast('热力点空间分布为示意性插值，非实测点位')
 }
 </script>
 
@@ -354,12 +367,11 @@ function hintSpaceOnce() {
       </div>
     </div>
 
-    <!-- ===== 下半：时间轴（滑块收进统一卡片，点击才展开；专注模式与刻度跳年保留） ===== -->
+    <!-- ===== 下半：时间轴（裸露滑块；时间只在滑动时以气泡跟手显示，不常驻占位） ===== -->
     <div class="time-section">
       <div class="time-grid">
-        <div class="time-card" :title="`当前 ${displayTime}`">
-          <!-- 年份/月份是"永远有当前值"的参数，直接裸露：不点开、不隐藏（A 类点击才展开只留给有未选态的选址因子/置信度） -->
-          <span class="time-now">{{ displayTime }}</span>
+        <div class="time-card" :style="{ '--pos': bubblePosCss }">
+          <span class="time-bubble">{{ displayTime }}</span>
           <input
             class="time-range"
             type="range"
@@ -374,9 +386,6 @@ function hintSpaceOnce() {
             @pointercancel="endSliderFocus"
           />
         </div>
-        <label class="gr-toggle time-granularity">
-          <input v-model="isYearMode" type="checkbox" />年
-        </label>
         <div class="time-slider-wrap">
           <div class="t-ticks">
             <span
@@ -397,7 +406,6 @@ function hintSpaceOnce() {
         </div>
       </div>
     </div>
-    <div class="forecast-note">空间分布为示意性插值，非实测点位。</div>
   </div>
 </template>
 
@@ -413,17 +421,17 @@ function hintSpaceOnce() {
   gap: v-bind(cell16px);
 }
 
-/* 按钮网格：2 列 1.8fr，行高 0.8cell，间距 0.2cell */
+/* 按钮网格：单行（3 个指标三等分；2×2 曾把第二行压进「运河情景」并内滚） */
 .btn-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1.8fr);
+  grid-template-columns: 1fr 1fr 1.55fr; /* 第三格标签最长（港口吞吐活跃度），给宽一点免得折行 */
   grid-auto-rows: v-bind(btnHeightCss);
   gap: v-bind(cell16px);
-  flex: 1;
+  flex: none;
   min-height: 0;
 
-  /* 容量出口（c043 口径随 2026-09-30 反转废止，此处保留滚动可达性）：条目超出可见高时
-     不被 GCSPanel 的 overflow:hidden 裁掉，可滚可达（D21-2 同步） */
+  /* 容量出口（c043）：面板变矮时按钮不被 GCSPanel 的 overflow:hidden 裁掉，仍可滚可达。
+     单行 3 个指标在 1440/900 下不会触发滚动条；保留声明是为了小视口不静默截断。 */
   overflow-y: auto;
 }
 
@@ -483,22 +491,24 @@ function hintSpaceOnce() {
 /* ===== 时间轴（滑块收进统一卡片；控件行高 0.8cell，与卡片行高同源） ===== */
 .time-section {
   flex-shrink: 0;
+
+  /* 贴底：指标与情景在上，时间轴留在面板下沿，气泡往上冒也不会压到情景行 */
+  margin-top: auto;
 }
 
 .time-grid {
   display: grid;
-  grid-template-columns: 1fr auto;
+  grid-template-columns: 1fr;
   align-items: center;
-  column-gap: v-bind(cell8px);
 }
 
-/* 裸露滑块行：左值右滑块，整行即一个可拖的 range */
+/* 裸露滑块行：整行即一个可拖的 range；当前时间只在滑动时以气泡跟手显示 */
 .time-card {
+  position: relative;
   grid-column: 1;
   grid-row: 1;
   display: flex;
   align-items: center;
-  gap: v-bind(cell8px);
   height: v-bind(btnHeightCss);
   padding: 0 v-bind(cell8px);
   border: 1px solid var(--GCS-border-default);
@@ -506,12 +516,29 @@ function hintSpaceOnce() {
   background: var(--GCS-bg-panel);
 }
 
-.time-now {
-  flex: none;
+.time-bubble {
+  position: absolute;
+  bottom: calc(100% + 4px);
+  left: var(--pos, 0%);
+  transform: translateX(-50%);
+  padding: 2px 8px;
+  border-radius: var(--GCS-radius-md);
+  background: var(--GCS-color-primary);
+  color: var(--GCS-text-inverse);
   font-size: v-bind(smallFontSizeCss);
-  color: var(--GCS-text-regular);
+  line-height: 1.2;
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 2;
+  box-shadow: var(--GCS-shadow-md, 0 4px 12px rgb(0 0 0 / 18%));
+  transition: opacity var(--GCS-duration-fast, 0.15s);
+}
+
+.time-card:hover .time-bubble,
+.time-card:focus-within .time-bubble {
+  opacity: 1;
 }
 
 .time-range {
@@ -544,24 +571,6 @@ function hintSpaceOnce() {
   background: var(--GCS-color-primary);
   border: 2px solid var(--GCS-bg-panel);
   box-shadow: var(--GCS-shadow-sm);
-  cursor: pointer;
-}
-
-.time-granularity {
-  grid-column: 2;
-  grid-row: 1;
-}
-
-.gr-toggle {
-  display: flex;
-  align-items: center;
-  gap: v-bind(cell8px);
-  font-size: v-bind(smallFontSizeCss);
-  color: var(--GCS-text-secondary);
-  cursor: pointer;
-}
-
-.gr-toggle input {
   cursor: pointer;
 }
 
@@ -615,18 +624,5 @@ function hintSpaceOnce() {
 /* ing 态图标反色（其余视觉由 .btn-cell.ing 组合提供；选择卡片样式归 SliderSelectCard） */
 .btn-cell.ing .ind-icon {
   color: var(--GCS-text-inverse);
-}
-
-/* 数据口径脚注（W17）：热力散射点的**空间分布**是示意性插值（每港 40 点、按距离衰减加随机权重
-   铺在港口周围 0.025–0.05°，见 backend/src/modules/forecast/services/forecast-engine.ts
-   generateSpatialValues），**指标值本身仍是官方吞吐量/真数据派生**——脚注只披露空间口径，
-   不能让人以为数值也是编的。与 diversion 的 .transfer-note 同型（4×4 面板内一行小字）。
-   flex-shrink:0 且不占 .btn-grid 的 flex:1，故只压缩按钮网格的可滚动区，不改变其容量语义。 */
-.forecast-note {
-  flex-shrink: 0;
-  padding: 0 v-bind(cell8px);
-  font-size: v-bind(smallFontSizeCss);
-  line-height: 1.4;
-  color: var(--GCS-text-muted);
 }
 </style>

@@ -6,7 +6,7 @@
  * 抽屉模式（<960px）下抽屉同时承载业务面板（slot left/right）。
  */
 
-import { computed, defineAsyncComponent, inject, onUnmounted, watch } from 'vue'
+import { computed, defineAsyncComponent, inject, onUnmounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 import { MAP_CONFIG } from '@/core/config/map'
@@ -46,6 +46,26 @@ const { active: sliderFocusActive, activePanel: sliderActivePanel } = useSliderF
 // 任务结果芯片（手机档进控制台；桌面档由 App.vue 自己渲染浮条）。
 // 未 provide 时（单测/独立挂载）为 undefined ⇒ 中转带不渲染。
 const taskChips = inject(GCS_TASK_CHIPS_KEY, undefined)
+
+/**
+ * 中转带拖拽：芯片拖到 dock 的 ＋ 附近时半圆展开（判距在 BottomNavBar），
+ * 松手落在弧上某项即跳该分析页——结果图层本来就挂在 App 作用域，换页后仍压在地图上。
+ * 命中区用 elementFromPoint 找弧项的 data-dock-route，不新建一套坐标表。
+ */
+const railDragPoint = ref<{ x: number; y: number } | null>(null)
+
+function onRailDragMove(payload: { key: string; x: number; y: number }): void {
+  railDragPoint.value = { x: payload.x, y: payload.y }
+}
+
+function onRailDragEnd(payload: { key: string; x: number; y: number }): void {
+  railDragPoint.value = null
+  const target = document
+    .elementFromPoint(payload.x, payload.y)
+    ?.closest<HTMLElement>('[data-dock-route]')
+  const path = target?.dataset.dockRoute
+  if (path) void router.push(path)
+}
 
 // 抽屉业务行：取 navConfig 中 type=business 的项（core 不引 business，由 App.vue 注入）
 const businessNavItems = computed<NavItem[]>(() => [
@@ -166,6 +186,8 @@ function goBusiness(item: NavItem): void {
         v-if="taskChips && taskChips.chips.value.length"
         :chips="taskChips.chips.value"
         @toggle="taskChips.toggle"
+        @dragmove="onRailDragMove"
+        @dragend="onRailDragEnd"
       />
       <div class="console-head">
         <span class="console-title">{{
@@ -254,7 +276,7 @@ function goBusiness(item: NavItem): void {
     </MobileDrawer>
 
     <!-- 底部导航（3 按钮：首页/个人中心/菜单） -->
-    <BottomNavBar />
+    <BottomNavBar :drag-point="railDragPoint" />
   </div>
 </template>
 

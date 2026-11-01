@@ -131,6 +131,7 @@ const slots = computed(() => {
           v-for="(slot, i) in slots"
           :key="slot.item.path"
           class="dock-fan__item"
+          :data-dock-route="slot.item.path"
           :style="{
             left: `${slot.x}px`,
             top: `${slot.y}px`,

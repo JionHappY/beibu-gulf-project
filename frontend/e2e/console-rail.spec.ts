@@ -139,3 +139,56 @@ test('手机档：结果芯片进控制台中转带，点击上图，换路由�
   await expect(page.locator('.console-rail .task-result-chip.active')).toHaveCount(1)
   await page.screenshot({ path: '.local/design-shots/rail-390-flood.png' })
 })
+
+test('手机档：把芯片拖到 ＋ 上，半圆自动展开，落在弧上即换页', async ({ page }) => {
+  await stub(page)
+  await page.goto('/route-analysis')
+
+  // 先造出一个终态结果（同上一例的前半段）
+  const slots = page.locator('.slot-btn')
+  await expect(slots.nth(0)).toBeVisible({ timeout: 30_000 })
+  await slots.nth(0).click()
+  await page.locator('.poi-item').first().click()
+  await slots.nth(3).click()
+  await page.locator('.poi-item').nth(1).click()
+  await page.getByRole('button', { name: '开始查询' }).click()
+
+  const chip = page.locator('.console-rail .task-result-chip').first()
+  await expect(chip).toBeVisible({ timeout: 30_000 })
+  // 先上图（否则拖拽本身不改变图层状态，末尾的「仍 active」就成了假判据）
+  await chip.click()
+  await expect(page.locator('.console-rail .task-result-chip.active')).toHaveCount(1)
+
+  const chipBox = await chip.boundingBox()
+  const plusBox = await page.locator('.dock-plus-wrap button').boundingBox()
+  if (!chipBox || !plusBox) throw new Error('芯片或 ＋ 无布局盒')
+
+  const from = { x: chipBox.x + chipBox.width / 2, y: chipBox.y + chipBox.height / 2 }
+  const plus = { x: plusBox.x + plusBox.width / 2, y: plusBox.y + plusBox.height / 2 }
+
+  // 拖到 ＋ 上方 70px（够远才说明「靠近就展开」是判距生效，而不是指针已经压在按钮上）
+  await page.mouse.move(from.x, from.y)
+  await page.mouse.down()
+  await page.mouse.move(from.x, from.y + 20, { steps: 4 })
+  await page.mouse.move(plus.x, plus.y - 70, { steps: 12 })
+
+  // 半圆自己张开（不需要先松手再点 ＋）
+  const fan = page.locator('.dock-fan')
+  await expect(fan).toBeVisible()
+  await expect(page.locator('.dock-fan [data-dock-route]')).toHaveCount(5)
+  await page.screenshot({ path: '.local/design-shots/rail-390-drag-fan.png' })
+
+  // 落在「预测分析」上
+  const target = page.locator('.dock-fan [data-dock-route="/forecast"]')
+  const targetBox = await target.boundingBox()
+  if (!targetBox) throw new Error('弧上目标无布局盒')
+  await page.mouse.move(targetBox.x + targetBox.width / 2, targetBox.y + targetBox.height / 2, {
+    steps: 4,
+  })
+  await page.mouse.up()
+
+  await expect(page).toHaveURL(/forecast/)
+  // 拖拽不是「切换图层」：芯片仍上图，跟着新页面继续压在地图上
+  await expect(page.locator('.console-rail .task-result-chip.active')).toHaveCount(1)
+  await page.screenshot({ path: '.local/design-shots/rail-390-drag.png' })
+})

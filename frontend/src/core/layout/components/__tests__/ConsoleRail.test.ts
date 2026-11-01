@@ -45,4 +45,31 @@ describe('ConsoleRail（控制台中转带）', () => {
     expect(wrapper.find('[data-testid="console-rail"]').exists()).toBe(true)
     expect(wrapper.findAll('.task-result-chip')).toHaveLength(0)
   })
+
+  it('拖动超过阈值才认拖拽：发 dragmove/dragend，且不发 toggle（拖去别的分析不是切图层）', async () => {
+    const wrapper = mount(ConsoleRail, { props: { chips } })
+    const cell = wrapper.findAll('.rail-cell')[0].element as HTMLElement
+    // jsdom 的 MouseEvent 把 clientX 定义成只读 getter，trigger 的第二个参数改不了它
+    const fire = (type: string, x: number, y: number): void => {
+      const event = new MouseEvent(type, { bubbles: true })
+      Object.defineProperties(event, {
+        clientX: { value: x },
+        clientY: { value: y },
+        pointerId: { value: 1 },
+      })
+      cell.dispatchEvent(event)
+    }
+    fire('pointerdown', 10, 10)
+    // 4px：手指抖动，还不算拖拽
+    fire('pointermove', 14, 10)
+    await wrapper.vm.$nextTick()
+    expect(wrapper.emitted('dragmove')).toBeUndefined()
+    fire('pointermove', 60, 10)
+    await wrapper.vm.$nextTick()
+    expect(wrapper.emitted('dragmove')?.[0]).toEqual([{ key: 't1:route', x: 60, y: 10 }])
+    fire('pointerup', 60, 10)
+    await wrapper.vm.$nextTick()
+    expect(wrapper.emitted('dragend')?.[0]).toEqual([{ key: 't1:route', x: 60, y: 10 }])
+    expect(wrapper.emitted('toggle')).toBeUndefined()
+  })
 })

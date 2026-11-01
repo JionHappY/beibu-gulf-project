@@ -30,6 +30,11 @@ const { cellPixel, navCompact, showPanels } = useGCS()
 // 抽屉开关（模块级单例）：菜单按钮与抽屉共享，激活时高亮
 const { drawerOpen, toggleDrawer } = useMobileDrawer()
 
+/** 中转带正在拖拽的指针位置（AppLayout 传入）；靠近 ＋ 时半圆自动展开，松手才落点 */
+const props = withDefaults(defineProps<{ dragPoint?: { x: number; y: number } | null }>(), {
+  dragPoint: null,
+})
+
 const businessItems = computed<NavItem[]>(() => navItems.value.filter((i) => i.type === 'business'))
 const homeItem = computed(() => navItems.value.find((i) => i.type === 'home'))
 const profileItem = computed(() => navItems.value.find((i) => i.type === 'profile'))
@@ -49,6 +54,27 @@ const fanOpen = ref(false)
 watch(fanOpen, (on) => document.body.classList.toggle('dock-fan-open', on), { immediate: true })
 onUnmounted(() => document.body.classList.remove('dock-fan-open'))
 const plusRef = ref<HTMLElement | null>(null)
+
+/**
+ * 拖拽中转带芯片时，指针进入 ＋ 周围就展开半圆：用户不必先松手再点一次 ＋，
+ * 而是「拖过去 → 弧自己张开 → 直接落在某个分析上」。判定半径按 cell 缩放，
+ * 手机档 ±2 屏宽内都算（弧展开后入口离 ＋ 最多 1.6 cell）。
+ */
+const FAN_REACH_CELL = 2
+watch(
+  () => props.dragPoint,
+  (point) => {
+    if (!point || !navCompact.value || fanOpen.value) return
+    const el = plusRef.value
+    if (!el) return
+    const rect = el.getBoundingClientRect()
+    const distance = Math.hypot(
+      point.x - (rect.left + rect.width / 2),
+      point.y - (rect.top + rect.height / 2)
+    )
+    if (distance <= cellPixel.value * FAN_REACH_CELL) fanOpen.value = true
+  }
+)
 
 function toggleFan(): void {
   fanOpen.value = !fanOpen.value

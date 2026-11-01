@@ -59,12 +59,12 @@ describe('useOwnedLayers — 图层归属结构约束', () => {
       }),
       MOUNT_OPTS(manager)
     )
-    expect(seen.at(-1)).toBe(false)
+    expect(seen[seen.length - 1]).toBe(false)
     ;(
       wrapper.vm as unknown as { owned: { register: (k: string, d: unknown) => boolean } }
     ).owned.register('a', DESC)
     await nextTick()
-    expect(seen.at(-1)).toBe(true)
+    expect(seen[seen.length - 1]).toBe(true)
   })
 
   it('注册即登记：作用域销毁自动清掉本 owner 全部图层（页面不写 remove）', () => {

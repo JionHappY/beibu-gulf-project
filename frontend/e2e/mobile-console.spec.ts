@@ -94,3 +94,18 @@ test('图层面板在控制台里收成三列紧凑排，桌面档仍是两列�
   expect(desktop.cols).toBe(2)
   expect(desktop.rowDir).toBe('column')
 })
+
+test('控制台里的图表留足高度，双轴刻度不被挤/裁', async ({ page }) => {
+  await page.goto('/forecast', { waitUntil: 'networkidle' })
+
+  const canvases = page.locator('.console-body canvas')
+  await expect(canvases.first()).toBeVisible()
+
+  const heights = await canvases.evaluateAll((els) =>
+    els.map((el) => Math.round(el.getBoundingClientRect().height))
+  )
+  expect(heights.length).toBeGreaterThan(0)
+  // CHART_GRID 上下各 40px（标题 + 图例）：110px 时绘图区只剩 30px，纵轴刻度互压、
+  // 右轴 700,000 这类六位数被画布边缘裁掉；150px 仍重叠，170px 才干净
+  for (const h of heights) expect(h).toBeGreaterThanOrEqual(160)
+})

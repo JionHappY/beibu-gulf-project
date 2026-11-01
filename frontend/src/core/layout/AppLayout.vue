@@ -403,14 +403,17 @@ function goBusiness(item: NavItem): void {
   height: auto;
 }
 
-/* 图表给确定高度：面板改 auto 后 flex:1 的挂载点会塌成 0，ECharts 按 0 高初始化 */
+/* 图表给确定高度：面板改 auto 后 flex:1 的挂载点会塌成 0，ECharts 按 0 高初始化。
+   170 不是随手取的：CHART_GRID 上下各留 40px（标题 + 图例），110px 时绘图区只剩 30px，
+   纵轴刻度挤在一起、双轴图右侧 700,000 这类六位数会被画布边缘裁掉；150px 仍会重叠，
+   170px 是实测刻度互不压且右轴完整的第一个高度。 */
 .console-body :deep(.line-chart),
 .console-body :deep(.bar-chart),
 .console-body :deep(.suit-radar-chart),
 .console-body :deep(.transfer-chart),
 .console-body :deep(.chart-container) {
   flex: 0 0 auto;
-  height: 110px;
+  height: 170px;
 }
 
 /* 图层控制在控制台里收成三列紧凑排：组件的 2 列 × 0.8cell 行高在 390 宽下占 262px

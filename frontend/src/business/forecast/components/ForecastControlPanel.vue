@@ -425,9 +425,10 @@ function hintOnce() {
 .btn-grid {
   display: grid;
   grid-template-columns: 1fr 1fr 1.55fr; /* 第三格标签最长（港口吞吐活跃度），给宽一点免得折行 */
-  grid-auto-rows: v-bind(btnHeightCss);
+  grid-auto-rows: minmax(0, 1fr);
   gap: v-bind(cell16px);
-  flex: none;
+  /* 撑满面板剩余高度：原来 flex:none 固定 0.8cell，4×4 面板下面空出一大片 */
+  flex: 1 1 auto;
   min-height: 0;
 
   /* 容量出口（c043）：面板变矮时按钮不被 GCSPanel 的 overflow:hidden 裁掉，仍可滚可达。
@@ -492,8 +493,9 @@ function hintOnce() {
 .time-section {
   flex-shrink: 0;
 
-  /* 贴底：指标与情景在上，时间轴留在面板下沿，气泡往上冒也不会压到情景行 */
-  margin-top: auto;
+  /* 不再 margin-top:auto 顶到底：指标网格已 flex:1 吃掉剩余高度，
+     再贴底会在情景行与时间轴之间留一条空带 */
+  margin-top: 0;
 }
 
 .time-grid {
@@ -510,10 +512,12 @@ function hintOnce() {
   display: flex;
   align-items: center;
   height: v-bind(btnHeightCss);
-  padding: 0 v-bind(cell8px);
-  border: 1px solid var(--GCS-border-default);
-  border-radius: var(--GCS-radius-lg);
-  background: var(--GCS-bg-panel);
+  padding: 0;
+
+  /* 不再套一层描边卡片：时间轴与浸没页的水位滑块同一种裸露形态，
+     外框只会让它看起来像「另一个可点的按钮」 */
+  border: none;
+  background: transparent;
 }
 
 .time-bubble {

@@ -12,6 +12,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { MAP_CONFIG } from '@/core/config/map'
 import { useMapControls } from '@/core/map/composables/useMapControls'
 import LayerControlPanel from '@/core/map/components/LayerControlPanel.vue'
+import HomeAnalysisGrid from './components/HomeAnalysisGrid.vue'
 import { PanelTitle, useGCS, useTheme } from '@/shared'
 
 import BottomNavBar from './components/BottomNavBar.vue'
@@ -174,8 +175,8 @@ function goBusiness(item: NavItem): void {
       </div>
       <div class="console-body">
         <template v-if="route.name === 'Home'">
+          <HomeAnalysisGrid />
           <div class="console-card"><LayerControlPanel /></div>
-          <slot name="left" />
         </template>
         <template v-else-if="route.name === 'Profile'">
           <slot name="right" />

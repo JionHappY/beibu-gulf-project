@@ -519,7 +519,10 @@ body {
 .gcs-chip.sel {
   background: var(--GCS-bg-active);
   border-color: var(--GCS-color-primary);
-  color: var(--GCS-color-primary);
+
+  /* 选中态文字对 bg-active 只有 4.34:1（12px 正文要 4.5），换 primary-hover 一档：
+     同色系、更深，对 bg-active 5.7:1；边框仍用 primary 保持品牌色不变 */
+  color: var(--GCS-color-primary-hover);
   font-weight: 600;
 }
 

@@ -403,16 +403,18 @@ function goBusiness(item: NavItem): void {
    GCSPanel 把 left/top/width/height 写成内联 CSS 变量，所以这里必须 !important 才压得住
    （与 style.css 里 .GCS-drawer__body .GCS-panel 的抽屉归一化同一手法）。 */
 .console-body :deep(.GCS-panel) {
-  position: static !important;
-  width: 100% !important;
-  height: auto !important;
-  min-width: 0 !important;
-  min-height: 0 !important;
-  margin: 0 !important;
-  overflow: visible !important;
+  /* 选择器特异度（.console-body[data-v-x] .GCS-panel）已经高于 .GCS-panel 自身，
+     这里不需要 !important——GCSPanel 的定位走的是 CSS 变量，不是内联属性 */
+  position: static;
+  width: 100%;
+  height: auto;
+  min-width: 0;
+  min-height: 0;
+  margin: 0;
+  overflow: visible;
 
   /* flex 列里不能压缩：被压扁时内层内容会溢出到面板外、盖住 dock */
-  flex: 0 0 auto !important;
+  flex: 0 0 auto;
   padding: 6px;
 }
 

@@ -25,10 +25,11 @@ import {
   useStackablePanels,
 } from '@/core'
 import { DEFAULT_LAYER_ORDER, loadStatic, logger, showToast } from '@/shared'
+import { isFiniteLngLat } from '@/shared/utils/pointFeature'
 import { useMapStore, useTaskStore } from '@/stores'
 import type { MapRenderer, RoutePathResult } from '@/types'
-import type { TaskSlot } from '@/types/task'
 import { pingluImageryIndexSchema, tilesetJsonSchema } from '@/types/schemas'
+import type { TaskSlot } from '@/types/task'
 
 import RouteControlPanel from './components/RouteControlPanel.vue'
 import { fitViewForPath } from './composables/pathFit'
@@ -226,7 +227,7 @@ function handleRendererClick(event: CustomEvent<{ coordinate: [number, number] |
   if (!coordinate || !Array.isArray(coordinate) || coordinate.length < 2) return
   const lng = Number(coordinate[0])
   const lat = Number(coordinate[1])
-  if (!Number.isFinite(lng) || !Number.isFinite(lat)) return
+  if (!isFiniteLngLat({ lng, lat })) return
   void panelRef?.value?.handleMapPick(lng, lat)
 }
 

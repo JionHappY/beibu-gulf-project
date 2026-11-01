@@ -327,6 +327,13 @@ body {
   display: none;
 }
 
+/* 手机档（<640px）：地图只占上半屏，下半屏让给控制台。
+   断点由 useGCS 的 layoutTierFor 判定、以 body class 下发，这里不重复写媒体查询。 */
+.layout-console .unified-map-wrapper {
+  height: 46vh;
+  inset: auto 0;
+}
+
 /* 面板内滚动条统一走主题 token（暗色不再出现 UA 浅色条） */
 .GCS-panel * {
   scrollbar-width: thin;

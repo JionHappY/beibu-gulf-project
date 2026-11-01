@@ -44,7 +44,7 @@ const emit = defineEmits<{ select: [item: NavItem]; close: [] }>()
 const { cellPixel } = useGCS()
 
 /** 半径（cell 数）：2.4 cell ≈ 拇指 60° 扇区内的舒适指向距离 */
-const RADIUS_CELL = 2.2
+const RADIUS_CELL = 1.7
 /** 圆心抬升（cell 数）：让弧的左右两端离开 dock 本体，不被按钮压住 */
 const BASE_LIFT_CELL = 1.5
 

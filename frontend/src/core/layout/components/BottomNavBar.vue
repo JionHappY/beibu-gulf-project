@@ -34,20 +34,8 @@ const businessItems = computed<NavItem[]>(() => navItems.value.filter((i) => i.t
 const homeItem = computed(() => navItems.value.find((i) => i.type === 'home'))
 const profileItem = computed(() => navItems.value.find((i) => i.type === 'profile'))
 
-/**
- * 档位 3 的半圆入口：5 个业务页 + 「更多」。
- *
- * 为什么把菜单也放进来：<640px 的控制面板收在抽屉里（AppLayout 的 MobileDrawer），
- * 删掉菜单键后若无替代入口，窄屏就再也打不开面板——业务页进得去、参数调不了。
- * 菜单项只在抽屉模式（showPanels=false）存在，档位逻辑不变。
- */
-const fanItems = computed<NavItem[]>(() => {
-  const items = [...businessItems.value]
-  if (!showPanels.value) {
-    items.push({ type: 'business', label: '更多', icon: '⋯', path: '' })
-  }
-  return items
-})
+// 手机档的入口就是这 5 个分析页：抽屉内容已迁到下半屏控制台，弧上不再需要「更多」
+const fanItems = computed<NavItem[]>(() => [...businessItems.value])
 
 /** 档位 3：首页 / ＋ / 个人中心 三格；其余档位：全部项 + 菜单键 */
 const dockCellCount = computed(() =>
@@ -77,13 +65,10 @@ const plusRing = computed(() => {
   return null
 })
 
-/** 半圆里点了「更多」以外的项：跳路由并收起 */
+/** 半圆里选项：跳路由并收起（弧上已无抽屉入口，不存在空 path 分支） */
 function onFanSelect(item: NavItem): void {
   fanOpen.value = false
-  if (!item.path) {
-    toggleDrawer()
-    return
-  }
+  if (!item.path) return
   void router.push(item.path)
 }
 
@@ -142,10 +127,10 @@ function preloadIf3D(item: NavItem): void {
           @click="go(homeItem)"
         />
         <div ref="plusRef" class="dock-plus-wrap" :class="{ 'is-open': fanOpen }">
-          <GCSButton :w="0.9" :h="0.9" label="" icon="＋" :active="fanOpen" @click="toggleFan" />
+          <GCSButton :w="1" :h="1" label="" icon="＋" :active="fanOpen" @click="toggleFan" />
           <span v-if="plusRing" class="nav-button-ring">
             <TaskProgressRing
-              :size="Math.round(cellPixel * 0.9 + 8)"
+              :size="Math.round(cellPixel + 8)"
               :progress="plusRing.progress"
               :status="plusRing.status ?? 'pending'"
               :indeterminate="plusRing.indeterminate"
@@ -221,6 +206,18 @@ function preloadIf3D(item: NavItem): void {
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+}
+
+/* ＋ 是半圆入口：GCSButton 的 .button-icon 默认 0.85em，1 cell 按钮里只剩 14px，压不住 dock */
+.dock-plus-wrap :deep(.button-icon) {
+  font-size: 26px;
+  line-height: 1;
+  opacity: 1;
+}
+
+/* 空 label 不占行高（否则图标被挤到按钮下半截） */
+.dock-plus-wrap :deep(.button-label:empty) {
+  display: none;
 }
 
 .nav-button-ring {

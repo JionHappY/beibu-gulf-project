@@ -24,7 +24,7 @@ import { useSliderFocus } from './useSliderFocus'
 
 const route = useRoute()
 const router = useRouter()
-const { showPanels, showTopArea } = useGCS()
+const { showPanels, showTopArea, navCompact, cellPixel } = useGCS()
 const { flyTo } = useMapControls()
 // 城市切换（必要性审判波次二·单元 F）：原 useScreenActions 只是 flyTo 的同义转发层，
 // 就地按 MAP_CONFIG.CITY_CENTERS（单一权威源）取坐标，不新增第二份城市表。
@@ -56,6 +56,13 @@ watch(sliderFocusActive, (act) => {
     p.classList.toggle('slider-focus-panel', act && p === sliderActivePanel.value)
   })
 })
+
+// 手机档（<640）把地图压到上半屏：统一挂在 body 上，由 style.css 收 .unified-map-wrapper 高度。
+// 用 body class 而非媒体查询，断点仍只由 useGCS 的 layoutTierFor 一处判定。
+watch(navCompact, (on) => document.body.classList.toggle('layout-console', on), { immediate: true })
+onUnmounted(() => document.body.classList.remove('layout-console'))
+// 控制台底部让开 dock（dock 是 1 cell 高的 GCSPanel，同源取 cellPixel，不写死像素）
+const consoleStyle = computed(() => ({ bottom: `${Math.round(cellPixel.value * 1.7)}px` }))
 
 // 专注态激活期间切路由 ⇒ 旧页 AppLayout 卸载，而 useSliderFocus 的
 // onScopeDispose(endSliderFocus) 与本 watch 的效果在同一批 scope.stop() 里停掉，
@@ -142,9 +149,47 @@ function goBusiness(item: NavItem): void {
       </div>
     </template>
 
-    <!-- ===== 抽屉菜单（抽屉模式 <960px） =====
-         业务入口（sticky 冻结首行）+ 城市切换 + 业务面板；档位 1 时菜单键不存在 -->
-    <MobileDrawer :open="drawerOpen" @close="closeDrawer">
+    <!-- ===== 控制台（手机档 <640px） =====
+         地图收上半屏，原抽屉里的图层控制 / 业务面板整体搬到下半屏（压缩排版，尽量一屏放完）。
+         抽屉在手机档不再渲染——入口是 dock 的 ＋ 半圆，内容是这张控制台。 -->
+    <section v-if="navCompact" class="mobile-console" :style="consoleStyle" aria-label="控制台">
+      <div class="console-head">
+        <span class="console-title">{{
+          (route.meta?.title as string) || '北部湾智慧港口平台'
+        }}</span>
+        <div class="console-cities">
+          <NavButton
+            v-for="city in Object.keys(MAP_CONFIG.CITY_CENTERS)"
+            :key="city"
+            :label="city"
+            @click="flyToCity(city)"
+          />
+          <NavButton
+            :icon="isDark ? '☀️' : '🌙'"
+            class="theme-toggle"
+            aria-label="切换主题"
+            @click="toggleTheme"
+          />
+        </div>
+      </div>
+      <div class="console-body">
+        <template v-if="route.name === 'Home'">
+          <div class="console-card"><LayerControlPanel /></div>
+          <slot name="left" />
+        </template>
+        <template v-else-if="route.name === 'Profile'">
+          <slot name="right" />
+        </template>
+        <template v-else>
+          <slot name="right" />
+          <slot name="left" />
+        </template>
+      </div>
+    </section>
+
+    <!-- ===== 抽屉菜单（平板档 640–959px） =====
+         业务入口（sticky 冻结首行）+ 城市切换 + 业务面板；手机档已由上方控制台承接 -->
+    <MobileDrawer v-if="!navCompact" :open="drawerOpen" @close="closeDrawer">
       <div class="drawer-menu">
         <!-- 业务入口行：滚动时冻结（sticky） -->
         <div class="drawer-menu__row drawer-menu__row--sticky" aria-label="业务功能">
@@ -233,6 +278,119 @@ function goBusiness(item: NavItem): void {
   align-items: center;
   justify-content: space-around;
   box-sizing: border-box;
+}
+
+/* ===== 手机档控制台 ===== */
+.mobile-console {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 46vh;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px;
+  background-color: var(--GCS-bg-page);
+  border-top: 1px solid var(--GCS-border-light);
+  pointer-events: auto;
+  box-sizing: border-box;
+}
+
+.console-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex: none;
+}
+
+.console-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--GCS-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.console-cities {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: none;
+}
+
+.console-cities :deep(.GCS-button) {
+  --GCS-button-w: 44px;
+  --GCS-button-h: 26px;
+
+  font-size: 11px;
+}
+
+/* 内容区唯一可滚动的地方；面板改为正常流堆叠，压缩后尽量一屏放完 */
+.console-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.console-card {
+  background-color: var(--GCS-bg-panel);
+  border-radius: var(--GCS-radius-md);
+  box-shadow: var(--GCS-shadow-sm);
+  padding: 6px;
+}
+
+/* 面板进控制台后按内容高度堆叠。
+   GCSPanel 把 left/top/width/height 写成内联 CSS 变量，所以这里必须 !important 才压得住
+   （与 style.css 里 .GCS-drawer__body .GCS-panel 的抽屉归一化同一手法）。 */
+.console-body :deep(.GCS-panel) {
+  position: static !important;
+  width: 100% !important;
+  height: auto !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  overflow: visible !important;
+
+  /* flex 列里不能压缩：被压扁时内层内容会溢出到面板外、盖住 dock */
+  flex: 0 0 auto !important;
+  padding: 6px;
+}
+
+.console-body :deep(.GCS-panel > *) {
+  height: auto;
+}
+
+/* 图表给确定高度：面板改 auto 后 flex:1 的挂载点会塌成 0，ECharts 按 0 高初始化 */
+.console-body :deep(.line-chart),
+.console-body :deep(.bar-chart),
+.console-body :deep(.suit-radar-chart),
+.console-body :deep(.transfer-chart),
+.console-body :deep(.chart-container) {
+  flex: 0 0 auto;
+  height: 110px;
+}
+
+/* 压缩：面板内的区块间距与字号整体收一档（目标是一屏放完，不靠滑） */
+.console-body :deep(.GCS-panel) {
+  font-size: 11.5px;
+  line-height: 1.35;
+}
+
+/* 内容区不许再按 cell 高度 flex 撑满 */
+.console-body :deep(.GCS-panel > * > *) {
+  min-height: 0;
+}
+
+.console-body :deep(.GCS-panel .layer-grid),
+.console-body :deep(.GCS-panel .btn-grid),
+.console-body :deep(.GCS-panel .criteria-grid) {
+  gap: 4px;
 }
 
 /* ===== 抽屉菜单 ===== */

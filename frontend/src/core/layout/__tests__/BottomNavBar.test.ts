@@ -146,7 +146,7 @@ describe('BottomNavBar 三档位', () => {
     expect(mockPreloadCesium).not.toHaveBeenCalled()
   })
 
-  it('档位 3 点 ＋ 展开半圆：5 个业务项 + 更多', async () => {
+  it('档位 3 点 ＋ 展开半圆：只有 5 个业务项，没有「更多」', async () => {
     await setViewport(375)
     const wrapper = mount(BottomNavBar)
     await wrapper.find('.dock-plus-wrap .GCS-button').trigger('click')
@@ -160,7 +160,8 @@ describe('BottomNavBar 三档位', () => {
     expect(labels.some((l) => l.includes('预测'))).toBe(true)
     expect(labels.some((l) => l.includes('分流'))).toBe(true)
     expect(labels.some((l) => l.includes('浸没'))).toBe(true)
-    expect(labels.some((l) => l.includes('更多'))).toBe(true)
+    expect(labels).toHaveLength(4) // 夹具只注册了 4 个业务项
+    expect(labels.some((l) => l.includes('更多'))).toBe(false)
   })
 
   it('半圆里点业务项：跳该路由并收起', async () => {

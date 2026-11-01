@@ -16,7 +16,7 @@ export interface TaskChipView {
   active: boolean
 }
 
-export interface TaskChipsContext {
+interface TaskChipsContext {
   chips: ComputedRef<TaskChipView[]>
   /** 上图 ⇄ 撤下的开关；参数是芯片 key（IR id） */
   toggle: (key: string) => void

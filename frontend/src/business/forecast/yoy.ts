@@ -7,15 +7,15 @@
  */
 import { fromMonthOrdinal, toMonthOrdinal } from './timeline'
 
-export type YoyGranularity = 'month' | 'year'
+type YoyGranularity = 'month' | 'year'
 
-export interface YoyPoint {
+interface YoyPoint {
   time: string
   value: number | null | undefined
 }
 
 /** 时间→值。缺失项不进表 ⇒ 查不到就是「没有前期数据」 */
-export type YoyLookup = Map<string, number>
+type YoyLookup = Map<string, number>
 
 /** t-12 期的时间键（月粒度退 12 个月，年粒度退 1 年） */
 export function shiftBack12(time: string, granularity: YoyGranularity): string {

@@ -591,12 +591,20 @@ function hintOnce() {
   flex: 1;
   appearance: none;
   min-width: 0;
-  height: var(--GCS-slider-thumb-size);
-  background: linear-gradient(to right, var(--GCS-border-default), var(--GCS-color-primary));
-  border-radius: calc(var(--GCS-slider-thumb-size) / 2);
+
+  /* 命中区 24px（WCAG 2.5.8）：视觉轨道仍是 14px，多出来的高度由透明盒吃掉，
+     否则手机上手指按偏一两像素就滑不动。 */
+  height: 24px;
+  background: transparent;
   outline: none;
   cursor: pointer;
   margin: 0;
+}
+
+.time-range::-webkit-slider-runnable-track {
+  height: var(--GCS-slider-thumb-size);
+  border-radius: calc(var(--GCS-slider-thumb-size) / 2);
+  background: linear-gradient(to right, var(--GCS-border-default), var(--GCS-color-primary));
 }
 
 .time-range::-webkit-slider-thumb {
@@ -608,6 +616,12 @@ function hintOnce() {
   border: 2px solid var(--GCS-bg-panel);
   box-shadow: var(--GCS-shadow-sm);
   cursor: pointer;
+}
+
+.time-range::-moz-range-track {
+  height: var(--GCS-slider-thumb-size);
+  border-radius: calc(var(--GCS-slider-thumb-size) / 2);
+  background: linear-gradient(to right, var(--GCS-border-default), var(--GCS-color-primary));
 }
 
 .time-range::-moz-range-thumb {

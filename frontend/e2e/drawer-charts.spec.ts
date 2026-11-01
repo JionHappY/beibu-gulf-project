@@ -36,6 +36,8 @@ async function stubBackend404(page: Page): Promise<void> {
 }
 
 const CASES = [
+  // 首页概览图曾因 Home 分支只注入图层控制而在窄屏完全不可达；补 #left 后纳入回归
+  { path: '/', chart: '.line-chart' },
   { path: '/site-suitability', chart: '.suit-radar-chart' },
   { path: '/diversion-analysis', chart: '.transfer-chart' },
   { path: '/forecast', chart: '.line-chart' },

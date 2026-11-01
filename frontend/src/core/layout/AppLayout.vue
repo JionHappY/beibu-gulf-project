@@ -178,6 +178,9 @@ function goBusiness(item: NavItem): void {
         <template v-if="!showPanels">
           <template v-if="route.name === 'Home'">
             <GCSPanel :w="4" :h="4"><LayerControlPanel /></GCSPanel>
+            <!-- 桌面左侧的两张概览图在窄屏原本完全不可达（Home 分支只注入图层控制）；
+                 补 #left 后抽屉内可滚动查看，数据与桌面同源。 -->
+            <slot name="left" />
           </template>
           <template v-else-if="route.name === 'Profile'">
             <slot name="right" />
@@ -256,6 +259,11 @@ function goBusiness(item: NavItem): void {
   z-index: 5;
   background: var(--GCS-bg-panel);
   border-bottom: 1px solid var(--GCS-border-light);
+
+  /* 5 个业务入口默认在 294px 抽屉里排成 4+1（第 5 项单吊一行）观感失衡；
+     限宽到 200px 后稳定 3+2 两行居中，行高不变。 */
+  max-width: 200px;
+  margin-inline: auto;
 }
 
 /* 主题切换按钮 emoji 放大（默认偏小，仅作用于 .theme-toggle） */

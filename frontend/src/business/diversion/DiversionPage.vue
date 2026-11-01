@@ -12,11 +12,9 @@ import { mapDataService } from '@/services'
 import {
   DEFAULT_LAYER_ORDER,
   PORT_PORTS,
-  ROW_HEIGHT_CELL,
   logger,
   showError,
   SliderNaked,
-  useGCS,
   useLatestRequest,
   usePanelPlacements,
 } from '@/shared'
@@ -55,14 +53,6 @@ const loading = ref(false)
 
 /** 四面板位置由 panels.ts 派生（cell 档随全局；模板不写 offset 字面量） */
 const placements = usePanelPlacements(DIVERSION_PANELS)
-
-/**
- * 年份卡片行高：与预测/选址/浸没三页同一系数（ROW_HEIGHT_CELL = 0.8cell，与 panelCapacity 同源）。
- * 原 48px 字面量比另三页 0.8cell（cell=80 时 64px）矮 16px，同一控件跨页不同高；
- * 改由 cell 派生后四页同高，且随档位（90/80/70）等比缩放。
- */
-const { cellPixel } = useGCS()
-const cardHeightCss = computed(() => `${cellPixel.value * ROW_HEIGHT_CELL}px`)
 
 // 可视化面板共用堆叠拖拽（与预测/选址同一方法）
 const STACKABLE_PANELS = [
@@ -342,21 +332,16 @@ onUnmounted(() => {
   color: var(--GCS-text-muted);
 }
 
-/* 年份卡片：标题 + 收起态按钮 + 口径提示，避免 4×4 面板被一张卡片拉成大白块 */
+/* 只吃面板剩余的 296px（面板 320 − 头部 24）。height:100% 会按 320 撑满、
+   底部 24px 被 .GCS-panel 的 overflow:hidden 裁掉（1440 实测 scrollHeight 344 / clientHeight 320） */
 .year-panel {
-  height: 100%;
+  flex: 1 1 auto;
+  min-height: 0;
   padding: 8px;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
   gap: 8px;
-}
-
-/* 卡片行高由外层给定（SliderSelectCard 根 height:100%）：与另三页同为 0.8cell，
-   flex:none 防它被 .year-panel 的纵向 flex 拉伸 */
-.year-panel :deep(.ssc) {
-  height: v-bind(cardHeightCss);
-  flex: none;
 }
 
 .year-hint {

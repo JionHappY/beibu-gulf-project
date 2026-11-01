@@ -15,7 +15,7 @@ import {
   ROW_HEIGHT_CELL,
   logger,
   showError,
-  SliderSelectCard,
+  SliderNaked,
   useGCS,
   useLatestRequest,
   usePanelPlacements,
@@ -49,8 +49,6 @@ const YEAR_MIN = 2027
 const YEAR_MAX = 2050
 const year = ref(2035)
 /** 年份卡片展开态：默认收起（无 range），点击卡片进入选择态才渲染滑块；点面板外回到已选态 */
-const yearCardOpen = ref(false)
-const yearPanelRef = ref<HTMLElement | null>(null)
 const { getBreakdown, getCanalLine } = useDiversionApi()
 const result = ref<DiversionBreakdownResponseParsed | null>(null)
 const loading = ref(false)
@@ -214,31 +212,22 @@ async function loadGeometry(): Promise<void> {
 let debounceTimer: ReturnType<typeof setTimeout> | null = null
 const DEBOUNCE_DELAY = 300
 
-/** 年份写入 + 300ms 防抖（滑块收进 SliderSelectCard 后由组件抽出 number，防抖语义不变） */
+/** 年份写入 + 300ms 防抖（裸露滑块直接吐 number，拖动过程连续触发只发末次请求） */
 function onYearInput(value: number): void {
   year.value = value
   if (debounceTimer) clearTimeout(debounceTimer)
   debounceTimer = setTimeout(() => void load(), DEBOUNCE_DELAY)
 }
 
-/** 点年份面板外部回到已选态（卡片自身 click.stop，点卡片不会走到这里） */
-function handleGlobalClick(e: MouseEvent): void {
-  if (yearPanelRef.value && !yearPanelRef.value.contains(e.target as Node)) {
-    yearCardOpen.value = false
-  }
-}
-
 onMounted(() => {
   void load()
   void loadGeometry()
-  document.addEventListener('click', handleGlobalClick)
 })
 
 onUnmounted(() => {
   unmounted = true
   pageAbort.abort()
   latestBreakdown.cancel()
-  document.removeEventListener('click', handleGlobalClick)
   if (debounceTimer) {
     clearTimeout(debounceTimer)
     debounceTimer = null
@@ -289,21 +278,18 @@ onUnmounted(() => {
         </GCSPanel>
       </template>
       <template #right>
-        <!-- 右上 4×4：年份控制（滑块收进统一卡片，点击才展开；300ms 防抖逻辑不动） -->
+        <!-- 右上 4×4：年份控制（常驻滑块；300ms 防抖逻辑不动） -->
         <GCSPanel v-bind="placements.year" title="年份">
-          <div ref="yearPanelRef" class="year-panel">
-            <!-- 三态选择卡片（公共组件 SliderSelectCard）：默认=按钮，点击进入选择态才渲染滑块 -->
-            <SliderSelectCard
-              :selecting="yearCardOpen"
-              :selected="true"
+          <div class="year-panel">
+            <!-- 裸露滑块（SliderNaked）：年份没有「未选中」态，不存在先选再编辑，直接摊开 -->
+            <SliderNaked
               label="当前年份"
-              :status-text="String(year)"
-              :slider-value="yearCardOpen ? year : null"
-              :slider-min="YEAR_MIN"
-              :slider-max="YEAR_MAX"
-              :slider-step="1"
-              @toggle="yearCardOpen = true"
-              @update:slider-value="onYearInput"
+              :value="year"
+              :min="YEAR_MIN"
+              :max="YEAR_MAX"
+              :step="1"
+              aria-label="分析年份"
+              @update:value="onYearInput"
             />
             <p class="year-hint">
               可调范围 {{ YEAR_MIN }}–{{ YEAR_MAX }}；切换年份会重算转移量与桑基图。

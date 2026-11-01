@@ -3,8 +3,8 @@
  * 水位滑块与剖面分析面板：滑块控制水位（0-10m，海平面/EGM96 基准，0.1m 步进；
  * 0 = 平均海平面）、点击等距刻度标记、下拉选择预设剖面线，自动显示高程剖面图
  * 并叠加当前水位线。布局 4×4，右上角。
- * 滑块统一到公共组件 SliderSelectCard（三态卡片，与预测/选址同款）：默认只读显示
- * 当前水位，点击卡片才展开滑块；刻度 5 档等距纯数值（0/2.5/5/7.5/10）单排贴卡片下方。
+ * 滑块用公共组件 SliderNaked（常驻裸露）：水位没有「未选中」态，不需要先点一下再拖；
+ * 刻度 5 档等距纯数值（0/2.5/5/7.5/10）单排贴在滑块下方，点刻度直接跳水位。
  * 风险语义由标题行动态徽章实时承载（deriveRiskLevelDisplay，与后端
  * RISK_LEVEL_BANDS 同表）。后端数据全域 0-25 保留，展示域收口见
  * FLOOD_DISPLAY_MAX_WATER_LEVEL。
@@ -43,8 +43,7 @@ import {
   PROFILE_AREA_STOP_STRONG,
   PROFILE_AREA_STOP_WEAK,
   PROFILE_COLORS,
-  ROW_HEIGHT_CELL,
-  SliderSelectCard,
+  SliderNaked,
 } from '@/shared'
 import { useGCS } from '@/shared'
 import { perfTimeFn } from '@/shared'
@@ -93,9 +92,7 @@ const taskStore = useTaskStore()
 // 滑块专注模式（安卓控制中心风格）：拖动水位滑块时隐藏其他面板，只留本面板
 const { beginSliderFocusOnRange, endSliderFocus } = useSliderFocus()
 // 直接从 useGCS 解构 CSS 变量供 v-bind() 使用
-const { cell8px, cell16px, cellPixel } = useGCS()
-/** 三态卡片行高：与预测/选址控制面板统一 0.8cell（ROW_HEIGHT_CELL 与容量公式同源） */
-const cardHeightCss = computed(() => `${cellPixel.value * ROW_HEIGHT_CELL}px`)
+const { cell8px, cell16px } = useGCS()
 
 /**
  * 页面恢复标志（由父页面传入）。
@@ -357,9 +354,6 @@ onMounted(() => {
 
   // 监听窗口大小变化
   window.addEventListener('resize', handleResize)
-
-  // 三态卡片点外部收起（卡片自身 click.stop，点卡片不会走到这里）
-  document.addEventListener('click', handleGlobalClick)
 })
 
 /**
@@ -388,26 +382,6 @@ const localWaterLevel = computed<number>({
 })
 
 /**
- * 三态卡片的「选择中」态（滑块是否展开）。
- *
- * 旧版 el-slider 常驻可见；统一到 SliderSelectCard 后滑块收进卡片：
- * 默认/已选态只显示当前水位数值，点击卡片才进入选择态渲染滑块，
- * 点卡片区外部回到已选态（与预测时间轴、选址准则卡片同一套状态机）。
- */
-const sliderOpen = ref(false)
-
-/**
- * 卡片区（含刻度行）DOM 引用：点其外部收起滑块。
- * 刻度行刻意纳入区内——点刻度跳转水位时卡片应保持展开，不打断连续微调。
- */
-const sliderAreaRef = ref<HTMLElement | null>(null)
-
-function handleGlobalClick(e: MouseEvent): void {
-  if (!sliderAreaRef.value) return
-  if (!sliderAreaRef.value.contains(e.target as Node)) sliderOpen.value = false
-}
-
-/**
  * 可点击刻度标记（5 档等距：0/2.5/5/7.5/10，25% 等距，纯数值标签；步进 0.1m 手感）。
  * 风险语义不走静态刻度——阈值（0/2/5/8/10，backend RISK_LEVEL_BANDS 同源）与等距
  * 位置对不齐，硬贴档名会错档；改为标题行"当前风险"动态徽章实时显示
@@ -430,7 +404,7 @@ const currentRiskLabel = computed(() => deriveRiskLevelDisplay(floodStore.waterL
 /**
  * 滑块变化直接写 store；防抖由父组件统一处理（可写 computed 的 set 即写 store）。
  *
- * SliderSelectCard 的 `update:sliderValue` 已抽出 number，旧版 `number | number[]`
+ * 裸露滑块的 `update:value` 直接给 number，旧版 `number | number[]`
  * 的数组解包分支（el-slider range 模式，本页从未启用）随之退役；
  * 旧版 `@input` + `@change` 双绑也会对同一次拖动写两遍 store，现在只剩一条写入路径。
  */
@@ -645,7 +619,6 @@ onUnmounted(() => {
 
   window.removeEventListener('resize', handleResize)
   // 卸载即摘除点外部收起监听（document 上的监听不随组件树销毁）
-  document.removeEventListener('click', handleGlobalClick)
   // 卸载时若滑块专注模式仍激活立即退出，避免拖到一半切路由后残留导致下页面板全透明
   endSliderFocus()
 })
@@ -680,25 +653,22 @@ defineExpose({ registerRenderers, dockToTask })
     <!-- ECharts图表区 -->
     <div ref="chartContainerRef" class="chart-container"></div>
 
-    <!-- 水位控件区：三态卡片（点击展开滑块）+ 卡片下方一行可点刻度 -->
-    <div ref="sliderAreaRef" class="water-slider-container">
+    <!-- 水位控件区：裸露滑块 + 下方一行可点刻度 -->
+    <div class="water-slider-container">
       <div
         class="water-card"
         title="水位基准为工程参考假设（平均海平面/设计高潮位），未接实测潮位站"
       >
-        <!-- 三态选择卡片（公共组件 SliderSelectCard，与预测/选址同款）：默认=按钮，
-             点击进入选择态才渲染滑块，点卡片区外部回到已选态 -->
-        <SliderSelectCard
-          :selecting="sliderOpen"
-          :selected="true"
+        <!-- 裸露滑块（SliderNaked）：水位没有「未选中」态，常驻可见，拖了就生效 -->
+        <SliderNaked
           label="水位"
-          :status-text="`${localWaterLevel.toFixed(1)}m`"
-          :slider-value="sliderOpen ? localWaterLevel : null"
-          :slider-min="0"
-          :slider-max="FLOOD_DISPLAY_MAX_WATER_LEVEL"
-          :slider-step="0.1"
-          @toggle="sliderOpen = true"
-          @update:slider-value="onSliderChange"
+          suffix="m"
+          :value="localWaterLevel"
+          :min="0"
+          :max="FLOOD_DISPLAY_MAX_WATER_LEVEL"
+          :step="0.1"
+          aria-label="分析水位"
+          @update:value="onSliderChange"
           @pointerdown="beginSliderFocusOnRange"
           @pointerup="endSliderFocus"
           @pointercancel="endSliderFocus"
@@ -784,24 +754,23 @@ defineExpose({ registerRenderers, dockToTask })
   padding-bottom: 18px;
 }
 
-/* 卡片行高：SliderSelectCard 根是 height:100%，行高必须由外层给定（预测/选址同款 0.8cell） */
+/* 裸露滑块按内容高度走（不再需要给三态卡片定 0.8cell 行高） */
 .water-card {
-  height: v-bind(cardHeightCss);
+  height: auto;
 }
 
 /* el-slider 三段 :deep 覆盖（runway 渐变轨 / bar 隐藏 / button 白描边拇指）随控件一并删除：
    同一套视觉已由 SliderSelectCard 的 .ssc-slider 自带（同一批 GCS token，改一处两页同步） */
 
-/* 刻度 5 档单排（见 scaleMarks）：刻度层贴卡片下方一行。
-   left/right 9px = 卡片 1px 边框 + 8px 内边距；margin 0 10% = 卡片内 range width:80% 的两侧留白
-   （与预测页 .t-ticks 同一套复刻公式，保证 left 百分比落在轨道真实位置上）；
-   nowrap 防折行，首尾单侧对齐防溢出面板 */
+/* 刻度 5 档单排（见 scaleMarks）：贴滑块下方一行。
+   轨道现在满宽（SliderNaked 的 input 是 width:100%），故刻度层也用满宽、
+   百分比才与拇指位置一一对应；nowrap 防折行，首尾单侧对齐防溢出面板 */
 .scale-marks {
   position: absolute;
-  left: 9px;
-  right: 9px;
+  left: 0;
+  right: 0;
   bottom: 0;
-  margin: 0 10%;
+  margin: 0;
   height: 18px;
   font-size: var(--GCS-font-size-xs); /* 越档 11px 归 12px 档 */
   color: var(--GCS-text-muted);

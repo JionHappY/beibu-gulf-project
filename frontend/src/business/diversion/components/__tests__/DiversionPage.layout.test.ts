@@ -284,31 +284,24 @@ describe('DiversionPage 4×4 布局', () => {
     wrapper.unmount()
   })
 
-  it('年份滑块收进卡片：默认无 range，点击卡片才出现；输入经 300ms 防抖以新年份取数', async () => {
+  it('年份滑块裸露常驻：无需点击即有 range；输入经 300ms 防抖以新年份取数', async () => {
     api.getBreakdown.mockResolvedValue(FIXTURE)
     const { wrapper } = mountPage()
     await flushPromises()
     expect(api.getBreakdown).toHaveBeenCalledTimes(1)
 
-    // 默认：整页 0 个 range（年份滑块被收进卡片）；年份面板是按钮卡片（三态卡片已选态）
-    expect(wrapper.findAll('input[type="range"]')).toHaveLength(0)
+    // 年份没有「未选中」态：挂载即有滑块，不存在先点卡片再展开的三态机
     const yearPanel = panelWithClass(wrapper, '.year-panel')
-    expect(yearPanel.findAll('input[type="range"]')).toHaveLength(0)
-    const card = yearPanel.find('button.ssc')
-    expect(card.exists()).toBe(true)
-    expect(card.find('.ssc-label').text()).toBe('当前年份')
-    expect(card.find('.ssc-status').text()).toBe('2035')
-
-    // 点击卡片 → 选择态才渲染滑块，值=当前年份，档位=2027..2050
-    await card.trigger('click')
+    expect(yearPanel.find('button.ssc').exists()).toBe(false)
     const slider = yearPanel.find('input[type="range"]')
     expect(slider.exists()).toBe(true)
     expect((slider.element as HTMLInputElement).value).toBe('2035')
     expect(slider.attributes('min')).toBe('2027')
     expect(slider.attributes('max')).toBe('2050')
     expect(slider.attributes('step')).toBe('1')
+    expect(yearPanel.find('.slider-naked__value').text()).toBe('2035')
 
-    // 输入 2040：300ms 内不取数（防抖），300ms 后用新年份取一次；卡片状态文案同步
+    // 输入 2040：300ms 内不取数（防抖），300ms 后用新年份取一次；行内数值同步
     await slider.setValue('2040')
     await new Promise((resolve) => setTimeout(resolve, 150))
     expect(api.getBreakdown).toHaveBeenCalledTimes(1)
@@ -316,7 +309,7 @@ describe('DiversionPage 4×4 布局', () => {
     await flushPromises()
     expect(api.getBreakdown).toHaveBeenCalledTimes(2)
     expect(api.getBreakdown).toHaveBeenLastCalledWith(2040, expect.any(AbortSignal))
-    expect(yearPanel.find('.ssc-status').text()).toBe('2040')
+    expect(yearPanel.find('.slider-naked__value').text()).toBe('2040')
 
     wrapper.unmount()
   })
@@ -335,7 +328,6 @@ describe('DiversionPage 4×4 布局', () => {
     await flushPromises()
 
     const yearPanel = panelWithClass(wrapper, '.year-panel')
-    await yearPanel.find('button.ssc').trigger('click')
     const slider = yearPanel.find('input[type="range"]')
 
     await slider.setValue('2040')

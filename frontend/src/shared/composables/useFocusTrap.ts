@@ -16,7 +16,7 @@ import { nextTick, watch, type Ref } from 'vue'
 const FOCUSABLE =
   'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
 
-export interface FocusTrap {
+interface FocusTrap {
   /** 绑到浮层根节点的 @keydown */
   onKeydown: (e: KeyboardEvent) => void
   /** 浮层因跳转而非用户关闭时调用：跳过回焦，避免把焦点抢回旧页面的触发键 */

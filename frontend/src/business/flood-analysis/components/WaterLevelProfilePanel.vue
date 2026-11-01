@@ -746,7 +746,7 @@ defineExpose({ registerRenderers, dockToTask })
   flex-direction: column;
   gap: 4px;
   box-sizing: border-box;
-  padding: 22px 0 20px;
+  padding: 20px 0;
 }
 
 /* 与选址/预测统一：整条渐变轨道（灰→品牌色）+ 白底描边拇指。

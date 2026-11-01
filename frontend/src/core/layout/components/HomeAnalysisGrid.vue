@@ -115,7 +115,7 @@ function open(path: string): void {
 .home-analysis__text {
   display: flex;
   flex-direction: column;
-  gap: 1px;
+  gap: 2px;
   min-width: 0;
 }
 

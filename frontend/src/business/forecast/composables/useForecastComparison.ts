@@ -17,6 +17,7 @@ interface UseForecastComparisonReturn {
 }
 
 import { guardForecastAuth, useForecastRequest } from './useForecastRequest'
+import { toLookup, yoyAt } from '../yoy'
 
 // 柱状图固定对比真实吞吐量指标（cargo/container；合成数据不入图），当前 3 港 × 2 指标 = 6 柱
 const BAR_INDICATORS = ['cargo', 'container'] as const
@@ -41,7 +42,8 @@ export function useForecastComparison(): UseForecastComparisonReturn {
       const scenario = forecastState.canalScenario || 'baseline'
       const cacheKey = `cmp:${time}:${confKey}:${scenario}`
       const cached = forecastState.requestCache.get(cacheKey)
-      if (cached) {
+      // 增速视图不能用绝对值缓存：同比要 t 与 t-12 两期，缓存里只存了渲染好的绝对值
+      if (cached && !forecastState.growthMode) {
         // 事务检查：即使缓存命中也要验证事务有效性
         if (!isTransactionValid(transactionId)) return
         const c = cached as {
@@ -93,6 +95,13 @@ export function useForecastComparison(): UseForecastComparisonReturn {
         : barSources.includes('model')
           ? 'model'
           : null
+      // 同比视图：两指标都变成百分比 ⇒ 量纲统一，左右双轴没有意义，全部收回左轴
+      const growth = forecastState.growthMode
+      const granularity = forecastState.timeGranularity as 'month' | 'year'
+      if (growth) {
+        forecastState.chart.barUnit = '%'
+        forecastState.chart.barUnitRight = ''
+      }
       forecastState.chart.barSeries = BAR_INDICATORS.map((ind, i) => {
         const r = results[i]
         const p = r?.ports
@@ -101,9 +110,14 @@ export function useForecastComparison(): UseForecastComparisonReturn {
           // 无数据保留 null（图表空档），不再折叠为 0——
           // 后端 value 缺失时 `|| 0` 会把「无数据」伪装成「真实 0」。
           // 按 PORT_KEYS 取数：顺序与 barXData（PORT_NAMES）由同一权威源派生
-          data: PORT_KEYS.map((k) => p?.[k]?.value ?? null),
+          data: PORT_KEYS.map((k) => {
+            if (!growth) return p?.[k]?.value ?? null
+            const port = p?.[k]
+            const lookup = toLookup([...(port?.historical ?? []), ...(port?.forecast ?? [])])
+            return yoyAt(lookup, forecastState.currentTime, granularity)
+          }),
           // container 量纲不同（TEU）绑右轴；cargo 留默认左轴（index 0）
-          ...(ind === 'container' ? { yAxisIndex: 1 } : {}),
+          ...(ind === 'container' && !growth ? { yAxisIndex: 1 } : {}),
         }
       })
       forecastState.setRequestCache(cacheKey, {

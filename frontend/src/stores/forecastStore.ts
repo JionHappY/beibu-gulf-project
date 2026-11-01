@@ -46,6 +46,13 @@ export const useForecastStore = defineStore('forecast', () => {
     activity: DEFAULT_CONFIDENCE,
   })
 
+  /**
+   * 同比增速视图（第四张指标卡）：为 true 时折线/柱图按同比百分比重建。
+   * 不是第四个数据指标——后端只有 cargo/container/activity 三份数据，
+   * 增速由同一序列的 t 与 t-12 期直接算，不发新请求、不新增图层。
+   */
+  const growthMode: Ref<boolean> = ref(false)
+
   const activeForecastLayer: Ref<string | null> = ref(null)
   // F-7：原 dataCache/currentData 无业务写路径（死状态，currentData 恒 null），已移除；
   // 数据缓存职责由 requestCache（LRU 上限 50）承担
@@ -69,7 +76,7 @@ export const useForecastStore = defineStore('forecast', () => {
   // 重新加载（requestCache 命中即零请求重建），快照只存源数据不存派生视图。
   const chart = reactive({
     lineXData: [] as string[],
-    lineSeries: [] as Array<{ name: string; data: number[] }>,
+    lineSeries: [] as Array<{ name: string; data: Array<number | null> }>,
     /** 折线图 y 轴单位（接口 unit 透传；F4 前被适配器丢弃，图无单位标注） */
     lineUnit: '',
     /**
@@ -117,6 +124,10 @@ export const useForecastStore = defineStore('forecast', () => {
     confidenceThresholds.value[indicator] = value
   }
 
+  function setGrowthMode(on: boolean): void {
+    growthMode.value = on
+  }
+
   function setIsPlaying(playing: boolean): void {
     isPlaying.value = playing
   }
@@ -156,6 +167,7 @@ export const useForecastStore = defineStore('forecast', () => {
     isPlaying.value = false
     playSpeed.value = 500
     activeIndicator.value = 'cargo'
+    growthMode.value = false
     canalScenario.value = 'baseline'
     confidenceThresholds.value = {
       cargo: DEFAULT_CONFIDENCE,
@@ -203,6 +215,7 @@ export const useForecastStore = defineStore('forecast', () => {
     isPlaying,
     playSpeed,
     activeIndicator,
+    growthMode,
     canalScenario,
     confidenceThresholds,
     activeForecastLayer,
@@ -215,6 +228,7 @@ export const useForecastStore = defineStore('forecast', () => {
     setCurrentTime,
     setTimeGranularity,
     setActiveIndicator,
+    setGrowthMode,
     setCanalScenario,
     setConfidenceThreshold,
     setIsPlaying,

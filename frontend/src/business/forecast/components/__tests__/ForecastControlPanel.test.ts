@@ -330,3 +330,55 @@ describe('公开面收窄 — FORECAST_ORCHESTRATOR_KEY 不得再导出', () => 
     expect(typeof mod.provideForecastOrchestrator).toBe('function')
   })
 })
+
+/**
+ * 指标卡 2×2（2026-11-01 用户定稿）：
+ * 「不要用左右阅读的，没有四个按钮，你就在业务里凑出来第四个指标用来做按钮」——
+ * 四格两列自上而下；第四格是同比增速视图（不是第四个数据指标）。
+ */
+describe('ForecastControlPanel 指标卡（2×2 四格）', () => {
+  beforeEach(async () => {
+    setActivePinia(createPinia())
+    router = createRouter({ history: createMemoryHistory(), routes: [] })
+    await router.push('/')
+    await router.isReady()
+  })
+
+  it('渲染 4 张卡，标签顺序为 货物/集装箱/活跃度/同比增速', () => {
+    const wrapper = mountPanel()
+    const cells = wrapper.findAll('.btn-cell')
+    expect(cells).toHaveLength(4)
+    expect(cells.map((c) => c.text())).toEqual([
+      expect.stringContaining('货物'),
+      expect.stringContaining('集装箱'),
+      expect.stringContaining('港口吞吐活跃度'),
+      expect.stringContaining('同比增速'),
+    ])
+    wrapper.unmount()
+  })
+
+  it('点「同比增速」开增速视图，再点关回去（不切换 activeIndicator）', async () => {
+    const wrapper = mountPanel()
+    const store = useForecastStore()
+    const growth = wrapper.findAll('.btn-cell')[3]
+
+    await growth.find('.ssc').trigger('click')
+    expect(store.growthMode).toBe(true)
+    expect(store.activeIndicator).toBe('cargo')
+
+    await growth.find('.ssc').trigger('click')
+    expect(store.growthMode).toBe(false)
+    wrapper.unmount()
+  })
+
+  it('增速视图下点任一真指标 ⇒ 增速退出（阳性：否则两张图口径打架）', async () => {
+    const wrapper = mountPanel()
+    const store = useForecastStore()
+    store.setGrowthMode(true)
+
+    await wrapper.findAll('.btn-cell')[1].find('.ssc').trigger('click')
+    expect(store.growthMode).toBe(false)
+    expect(store.activeIndicator).toBe('container')
+    wrapper.unmount()
+  })
+})

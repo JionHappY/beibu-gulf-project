@@ -14,6 +14,7 @@ import { useForecastStore } from '@/stores'
 import type { ForecastDataSource } from '@/types/schemas'
 
 import { fromMonthOrdinal, toMonthOrdinal } from '../timeline'
+import { toLookup, yoyAt } from '../yoy'
 
 import { guardForecastAuth, useForecastRequest } from './useForecastRequest'
 
@@ -114,6 +115,20 @@ export function useForecastTimeseries(): UseForecastTimeseriesReturn {
       }))
       // F4：y 轴单位随数据入 store（LineChart :y-unit 消费）；缓存命中同路径
       forecastState.chart.lineUnit = entry?.unit ?? ''
+      if (forecastState.growthMode) {
+        // 同比视图：逐点取 t-12（前期值从同一份全量序列查，不发新请求）；
+        // 查不到前期就留 null —— 图上空档，不画成 0%
+        forecastState.chart.lineSeries = (entry?.allSeries ?? []).map((s) => {
+          const lookup = toLookup(s.data ?? [])
+          return {
+            name: s.portName,
+            data: (s.data ?? [])
+              .filter(inWindow)
+              .map((d) => yoyAt(lookup, d.time, granularity as 'month' | 'year')),
+          }
+        })
+        forecastState.chart.lineUnit = '%'
+      }
     } catch (e) {
       logger.error('[ForecastTimeseries] load error:', e)
       if (guardForecastAuth(e, router)) return

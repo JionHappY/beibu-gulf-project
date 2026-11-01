@@ -52,21 +52,43 @@ const INDICATORS = [
   { key: 'activity', label: '港口吞吐活跃度', icon: 'activity' },
 ] as const satisfies readonly { key: string; label: string; icon: IconName }[]
 
+/**
+ * 第四张卡：同比增速视图（2×2 的第二行右格，自上而下读）。
+ * 不是第四个数据指标——后端只有三份序列；增速在折线/柱图上由同一序列的 t 与 t-12 期算，
+ * 不发请求、不新增图层，所以它不进 INDICATORS（那个数组决定热力图条目数）。
+ */
+const GROWTH_CELL = { key: 'growth', label: '同比增速', icon: 'percent' } as const
+const CELLS = [...INDICATORS, GROWTH_CELL] as const
+
 // selected 由 store activeIndicator 派生（getter）——
 // 快照恢复 restoreState 设置 activeIndicator 后按钮高亮自动一致（原本地双源：恢复非 cargo 时按钮仍亮 cargo）
-const btnStates = reactive(
-  Object.fromEntries(
-    INDICATORS.map((i) => [
-      i.key,
-      {
-        get selected() {
-          return forecastState.activeIndicator === i.key
-        },
-        selecting: false,
+interface BtnState {
+  selected: boolean
+  selecting: boolean
+}
+
+const INDICATOR_STATES = Object.fromEntries(
+  INDICATORS.map((i) => [
+    i.key,
+    {
+      get selected() {
+        return forecastState.activeIndicator === i.key
       },
-    ])
-  )
-)
+      selecting: false,
+    },
+  ])
+) as Record<string, BtnState>
+
+const btnStates = reactive<Record<string, BtnState>>({
+  ...INDICATOR_STATES,
+  // 第四格不是数据指标：高亮跟随增速视图开关，任何时候都不进「选择中」滑块态
+  growth: {
+    get selected() {
+      return forecastState.growthMode
+    },
+    selecting: false,
+  },
+})
 
 /**
  * 定时器登记处：本组件 4 条链（confirm:指标键 按钮确认 / confidence 置信度防抖 /
@@ -104,6 +126,17 @@ function startNamedInterval(name: string, delay: number, fn: () => void): void {
 }
 
 function toggleBtn(key: string) {
+  if (key === GROWTH_CELL.key) {
+    Object.keys(btnStates).forEach((k) => {
+      btnStates[k].selecting = false
+      clearTimer(k)
+    })
+    forecastState.setGrowthMode(!forecastState.growthMode)
+    return
+  }
+  // 碰任何真指标都退出增速视图：增速是「看这张图的方式」，不是第四个并列指标。
+  // 放在分支之前——点「已选中」的那个指标也会走下面 else 分支，同样要退。
+  forecastState.setGrowthMode(false)
   const s = btnStates[key]
   if (!s.selected) {
     // 取消其他按钮的 selecting 计时器并复位（selected 已派生，无需直写）
@@ -317,7 +350,7 @@ function hintOnce() {
     <!-- ===== 上半：4 个指标按钮（2×2）===== -->
     <div class="btn-grid" data-overflow-exit="scroll">
       <div
-        v-for="ind in INDICATORS"
+        v-for="ind in CELLS"
         :key="ind.key"
         :class="[
           'btn-cell',
@@ -330,8 +363,12 @@ function hintOnce() {
           :selecting="btnStates[ind.key].selecting"
           :selected="btnStates[ind.key].selected"
           :label="ind.label"
-          :status-text="`${(getConf(ind.key) * 100).toFixed(0)}%`"
-          :slider-value="btnStates[ind.key].selecting ? getConf(ind.key) : null"
+          :status-text="
+            ind.key === GROWTH_CELL.key ? '' : `${(getConf(ind.key) * 100).toFixed(0)}%`
+          "
+          :slider-value="
+            btnStates[ind.key].selecting && ind.key !== GROWTH_CELL.key ? getConf(ind.key) : null
+          "
           :slider-min="0.8"
           :slider-max="1.2"
           :slider-step="0.05"
@@ -421,12 +458,14 @@ function hintOnce() {
   gap: v-bind(cell16px);
 }
 
-/* 按钮网格：单行（3 个指标三等分；2×2 曾把第二行压进「运河情景」并内滚） */
+/* 按钮网格：2×2 自上而下读（货物/集装箱，活跃度/同比增速）。三格横排会让第四格
+   无处安放，也会变成左右扫读；竖排顺序与业务阅读一致。 */
 .btn-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr 1.55fr; /* 第三格标签最长（港口吞吐活跃度），给宽一点免得折行 */
+  grid-template-columns: repeat(2, 1fr);
   grid-auto-rows: minmax(0, 1fr);
   gap: v-bind(cell16px);
+
   /* 撑满面板剩余高度：原来 flex:none 固定 0.8cell，4×4 面板下面空出一大片 */
   flex: 1 1 auto;
   min-height: 0;

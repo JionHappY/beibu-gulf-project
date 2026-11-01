@@ -179,7 +179,12 @@ onUnmounted(() => {
           draggable
           @drop="(z: HTMLElement) => onDrop('bar', z)"
         >
+          <!-- key：双轴↔单轴切换时强制重建实例。ECharts 的 notMerge:false + replaceMerge:['series']
+               只换系列、不删轴，轴数变少会留下上一轮的 TEU 幽灵右轴（同比增速把两指标并成百分比后量纲统一）。
+               键必须跟着「轴数」而不是 growthMode：切增速的那一帧 barUnitRight 还是旧值，
+               要等异步数据回来才变空，那时才真的少了一条轴。 -->
           <BarChart
+            :key="forecastState.chart.barUnitRight ? 'dual' : 'single'"
             title="港口对比"
             :x-data="forecastState.chart.barXData"
             :series="forecastState.chart.barSeries"
@@ -197,10 +202,10 @@ onUnmounted(() => {
         </GCSPanel>
       </template>
       <template #right>
-        <GCSPanel :w="4" :h="3" anchor="top-right" :offset-x="0" :offset-y="1.25">
+        <GCSPanel :w="4" :h="4" anchor="top-right" :offset-x="0" :offset-y="1.25">
           <ForecastControlPanel />
         </GCSPanel>
-        <GCSPanel :w="4" :h="4" anchor="top-right" :offset-x="0" :offset-y="4.5">
+        <GCSPanel :w="4" :h="4" anchor="top-right" :offset-x="0" :offset-y="5.5">
           <LayerControlPanel :layer-order="[...DEFAULT_LAYER_ORDER, ...FORECAST_PANEL_ORDER]" />
         </GCSPanel>
       </template>

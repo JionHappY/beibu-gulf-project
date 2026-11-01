@@ -9,7 +9,6 @@
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Ref } from 'vue'
-import { ref } from 'vue'
 
 const mockApiRequest = vi.hoisted(() => vi.fn())
 const mockPush = vi.hoisted(() => vi.fn())

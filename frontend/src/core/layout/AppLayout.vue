@@ -279,9 +279,11 @@ function goBusiness(item: NavItem): void {
             <slot name="right" />
           </template>
           <template v-else>
-            <!-- 操作/控制面板（right slot）在前，可视化面板（left slot）在后：避免首屏全是空白图表 -->
+            <!-- 操作/控制面板（right slot）在前，可视化面板（left slot）次之，图层控制最后：
+                 与手机档控制台同序（right → left → layers），图层不再夹在参数与结果之间 -->
             <slot name="right" />
             <slot name="left" />
+            <slot name="layers" />
           </template>
         </template>
       </div>

@@ -297,7 +297,11 @@ function stopPlayback() {
     </div>
 
     <!-- ===== 运河情景（仅 cargo 可选）===== -->
-    <div class="scenario-row" :class="{ off: scenarioDisabled }">
+    <div
+      class="scenario-row"
+      :class="{ off: scenarioDisabled }"
+      title="锚点出处见论文情景章；三港分摊默认按 2022 年现状吞吐量结构（钦 1.74/防 1.54/北 0.44 亿吨）"
+    >
       <span class="scenario-label">运河情景</span>
       <div class="scenario-chips">
         <button

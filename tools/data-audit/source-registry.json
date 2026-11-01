@@ -113,5 +113,101 @@
       "quality": "git grep -n \"site-selection\" -- backend/data/README.md（命中行须带历史/已移除语境）；git grep -n \"throughput\\.json\" -- backend/data/README.md（应为空）",
       "provenanceStatus": "confirmed"
     }
+  ],
+  "_assumptionsComment": "口径假设登记（方法侧的唯一权威源）：代码常量/数据文件里「不是实测、不是文献」的选择必须在此出现。where=可核对的落点（file:line，文件必须存在）；status=author-set 作者设定 / literature 文献锚点 / synthetic 合成 / proxy 代理指标 / unverified 未达标待裁；impact=论文里不这样写就会失实；disclosure=当前披露位置（UI/文档/论文），「待补」=尚未披露。",
+  "assumptions": [
+    {
+      "id": "ahp-weights-matrix",
+      "title": "选址 AHP 判断矩阵与准则权重",
+      "where": [
+        "backend/src/common/constants/site-ahp.constants.ts:1",
+        "backend/src/common/constants/site-ahp.constants.ts:79"
+      ],
+      "basis": "作者按 Saaty 1-9 两两比较定稿（2026-09-30）；CR=0.052<0.1、λmax=5.233；权重 43/9/21/11/17",
+      "status": "author-set",
+      "impact": "论文须给出判断矩阵与 CR，不得表述为客观赋权",
+      "disclosure": "论文方法章 + 附录矩阵；UI 权重标题 tooltip 已标 AHP/CR"
+    },
+    {
+      "id": "site-score-thresholds",
+      "title": "选址评分阈值",
+      "where": ["backend/src/modules/site-suitability/constants/score.constants.ts:56"],
+      "basis": "作者设定：浸没 1/6m、坡度 5/20°、港口 8km、道路 2km；16 维 OFAT 敏感性覆盖",
+      "status": "author-set",
+      "impact": "论文须列阈值并给敏感性结果，不得写成行业标准",
+      "disclosure": "论文方法/敏感性章；UI 权重标题 tooltip 已标「阈值为作者设定」"
+    },
+    {
+      "id": "access-straight-line",
+      "title": "交通可达因子用直线距离代理",
+      "where": ["tools/site-suitability/access-factors.sql:1"],
+      "basis": "v1 到最近港口/道路的球面直线距离，非路网旅行时间；pgRouting 升级列为后续",
+      "status": "proxy",
+      "impact": "论文只能写「直线距离代理」，不得写「路网可达」",
+      "disclosure": "工具脚本头注释；UI 交通可达卡片 tooltip 已标「直线距离代理」"
+    },
+    {
+      "id": "flood-facility-loss",
+      "title": "淹没设施价值与损失率",
+      "where": ["backend/data/flood/facilityPoints.json:11"],
+      "basis": "位置/名称来自高德 POI、高程来自 DEM；value/damageRate 按设施类型估算，非实测",
+      "status": "author-set",
+      "impact": "estimatedLoss/totalLoss 是假设系数口径，论文须标注",
+      "disclosure": "数据文件 dataNote；UI 预估损失 * 角标 + tooltip 已标估算"
+    },
+    {
+      "id": "flood-water-level",
+      "title": "洪涝水位基准参数",
+      "where": ["backend/data/flood/waterLevel.json:11"],
+      "basis": "工程参考假设（平均海平面/设计高潮位），未接实测潮位站",
+      "status": "author-set",
+      "impact": "论文须写明水位基准与实测缺失",
+      "disclosure": "数据文件 metadata.note；UI 水位卡片 tooltip 已标参考假设"
+    },
+    {
+      "id": "forecast-map-scatter",
+      "title": "预测地图热力散点",
+      "where": ["backend/src/modules/forecast/services/forecast-engine.ts:130"],
+      "basis": "固定种子合成的示意性插值，非实测空间分布",
+      "status": "synthetic",
+      "impact": "只能作可视化填充，不得作空间结论",
+      "disclosure": "UI 已标「空间分布为示意性插值，非实测点位。」"
+    },
+    {
+      "id": "home-radar-snapshot",
+      "title": "首页雷达兜底快照",
+      "where": ["frontend/src/visualization/charts/radarSnapshot.ts:2"],
+      "basis": "2026-08 一次后端实测快照（旧选址域已移除），仅 UI fallback",
+      "status": "synthetic",
+      "impact": "不得当作当前真实第一名",
+      "disclosure": "UI 角标「示例数据」"
+    },
+    {
+      "id": "canal-port-allocation",
+      "title": "运河情景三港分摊默认值",
+      "where": ["backend/src/modules/forecast/constants/scenario.constants.ts:12"],
+      "basis": "默认按 2022 年现状吞吐量结构（钦 1.74/防 1.54/北 0.44 亿吨），中性可辩护假设",
+      "status": "author-set",
+      "impact": "论文须给分摊敏感性；钦州倾斜方案只作敏感性，不进默认值",
+      "disclosure": "论文情景章；UI 运河情景行 tooltip 已标分摊来源"
+    },
+    {
+      "id": "canal-anchors",
+      "title": "运河情景年运量锚点",
+      "where": ["backend/src/modules/forecast/constants/scenario.constants.ts:4"],
+      "basis": "刘胜友 2025（珠江水运 2025(06):83-85）与罗淳 2024（重庆交大硕士论文）页码级锚点，段内线性插值",
+      "status": "literature",
+      "impact": "引用须给文献与页码；插值段须说明",
+      "disclosure": "论文情景章 + 参考文献"
+    },
+    {
+      "id": "forecast-picp-interval",
+      "title": "预测区间覆盖率口径",
+      "where": ["tools/forecast/lib/backtest.cjs:16"],
+      "basis": "名义 80% 区间实测覆盖 0.46–0.66（6/6 低于目标带）；生产链未传 intervalFn，前端显示的是步长 MAPE 折算",
+      "status": "unverified",
+      "impact": "论文不得宣称「80% 置信区间」；须先裁定如实披露、改构造或回退 MAPE 区间",
+      "disclosure": "待裁（候选：保留名义并如实披露 / 提高构造级别 / 回退旧 MAPE 区间）"
+    }
   ]
 }

@@ -117,8 +117,13 @@ const rows = computed<ReportRow[]>(() => {
       title: summary,
       valueClass: summary ? 'has-hint' : undefined,
     }),
-    // 预估损失（X4）：disaster 的 totalLoss 与 estimatedLoss 现同式，?? 兜底链两侧可互换
-    row('预估损失', `${loss}元`, { valueClass: 'highlight' }),
+    // 预估损失（X4）：disaster 的 totalLoss 与 estimatedLoss 现同式，?? 兜底链两侧可互换。
+    // * 与水深同一「参考值」语义：损失系数按设施类型估算（非实测），角标 + title 双通道披露。
+    row('预估损失', `${loss}元`, {
+      valueClass: 'highlight',
+      title: '损失系数按设施类型估算（非实测），见 source-registry.json#flood-facility-loss',
+      mark: { text: '*', class: 'ref-mark' },
+    }),
     row('影响等级', impactLevel.value),
   ]
   if (affectedPorts.value.length) list.push(row('受影响港口', affectedPorts.value.join('、')))

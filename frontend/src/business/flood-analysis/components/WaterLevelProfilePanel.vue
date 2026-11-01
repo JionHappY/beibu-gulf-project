@@ -682,7 +682,10 @@ defineExpose({ registerRenderers, dockToTask })
 
     <!-- 水位控件区：三态卡片（点击展开滑块）+ 卡片下方一行可点刻度 -->
     <div ref="sliderAreaRef" class="water-slider-container">
-      <div class="water-card">
+      <div
+        class="water-card"
+        title="水位基准为工程参考假设（平均海平面/设计高潮位），未接实测潮位站"
+      >
         <!-- 三态选择卡片（公共组件 SliderSelectCard，与预测/选址同款）：默认=按钮，
              点击进入选择态才渲染滑块，点卡片区外部回到已选态 -->
         <SliderSelectCard

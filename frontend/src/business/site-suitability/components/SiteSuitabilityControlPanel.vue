@@ -58,7 +58,9 @@ onUnmounted(() => {
 
 <template>
   <div ref="panelRef" class="ss-ctrl">
-    <div class="sec-title">准则权重（自动归一化）</div>
+    <div class="sec-title" title="AHP 定稿判断矩阵（CR=0.052）；评分阈值为作者设定，见论文方法章">
+      准则权重（自动归一化）
+    </div>
     <!-- 2 列 × 3 行：5 张准则卡片 + 陆地占比（末格）；行高与老选址控制面板同为 0.8cell -->
     <div
       class="criteria-grid"
@@ -67,7 +69,14 @@ onUnmounted(() => {
       @pointerup="endSliderFocus"
       @pointercancel="endSliderFocus"
     >
-      <div v-for="c in CRITERIA" :key="c.key" class="criteria-cell">
+      <div
+        v-for="c in CRITERIA"
+        :key="c.key"
+        class="criteria-cell"
+        :title="
+          c.key === 'access' ? '交通可达为直线距离代理（到最近港口/道路），非路网可达' : undefined
+        "
+      >
         <!-- 三态选择卡片（公共组件 SliderSelectCard）：默认/选择中滑块/已选 -->
         <SliderSelectCard
           :selecting="selectingKey === c.key"

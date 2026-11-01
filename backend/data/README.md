@@ -41,6 +41,9 @@ data/
         └── .gitkeep             # 目录占位（栅格本体 gitignored，来源见 tools/dem-pipeline/README.md）
 ```
 
+> ⚠️ 文件名沿用历史 `utm48n` 字样，**不代表当前工作投影**：实际工作格网为 CGCS2000 3°带、
+> 中央经线 108°E、k=1、东伪偏 500km（与 EPSG:4547 一致）。论文/对外文稿不得写作「UTM48N」。
+
 > `dem/` 下的 `.tif` 均 **gitignored**（体积 + 唯一原件在外部数据树；源路径、环境与复跑命令
 > 见 `tools/dem-pipeline/README.md`）。重建调用链：`09b-srtm15-sea-grid.ps1`（海侧格网）→
 > `06-sea-mask.py`（海掩膜三条判据）+ `06-restore-cut-dem.ps1`（陆地裁切）→

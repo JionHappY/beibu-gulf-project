@@ -10,12 +10,15 @@ import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 
 import {
+  ASSUMPTION_STATUSES,
+  assumptionTable,
   checkReviewBy,
   computeCoverage,
   groupCovers,
   isIsoDate,
   matchesGlob,
   SCAN_ROOTS,
+  validateAssumptions,
   validateRegistry,
 } from '../source-registry.mjs'
 
@@ -131,6 +134,53 @@ describe('validateRegistry：登记表自检', () => {
     const reg = JSON.parse(fs.readFileSync(REGISTRY_PATH, 'utf8'))
     for (const g of reg.groups) {
       expect(['confirmed', 'pending']).toContain(g.provenanceStatus)
+    }
+  })
+})
+
+describe('validateAssumptions：口径假设登记', () => {
+  const valid = (extra = {}) => ({
+    id: 'a1',
+    title: '口径',
+    where: ['package.json:1'],
+    basis: '依据',
+    status: 'author-set',
+    impact: '论文须标注',
+    disclosure: '论文方法章',
+    ...extra,
+  })
+
+  it('真实登记表无问题，且状态都在合法集合内', () => {
+    const reg = JSON.parse(fs.readFileSync(REGISTRY_PATH, 'utf8'))
+    expect(validateAssumptions(reg)).toEqual([])
+    for (const a of reg.assumptions) expect(ASSUMPTION_STATUSES).toContain(a.status)
+  })
+
+  it('缺字段 / id 重复 / where 为空 / status 非法 / 文件不存在 都要报（阴性对照）', () => {
+    const bad = {
+      assumptions: [
+        valid({ basis: '' }),
+        valid(),
+        valid({ id: 'a2', where: [] }),
+        valid({ id: 'a3', status: 'made-up' }),
+        valid({ id: 'a4', where: ['no/such/file.ts:1'] }),
+      ],
+    }
+    const problems = validateAssumptions(bad).join(' ')
+    expect(problems).toContain('缺字段 basis')
+    expect(problems).toContain('假设 id 重复')
+    expect(problems).toContain('缺 where')
+    expect(problems).toContain('status 非法')
+    expect(problems).toContain('where 文件不存在')
+  })
+
+  it('表格由登记表派生：每条假设一行且含 title/status', () => {
+    const reg = JSON.parse(fs.readFileSync(REGISTRY_PATH, 'utf8'))
+    const table = assumptionTable(reg)
+    expect(table.split('\n')).toHaveLength(reg.assumptions.length + 2)
+    for (const a of reg.assumptions) {
+      expect(table).toContain(a.title)
+      expect(table).toContain(a.status)
     }
   })
 })

@@ -79,6 +79,56 @@ export function validateRegistry(registry) {
   return problems
 }
 
+/** 口径假设的合法状态：作者设定 / 文献锚点 / 合成 / 代理指标 / 未达标待裁 */
+export const ASSUMPTION_STATUSES = ['author-set', 'literature', 'synthetic', 'proxy', 'unverified']
+
+/**
+ * 口径假设自检：必填字段、id 唯一、status 合法、每个 where 指向的文件必须存在。
+ *
+ * 为什么要查文件存在：假设条目一旦指向被删除/改名的实现，登记表就变成第二份过期文档；
+ * 这里让「代码没了、假设还在」当场红，而不是等论文引用时才发现。
+ */
+export function validateAssumptions(registry) {
+  const problems = []
+  const seen = new Set()
+  for (const a of registry.assumptions ?? []) {
+    const id = a.id ?? '?'
+    if (!a.id) problems.push('假设缺 id：' + JSON.stringify(a).slice(0, 60))
+    else if (seen.has(a.id)) problems.push('假设 id 重复：' + a.id)
+    else seen.add(a.id)
+
+    for (const field of ['title', 'basis', 'status', 'impact', 'disclosure']) {
+      if (!a[field]) problems.push(id + ' 缺字段 ' + field)
+    }
+    if (!Array.isArray(a.where) || a.where.length === 0) {
+      problems.push(id + ' 缺 where（至少一个 file:line）')
+    } else {
+      for (const w of a.where) {
+        const file = String(w).split(':')[0]
+        if (!fs.existsSync(path.join(ROOT, file))) problems.push(id + ' where 文件不存在：' + file)
+      }
+    }
+    if (a.status && !ASSUMPTION_STATUSES.includes(a.status)) {
+      problems.push(
+        id + ' status 非法：' + a.status + '（合法：' + ASSUMPTION_STATUSES.join('/') + '）'
+      )
+    }
+  }
+  return problems
+}
+
+/** 论文「数据与口径假设」表：由登记表派生，禁止手抄第二份 */
+export function assumptionTable(registry) {
+  const rows = ['| 口径 | 落点 | 依据 | 状态 | 论文表述要求 |', '| --- | --- | --- | --- | --- |']
+  for (const a of registry.assumptions ?? []) {
+    const where = (a.where ?? []).map((w) => '`' + w + '`').join('<br>')
+    rows.push(
+      '| ' + a.title + ' | ' + where + ' | ' + a.basis + ' | ' + a.status + ' | ' + a.impact + ' |'
+    )
+  }
+  return rows.join('\n')
+}
+
 /** UTC 日期 YYYY-MM-DD：判据与运行机器的时区无关（CI 在 UTC，本机在 +08） */
 export function utcDate(d = new Date()) {
   return d.toISOString().slice(0, 10)
@@ -140,13 +190,24 @@ function trackedDataFiles() {
 function main() {
   const asJson = process.argv.includes('--json')
   const registry = JSON.parse(fs.readFileSync(REGISTRY_PATH, 'utf8'))
-  const problems = validateRegistry(registry)
+  const problems = [...validateRegistry(registry), ...validateAssumptions(registry)]
+  const assumptions = registry.assumptions ?? []
   const files = trackedDataFiles()
   const { gaps, counts } = computeCoverage(files, registry.groups)
   const pending = registry.groups.filter((g) => g.provenanceStatus === 'pending')
   const today = utcDate()
   const review = checkReviewBy(registry.groups, today)
   problems.push(...review.problems)
+
+  if (process.argv.includes('--table')) {
+    if (problems.length) {
+      console.error('[source-registry] 登记表自检失败，拒绝派生表格：')
+      for (const p of problems) console.error('  - ' + p)
+      process.exit(1)
+    }
+    console.log(assumptionTable(registry))
+    return
+  }
 
   if (asJson) {
     console.log(
@@ -157,6 +218,7 @@ function main() {
           counts,
           problems,
           pending: pending.map((g) => g.id),
+          assumptions: assumptions.length,
           review: { today, upcoming: review.upcoming },
         },
         null,
@@ -183,6 +245,17 @@ function main() {
           : ''
       console.log('  ' + mark + ' ' + g.id + '：' + counts[g.id] + ' 件 — ' + g.title + due)
     }
+    const byStatus = {}
+    for (const a of assumptions) byStatus[a.status] = (byStatus[a.status] ?? 0) + 1
+    console.log(
+      '[source-registry] 口径假设 ' +
+        assumptions.length +
+        ' 条（' +
+        Object.entries(byStatus)
+          .map(([k, v]) => k + ' ' + v)
+          .join(' / ') +
+        '）；--table 可派生论文表'
+    )
     if (problems.length) {
       console.error('[source-registry] 登记表自检失败：')
       for (const p of problems) console.error('  - ' + p)

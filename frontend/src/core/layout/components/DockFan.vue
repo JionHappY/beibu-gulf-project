@@ -23,7 +23,7 @@ export default { name: 'GCSDockFan' }
  * 半圆必须画在面板外，否则会被裁掉上半截。层级只比 dock 高 1，不盖抽屉/弹层。
  */
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { useEscapeClose, useGCS } from '@/shared'
+import { useEscapeClose, useFocusTrap, useGCS } from '@/shared'
 
 import type { NavItem } from '../navConfig'
 
@@ -61,18 +61,10 @@ function measure(): void {
 watch(
   () => props.open,
   async (open) => {
-    if (!open) {
-      // 点击项跳走时不回焦；Esc/点遮罩关闭时还给触发它的 ＋
-      if (!navigated) lastFocused?.focus()
-      navigated = false
-      lastFocused = null
-      return
-    }
-    lastFocused = document.activeElement as HTMLElement | null
+    if (!open) return
     // 展开瞬间 dock 可能还在布局，等一帧再量
     await nextTick()
     measure()
-    fanButtons()[0]?.focus()
   }
 )
 
@@ -92,36 +84,13 @@ useEscapeClose(() => emit('close'))
 
 /* ===== 键盘焦点 =====
  * 半圆是带遮罩的浮层：遮罩底下的控件被盖住、鼠标点不到，键盘却还能 Tab 进去，
- * 于是「看不见的按钮能按」——这是焦点陷阱缺失，不是视觉问题。
- * 展开时把焦点交给第一个入口，Tab/Shift+Tab 在弧内循环；关闭时还给 ＋。 */
+ * 于是「看不见的按钮能按」。焦点进入 / 循环 / 回焦统一走 useFocusTrap。 */
 const rootRef = ref<HTMLElement | null>(null)
-let lastFocused: HTMLElement | null = null
-let navigated = false
-
-function fanButtons(): HTMLButtonElement[] {
-  const root = rootRef.value
-  return root ? [...root.querySelectorAll<HTMLButtonElement>('.dock-fan__item button')] : []
-}
-
-function onFanKeydown(e: KeyboardEvent): void {
-  if (e.key !== 'Tab') return
-  const list = fanButtons()
-  if (!list.length) return
-  const first = list[0]!
-  const last = list[list.length - 1]!
-  const active = document.activeElement
-  if (e.shiftKey && (active === first || !rootRef.value?.contains(active))) {
-    e.preventDefault()
-    last.focus()
-  } else if (!e.shiftKey && (active === last || !rootRef.value?.contains(active))) {
-    e.preventDefault()
-    first.focus()
-  }
-}
+const trap = useFocusTrap(rootRef, () => props.open)
 
 function onSelect(item: NavItem): void {
-  // 选中即跳路由，close 之后不该再把焦点抢回 ＋
-  navigated = true
+  // 选中即跳路由：关闭时不把焦点抢回旧页面的 ＋
+  trap.release()
   emit('select', item)
 }
 
@@ -168,7 +137,7 @@ const slots = computed(() => {
         class="dock-fan"
         role="menu"
         aria-label="分析入口"
-        @keydown="onFanKeydown"
+        @keydown="trap.onKeydown"
       >
         <!-- 压暗底下的控制台：弧上的入口要能读，不能和面板按钮糊成一片 -->
         <div class="dock-fan__scrim" aria-hidden="true" @click="emit('close')"></div>

@@ -3,6 +3,7 @@
 export * from './composables/useApiRequest'
 export * from './composables/useAuth'
 export * from './composables/useEscapeClose'
+export * from './composables/useFocusTrap'
 export * from './composables/useFavorites'
 export * from './composables/useLatestRequest'
 export * from './composables/usePanelDrag'

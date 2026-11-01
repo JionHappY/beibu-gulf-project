@@ -113,13 +113,32 @@ useProfileSnapshot({
   clear: () => state.reset(),
 })
 
+/**
+ * 同一组权重「在途」标记。
+ *
+ * 默认值回写会触发一次 300ms 防抖的 doUpdate：若首刷请求（AHP 栅格，重）还没回来，
+ * 第二次就会 cache miss 再发一遍同样的请求（实测进页面就发两次 /site-suitability/map，
+ * 参数逐字相同）。这里按「签名相同且在途」丢弃重复，请求回来后再同权重只会命中缓存。
+ */
+let inFlightSignature: string | null = null
+
+function requestSignature(): string {
+  return JSON.stringify({ w: state.weights, land: state.minLandFrac })
+}
+
 async function doUpdate() {
   if (!renderer.value) return
-  // 权重权威源在后端：首刷前拉一次 defaults（幂等 once；失败走快照兜底，
-  // 写回 weights 会触发下方 weights watch，但二次 doUpdate 命中 LRU 缓存零请求）
+  // 权重权威源在后端：首刷前拉一次 defaults（幂等 once；失败走快照兜底）
   await state.loadDefaults()
+  const signature = requestSignature()
+  if (signature === inFlightSignature) return
+  inFlightSignature = signature
   const { transactionId, signal } = startTransaction()
-  await updateLayer(transactionId, signal)
+  try {
+    await updateLayer(transactionId, signal)
+  } finally {
+    if (inFlightSignature === signature) inFlightSignature = null
+  }
 }
 
 watch(

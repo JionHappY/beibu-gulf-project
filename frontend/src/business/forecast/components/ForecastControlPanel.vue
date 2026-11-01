@@ -1,5 +1,5 @@
-<!-- 预测分析控制面板（4×4）：上半为 4 个指标按钮（三态）+ 置信度滑块，
-     下半为时间轴卡片（点击才展开滑块）+ 3 个可点击刻度 -->
+<!-- 预测分析控制面板（4×4）：上半为 4 个指标按钮（三态）+ 情景系数滑块，
+     下半为裸露时间轴（挂载即自动播放）+ 情景下拉 -->
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, reactive, watch } from 'vue'
 
@@ -365,9 +365,7 @@ function hintOnce() {
           :selecting="btnStates[ind.key].selecting"
           :selected="btnStates[ind.key].selected"
           :label="ind.label"
-          :status-text="
-            ind.key === GROWTH_CELL.key ? '' : `${(getConf(ind.key) * 100).toFixed(0)}%`
-          "
+          :status-text="ind.key === GROWTH_CELL.key ? '' : `×${getConf(ind.key).toFixed(2)}`"
           :slider-value="
             btnStates[ind.key].selecting && ind.key !== GROWTH_CELL.key ? getConf(ind.key) : null
           "

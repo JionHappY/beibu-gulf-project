@@ -357,6 +357,16 @@ describe('ForecastControlPanel 指标卡（2×2 四格）', () => {
     wrapper.unmount()
   })
 
+  it('指标卡状态显示情景系数「×0.80」而不是概率百分比', () => {
+    // 后端把这个参数当情景系数用（forecast-engine.ts:76 `1 + avgAnnualGrowth * scenarioLevel`），
+    // 不是置信区间：显示成「80%」会被读成概率，故钉住单位写法
+    const wrapper = mountPanel()
+    const stateText = wrapper.findAll('.btn-cell')[0].text()
+    expect(stateText).toContain('×0.80')
+    expect(stateText).not.toContain('%')
+    wrapper.unmount()
+  })
+
   it('点「同比增速」开增速视图，再点关回去（不切换 activeIndicator）', async () => {
     const wrapper = mountPanel()
     const store = useForecastStore()

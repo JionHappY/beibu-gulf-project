@@ -454,8 +454,9 @@ onUnmounted(() => {
       <template #left>
         <GCSPanel
           v-if="!isStacked('result')"
+          class="route-result-panel"
           :w="4"
-          :h="4"
+          :h="2"
           anchor="top-left"
           :offset-x="0"
           :offset-y="1.25"
@@ -523,7 +524,21 @@ onUnmounted(() => {
   pointer-events: none;
 }
 
+/* 面板高度按内容定 2 cell（160px）：有摘要时实测 96px、空态 64px，
+   4 cell（320px）会空 190px 以上。GCSPanel 根改成列向 flex，摘要区吃掉
+   剩余高度并居中，内容变长时也不会挤在顶部被裁。 */
+.route-result-panel {
+  display: flex;
+  flex-direction: column;
+}
+
 .result-panel {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
   padding: 0 12px 12px;
   color: var(--GCS-text-primary);
 }

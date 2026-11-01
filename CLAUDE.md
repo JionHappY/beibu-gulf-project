@@ -26,7 +26,7 @@ Vue 3 + Pinia + Element Plus + ECharts + Cesium/OL 双引擎前端；NestJS 后�
 commit 格式由 `.husky/commit-msg` 的 commitlint 强制（`@commitlint/config-conventional`）：形式 `type: 中文说明`，type 取值与「禁 `type(scope):` 括号写法」的口径以 `AGENTS.md` §六 为准。
 一个符合口径的示例（仅示意，规则本身不在此复制）：
 例：`docs: 把协议抄本改成指针，消灭第二个口径`
-已知 flake：`backend/test/task.e2e-spec.ts` 墙钟计时断言（归属与处置见 `AGENTS.md` §五「失败项归属」）。
+已知 flake 记录：`backend/test/task.e2e-spec.ts` 的 V1 原用墙钟阈值判定「提交不等待计算」，全量并发下会脆断；2026-11-02 改为可控闸门（判据是 handler 未完成，与调度快慢无关），该条已关闭。
 
 ## 本文件的机器约束
 

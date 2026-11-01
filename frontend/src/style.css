@@ -334,6 +334,11 @@ body {
   inset: auto 0;
 }
 
+/* 手机档 dock 半圆展开时收起控制台：两层按钮叠在一起就谁也读不清了 */
+.dock-fan-open .mobile-console {
+  visibility: hidden;
+}
+
 /* 面板内滚动条统一走主题 token（暗色不再出现 UA 浅色条） */
 .GCS-panel * {
   scrollbar-width: thin;

@@ -8,7 +8,7 @@ export default { name: 'GCSBottomNavBar' }
  * 档位 2（640~959px）追加菜单键；档位 3（<640px）首页 / ＋ / 个人中心——
  * 业务入口收进 ＋ 展开的半圆（DockFan），菜单作为半圆末项保留抽屉入口。
  */
-import { computed, ref } from 'vue'
+import { computed, onUnmounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 import { useGCS } from '@/shared'
@@ -43,6 +43,11 @@ const dockCellCount = computed(() =>
 )
 
 const fanOpen = ref(false)
+
+// 半圆展开时把控制台藏起来：弧上的入口就压在控制台正上方，两层按钮叠在一起读不清。
+// 用 body class 下发（AppLayout 的 .mobile-console 在兄弟组件里，拿不到 scoped 样式）。
+watch(fanOpen, (on) => document.body.classList.toggle('dock-fan-open', on), { immediate: true })
+onUnmounted(() => document.body.classList.remove('dock-fan-open'))
 const plusRef = ref<HTMLElement | null>(null)
 
 function toggleFan(): void {

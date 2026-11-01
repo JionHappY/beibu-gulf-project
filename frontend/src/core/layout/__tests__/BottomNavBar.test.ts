@@ -146,6 +146,22 @@ describe('BottomNavBar 三档位', () => {
     expect(mockPreloadCesium).not.toHaveBeenCalled()
   })
 
+  it('档位 3 半圆展开时给 body 挂 dock-fan-open，收起/卸载都摘掉', async () => {
+    await setViewport(375)
+    const wrapper = mount(BottomNavBar)
+    expect(document.body.classList.contains('dock-fan-open')).toBe(false)
+
+    await wrapper.find('.dock-plus-wrap .GCS-button').trigger('click')
+    expect(document.body.classList.contains('dock-fan-open')).toBe(true)
+
+    await wrapper.find('.dock-plus-wrap .GCS-button').trigger('click')
+    expect(document.body.classList.contains('dock-fan-open')).toBe(false)
+
+    await wrapper.find('.dock-plus-wrap .GCS-button').trigger('click')
+    wrapper.unmount()
+    expect(document.body.classList.contains('dock-fan-open')).toBe(false)
+  })
+
   it('档位 3 点 ＋ 展开半圆：只有 5 个业务项，没有「更多」', async () => {
     await setViewport(375)
     const wrapper = mount(BottomNavBar)

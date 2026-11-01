@@ -43,10 +43,12 @@ const emit = defineEmits<{ select: [item: NavItem]; close: [] }>()
 
 const { cellPixel } = useGCS()
 
-/** 半径（cell 数）：2.4 cell ≈ 拇指 60° 扇区内的舒适指向距离 */
-const RADIUS_CELL = 1.7
+/** 横向半径（cell 数）：弧的左右展开量；再宽在 390px 下两端就贴边了 */
+const RADIUS_X_CELL = 1.62
+/** 纵向半径（cell 数）：比横向大，弧才会往上翻开、落到地图上而不是压在控制台上 */
+const RADIUS_Y_CELL = 2.4
 /** 圆心抬升（cell 数）：让弧的左右两端离开 dock 本体，不被按钮压住 */
-const BASE_LIFT_CELL = 1.5
+const BASE_LIFT_CELL = 1.15
 
 const origin = ref({ x: 0, y: 0 })
 
@@ -102,15 +104,18 @@ const slots = computed(() => {
   // 否则弧的两端会滑出屏幕（390px 下 2.4 cell 的弧比屏还宽）
   const itemHalf = cellPixel.value * 0.4 + 8
   const fitHalf = Math.max(cellPixel.value * 1.2, window.innerWidth / 2 - itemHalf - 10)
-  const r = Math.min(cellPixel.value * RADIUS_CELL, fitHalf)
+  // 椭圆而不是正圆：横向受屏幕宽度约束（窄屏两端不能出界），纵向自由，
+  // 于是 5 个入口往上翻到地图上方，横向仍收在拇指一张手之内
+  const rx = Math.min(cellPixel.value * RADIUS_X_CELL, fitHalf)
+  const ry = cellPixel.value * RADIUS_Y_CELL
   const lift = cellPixel.value * BASE_LIFT_CELL
   return props.items.map((item, i) => {
     const angle = n === 1 ? 90 : 180 - (180 * i) / (n - 1)
     const rad = (angle * Math.PI) / 180
     return {
       item,
-      x: Math.round(origin.value.x + Math.cos(rad) * r),
-      y: Math.round(origin.value.y - lift - Math.sin(rad) * r),
+      x: Math.round(origin.value.x + Math.cos(rad) * rx),
+      y: Math.round(origin.value.y - lift - Math.sin(rad) * ry),
     }
   })
 })
@@ -120,6 +125,8 @@ const slots = computed(() => {
   <Teleport to="body">
     <Transition name="dock-fan">
       <div v-if="open" class="dock-fan" role="menu" aria-label="分析入口">
+        <!-- 压暗底下的控制台：弧上的入口要能读，不能和面板按钮糊成一片 -->
+        <div class="dock-fan__scrim" aria-hidden="true" @click="emit('close')"></div>
         <div
           v-for="(slot, i) in slots"
           :key="slot.item.path"
@@ -155,6 +162,14 @@ const slots = computed(() => {
 
   /* 高于底部导航（nav=60）、低于抽屉/弹窗，复用浮动面板刻度 */
   z-index: var(--GCS-z-panel-float);
+}
+
+/* 遮罩只压暗、不接管键盘焦点；点它等同点空白处收起 */
+.dock-fan__scrim {
+  position: absolute;
+  inset: 0;
+  background: var(--GCS-bg-overlay);
+  pointer-events: auto;
 }
 
 .dock-fan__item {

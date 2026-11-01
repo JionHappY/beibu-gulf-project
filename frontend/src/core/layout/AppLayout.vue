@@ -6,7 +6,7 @@
  * 抽屉模式（<960px）下抽屉同时承载业务面板（slot left/right）。
  */
 
-import { computed, defineAsyncComponent, onUnmounted, watch } from 'vue'
+import { computed, defineAsyncComponent, inject, onUnmounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 import { MAP_CONFIG } from '@/core/config/map'
@@ -16,10 +16,12 @@ import HomeAnalysisGrid from './components/HomeAnalysisGrid.vue'
 import { PanelTitle, useGCS, useTheme } from '@/shared'
 
 import BottomNavBar from './components/BottomNavBar.vue'
+import ConsoleRail from './components/ConsoleRail.vue'
 import GCSPanel from './components/GCSPanel.vue'
 import MobileDrawer from './components/MobileDrawer.vue'
 import NavButton from './components/NavButton.vue'
 import { type NavItem, navItems } from './navConfig'
+import { GCS_TASK_CHIPS_KEY } from './taskChipsContext'
 import { useMobileDrawer } from './useMobileDrawer'
 import { useSliderFocus } from './useSliderFocus'
 
@@ -40,6 +42,10 @@ const { isDark, toggleTheme } = useTheme()
 const { drawerOpen, closeDrawer } = useMobileDrawer()
 // 滑块专注模式（模块级单例，滑块组件调用 begin/end）
 const { active: sliderFocusActive, activePanel: sliderActivePanel } = useSliderFocus()
+
+// 任务结果芯片（手机档进控制台；桌面档由 App.vue 自己渲染浮条）。
+// 未 provide 时（单测/独立挂载）为 undefined ⇒ 中转带不渲染。
+const taskChips = inject(GCS_TASK_CHIPS_KEY, undefined)
 
 // 抽屉业务行：取 navConfig 中 type=business 的项（core 不引 business，由 App.vue 注入）
 const businessNavItems = computed<NavItem[]>(() => [
@@ -154,6 +160,13 @@ function goBusiness(item: NavItem): void {
          地图收上半屏，原抽屉里的图层控制 / 业务面板整体搬到下半屏（压缩排版，尽量一屏放完）。
          抽屉在手机档不再渲染——入口是 dock 的 ＋ 半圆，内容是这张控制台。 -->
     <section v-if="navCompact" class="mobile-console" :style="consoleStyle" aria-label="控制台">
+      <!-- 中转带：已完成任务结果的芯片，点一下上图/撤下（App 供给，桌面档在右下浮条里）。
+           放在滚动区外：结果下来时控制台常已滚到参数区，放在里面会跟着滚走 -->
+      <ConsoleRail
+        v-if="taskChips && taskChips.chips.value.length"
+        :chips="taskChips.chips.value"
+        @toggle="taskChips.toggle"
+      />
       <div class="console-head">
         <span class="console-title">{{
           (route.meta?.title as string) || '北部湾智慧港口平台'

@@ -21,7 +21,7 @@ import {
 import { useMapControls } from '@/core'
 import { UNIFIED_MAP_KEY, type UnifiedMapExposed } from '@/core'
 import { preloadCesium, UnifiedMap } from '@/core'
-import { type LayerIR, taskResultToIR, useLayerIRLayer } from '@/core'
+import { GCS_TASK_CHIPS_KEY, type LayerIR, taskResultToIR, useLayerIRLayer } from '@/core'
 import {
   captureError,
   ErrorBoundary,
@@ -32,6 +32,7 @@ import {
   removeAuthStorageListener,
   showWarning,
   useAuth,
+  useGCS,
   useGlobalPanelDragActive,
   useWaitForRenderer,
   warmupAfterFirstFrame,
@@ -165,6 +166,9 @@ const panelDragActive = useGlobalPanelDragActive()
 // （chip 显示已上图、BLM 里却没有该图层）。
 const layerIR = useLayerIRLayer(businessLayerManager)
 
+// 手机档的芯片渲染面在控制台里（AppLayout 的 ConsoleRail），右下浮条隐藏——两处同源，不能同时出现
+const { navCompact } = useGCS()
+
 /** 任务槽位列表（resultChips 与 dockCards 共用；Object.values 只保留一处） */
 const taskSlots = computed(() => Object.values(taskStore.slots))
 
@@ -191,6 +195,18 @@ function onResultChipToggle(ir: LayerIR): void {
   const action = layerIR.toggleIR(ir)
   logger.debug('[App] 任务结果拖出上图 toggle:', ir.meta.label, action)
 }
+
+// 手机档控制台的中转带：同一份 resultChips，换个渲染面。
+// 桌面档仍是下面的浮条（body.layout-console 时由样式隐藏，见 style 末段）。
+provide(GCS_TASK_CHIPS_KEY, {
+  chips: computed(() =>
+    resultChips.value.map(({ key, label, color, active }) => ({ key, label, color, active }))
+  ),
+  toggle: (key: string) => {
+    const chip = resultChips.value.find((c) => c.key === key)
+    if (chip) onResultChipToggle(chip.ir)
+  },
+})
 
 // ===== v4-S5 TaskDock：已转后台（docked）任务的卡片条 =====
 // 数据由根入口从 taskStore 派生后以 props 供给（core 组件不接 store，同 TaskDropZone 先例）；
@@ -339,7 +355,7 @@ onUnmounted(() => {
     <!-- v4-S8 系统 C：已完成任务结果「拖出上图」芯片条（数据跨路由，纯渲染不重算）。
          空态整体不渲染（同 dock 空态口径）；常驻不随路由卸载——跨路由上图是它的存在意义。
          点击/拖拽松开同义：上图⇄撤下 toggle（去重键 = taskId+kind，永不重复） -->
-    <div v-if="resultChips.length" class="task-result-strip">
+    <div v-if="resultChips.length && !navCompact" class="task-result-strip">
       <TaskResultChip
         v-for="chip in resultChips"
         :key="chip.key"

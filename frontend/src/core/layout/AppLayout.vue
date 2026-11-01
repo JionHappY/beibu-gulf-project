@@ -20,7 +20,7 @@ import ConsoleRail from './components/ConsoleRail.vue'
 import GCSPanel from './components/GCSPanel.vue'
 import MobileDrawer from './components/MobileDrawer.vue'
 import NavButton from './components/NavButton.vue'
-import { type NavItem, navItems } from './navConfig'
+import { businessNavItems, type NavItem } from './navConfig'
 import { GCS_TASK_CHIPS_KEY } from './taskChipsContext'
 import { useMobileDrawer } from './useMobileDrawer'
 import { useSliderFocus } from './useSliderFocus'
@@ -67,10 +67,7 @@ function onRailDragEnd(payload: { key: string; x: number; y: number }): void {
   if (path) void router.push(path)
 }
 
-// 抽屉业务行：取 navConfig 中 type=business 的项（core 不引 business，由 App.vue 注入）
-const businessNavItems = computed<NavItem[]>(() => [
-  ...navItems.value.filter((i) => i.type === 'business'),
-])
+// 抽屉业务行：取 navConfig 派生的业务项（core 不引 business，由 App.vue 注入）
 
 // 雷达图依赖 ECharts；保持动态加载，避免布局基座把它并进首屏入口图。
 const GlobalRadarPanel = defineAsyncComponent(() => import('./components/GlobalRadarPanel.vue'))

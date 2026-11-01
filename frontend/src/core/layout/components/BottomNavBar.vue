@@ -14,7 +14,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useGCS } from '@/shared'
 
 import { preloadCesium } from '../../map/renderers'
-import { type NavItem, navItems } from '../navConfig'
+import { businessNavItems, type NavItem, navItems } from '../navConfig'
 import { getTaskIndicator, taskIndicatorVersion } from '../taskIndicator'
 import { useMobileDrawer } from '../useMobileDrawer'
 
@@ -35,12 +35,11 @@ const props = withDefaults(defineProps<{ dragPoint?: { x: number; y: number } | 
   dragPoint: null,
 })
 
-const businessItems = computed<NavItem[]>(() => navItems.value.filter((i) => i.type === 'business'))
 const homeItem = computed(() => navItems.value.find((i) => i.type === 'home'))
 const profileItem = computed(() => navItems.value.find((i) => i.type === 'profile'))
 
 // 手机档的入口就是这 5 个分析页：抽屉内容已迁到下半屏控制台，弧上不再需要「更多」
-const fanItems = computed<NavItem[]>(() => [...businessItems.value])
+const fanItems = computed<NavItem[]>(() => [...businessNavItems.value])
 
 /** 档位 3：首页 / ＋ / 个人中心 三格；其余档位：全部项 + 菜单键 */
 const dockCellCount = computed(() =>
@@ -87,7 +86,7 @@ function toggleFan(): void {
 const plusRing = computed(() => {
   void taskIndicatorVersion.value
   if (fanOpen.value) return null
-  for (const item of businessItems.value) {
+  for (const item of businessNavItems.value) {
     const ind = getTaskIndicator(item.path)
     if (ind.occupied) {
       return { status: ind.status, progress: ind.progress, indeterminate: false }

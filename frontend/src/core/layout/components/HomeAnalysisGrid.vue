@@ -14,7 +14,7 @@ import { useRouter } from 'vue-router'
 
 import { AppIcon, isIconName } from '@/shared'
 
-import { navItems } from '../navConfig'
+import { businessNavItems } from '../navConfig'
 
 /** 说明文案（导航项里没有这份信息，且它只用来解释「这个分析做什么」） */
 const DESC: Record<string, string> = {
@@ -28,15 +28,13 @@ const DESC: Record<string, string> = {
 const router = useRouter()
 
 const entries = computed(() =>
-  navItems.value
-    .filter((i) => i.type === 'business')
-    .map((i) => ({
-      path: i.path,
-      label: i.label,
-      icon: i.icon,
-      disabled: i.disabled,
-      desc: DESC[i.path] ?? '',
-    }))
+  businessNavItems.value.map((i) => ({
+    path: i.path,
+    label: i.label,
+    icon: i.icon,
+    disabled: i.disabled,
+    desc: DESC[i.path] ?? '',
+  }))
 )
 
 function open(path: string): void {

@@ -7,6 +7,6 @@ import { LAYERS_PANEL } from '@/shared/constants/panels'
 export const DIVERSION_PANELS: PanelSpec[] = definePanels([
   { id: 'transfer', title: '西江→运河转移量', zone: 'left', order: 1, w: 4, h: 4, priority: 2 },
   { id: 'sankey', title: '转移流向', zone: 'left', order: 2, w: 4, h: 4, priority: 2 },
-  { id: 'year', title: '年份', zone: 'right', order: 1, w: 4, h: 2, priority: 1 },
+  { id: 'year', title: '年份', zone: 'right', order: 1, w: 4, h: 4, priority: 1 },
   LAYERS_PANEL,
 ])

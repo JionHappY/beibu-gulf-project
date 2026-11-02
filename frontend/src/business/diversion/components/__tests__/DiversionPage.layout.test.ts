@@ -185,12 +185,12 @@ describe('DiversionPage 布局派生（注册表 → props）', () => {
     }
   })
 
-  it('cell=80 派生值：左侧两面板沿用旧字面量 1.25/5.5，年份收 2 cell 后图层面板上移两格', () => {
+  it('cell=80 派生值等于旧字面量 1.25/5.5（像素零变化）', () => {
     expect(placementsFor(DIVERSION_PANELS, 80)).toEqual({
       transfer: { w: 4, h: 4, anchor: 'top-left', offsetX: 0, offsetY: 1.25 },
       sankey: { w: 4, h: 4, anchor: 'top-left', offsetX: 0, offsetY: 5.5 },
-      year: { w: 4, h: 2, anchor: 'top-right', offsetX: 0, offsetY: 1.25 },
-      layers: { w: 4, h: 4, anchor: 'top-right', offsetX: 0, offsetY: 3.5 },
+      year: { w: 4, h: 4, anchor: 'top-right', offsetX: 0, offsetY: 1.25 },
+      layers: { w: 4, h: 4, anchor: 'top-right', offsetX: 0, offsetY: 5.5 },
     })
   })
 
@@ -205,20 +205,17 @@ describe('DiversionPage 4×4 布局', () => {
     vi.clearAllMocks()
   })
 
-  it('四个 GCSPanel 同宽 4，年份只有滑轨 + 一行说明故 4×2，槽位与目标布局一致', async () => {
+  it('四个 GCSPanel 全部 4×4，槽位与目标布局一致', async () => {
     api.getBreakdown.mockResolvedValue(FIXTURE)
     const { wrapper } = mountPage()
     await flushPromises()
 
     const panels = wrapper.findAllComponents(GCSPanel)
     expect(panels).toHaveLength(4)
-    for (const panel of panels) expect(panel.props('w')).toBe(4)
-    // 年份面板内容只有滑轨 + 一行说明（实测 78px）：4 cell 会空出 240px，
-    // 收成 2 cell 后仍是 116px 可用（cell 最小档 56 也不裁），故它不是 4×4
-    expect(panelWithClass(wrapper, '.stub-bar-chart').props('h')).toBe(4)
-    expect(panelWithClass(wrapper, '.stub-sankey-chart').props('h')).toBe(4)
-    expect(panelWithClass(wrapper, '.year-panel').props('h')).toBe(2)
-    expect(panelWithClass(wrapper, '.stub-layer-control-panel').props('h')).toBe(4)
+    for (const panel of panels) {
+      expect(panel.props('w')).toBe(4)
+      expect(panel.props('h')).toBe(4)
+    }
 
     // 左上：转移量图表；左下：桑基图；右上：年份控制；右下：图层面板（位置期望由注册表派生）
     expect(panelWithClass(wrapper, '.stub-bar-chart').props()).toMatchObject(CELL80.transfer)

@@ -435,12 +435,14 @@ function goBusiness(item: NavItem): void {
   height: 170px;
 }
 
-/* 图层控制在控制台里收成三列紧凑排：组件的 2 列 × 0.8cell 行高在 390 宽下占 262px
-   （约四分之一屏），六项图标+文字挤成竖排。图标文字同行、行高 44px，正好两行。 */
+/* 图层控制在控制台里按「2×1 GCS 按钮」排：列数与行高由组件按容器实测宽度反推
+   （LayerControlPanel 的 compactGridStyle 写入 --layer-cols/--layer-row-h/--layer-gap），
+   这里只负责解除面板内的高度约束，不再写死列数与行高——
+   写死过 3 列 / 44px，与组件的 2×1 尺寸各说各话（用户截图：比城市按钮和 dock 宽一档）。 */
 .console-body :deep(.layer-grid) {
-  grid-template-columns: repeat(3, 1fr);
-  grid-auto-rows: 44px;
-  gap: 4px;
+  grid-template-columns: repeat(var(--layer-cols, 3), 1fr);
+  grid-auto-rows: var(--layer-row-h, 44px);
+  gap: var(--layer-gap, 4px);
   height: auto;
   overflow: visible;
 }
@@ -448,12 +450,12 @@ function goBusiness(item: NavItem): void {
 .console-body :deep(.layer-btn) {
   flex-direction: row;
   gap: 4px;
-  padding: 0 4px;
-  font-size: 11px;
+  padding: 0 6px;
+  font-size: var(--layer-font, 12px);
 }
 
 .console-body :deep(.layer-icon) {
-  font-size: 13px;
+  font-size: calc(var(--layer-font, 12px) * 1.1);
 }
 
 /* 浸没报告的内容区在桌面档用绝对定位钉在 2.8cell 的灰框里（宽高 top/left 都是内联算出来的）。

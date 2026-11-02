@@ -11,7 +11,7 @@
  *    ~50ms 就返回、早于 Cesium 就绪 ⇒ 整轮结果被静默丢掉，报告面板停在「暂无淹没分析
  *    结果」，直到用户再动一次滑块（实测日志里 flood-areas 200 但没有「更新淹没分析数据」）。
  */
-export interface LateResponseContext {
+interface LateResponseContext {
   /** 当前渲染器引擎；`null` = 渲染器还没建好 */
   actualEngine: string | null
   /** 本路由声明的引擎（`route.meta.engine`） */

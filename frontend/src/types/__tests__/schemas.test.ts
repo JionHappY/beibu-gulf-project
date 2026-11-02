@@ -661,7 +661,6 @@ describe('契约覆盖补齐的 schema（生成器门禁转红后补）', () => 
         kdeP99: 0.00004,
         minLandFrac: 0.5,
         maxLandFrac: 0.99,
-        maxLandFrac: 0.99,
       },
     })
     expect(ok.success).toBe(true)
@@ -718,7 +717,6 @@ describe('契约覆盖补齐的 schema（生成器门禁转红后补）', () => 
       siteSuitabilityDefaultsSchema.safeParse({
         weights: { inundation: 0.4 },
         minLandFrac: 0.5,
-        maxLandFrac: 0.99,
         maxLandFrac: 0.99,
         resolution: 0,
         source: 'x',

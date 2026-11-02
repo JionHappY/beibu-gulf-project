@@ -182,6 +182,7 @@ onUnmounted(() => {
         </GCSPanel>
         <GCSPanel
           v-if="!isStacked('bar')"
+          class="bar-panel"
           :w="4"
           :h="4"
           anchor="top-left"
@@ -252,14 +253,25 @@ onUnmounted(() => {
   pointer-events: auto;
 }
 
-/* G2 分流结论行：图表下方的窄条，不参与图表伸缩（flex:0 0 auto），
-   否则 ECharts 容器会把这一行压成 0 高。 */
+/* G2 分流结论行：面板底部留 20px 白，份额行绝对定位落在白里。
+   不用流内块 + flex 压图表——流内块会让固定高面板溢 23px；
+   flex 压图表则把 ECharts 容器（height:100%）算成 0。 */
+.bar-panel {
+  position: relative;
+  padding-bottom: 20px;
+}
+
 .share-line {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
   display: flex;
-  flex: 0 0 auto;
+  height: 20px;
+  align-items: center;
   align-items: baseline;
   gap: 8px;
-  padding: 0 10px 6px;
+  padding: 0 10px;
   font-size: 11px;
   color: var(--GCS-text-muted);
   white-space: nowrap;

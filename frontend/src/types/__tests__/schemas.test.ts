@@ -661,6 +661,7 @@ describe('契约覆盖补齐的 schema（生成器门禁转红后补）', () => 
         kdeP99: 0.00004,
         minLandFrac: 0.5,
         maxLandFrac: 0.99,
+        maxPortDistanceKm: 50,
       },
     })
     expect(ok.success).toBe(true)
@@ -682,6 +683,7 @@ describe('契约覆盖补齐的 schema（生成器门禁转红后补）', () => 
           kdeP99: 0,
           minLandFrac: 0.5,
           maxLandFrac: 0.99,
+          maxPortDistanceKm: 50,
         },
       }).success
     ).toBe(false)
@@ -709,6 +711,7 @@ describe('契约覆盖补齐的 schema（生成器门禁转红后补）', () => 
       },
       minLandFrac: 0.5,
       maxLandFrac: 0.99,
+      maxPortDistanceKm: 50,
       resolution: 0,
       source: 'SITE_AHP_MATRIX@2026-09-30',
     })

@@ -3,6 +3,7 @@ import { Injectable, Logger } from '@nestjs/common'
 import { DEFAULT_THRESHOLDS, type ScoreThresholds } from '../constants/score.constants'
 import {
   DEFAULT_MAX_LAND_FRAC,
+  DEFAULT_MAX_PORT_DISTANCE_KM,
   DEFAULT_MIN_LAND_FRAC,
   DEFAULT_RESOLUTION,
   defaultWeights,
@@ -12,6 +13,11 @@ import { SiteSuitabilityRepository } from '../repositories/site-suitability.repo
 
 import { type CellScore, type FactorCell, parseWeights, type SuitabilityWeights } from './scoring'
 import { cellScore } from './scoring'
+
+/** km → m；0 表示不设上限（与 SQL 的 `dist_port_m <= $3` 对齐，用 Infinity 表达） */
+function toMeters(km: number): number {
+  return km > 0 ? km * 1000 : Number.POSITIVE_INFINITY
+}
 
 // 加权叠加编排（单元四）：库行 → 纯函数评分 → GeoJSON FeatureCollection。
 // 计算全在内存（148k 行算术），出参形状为契约 siteSuitabilityResponseSchema（前端
@@ -32,6 +38,8 @@ export interface SuitabilityResult {
     minLandFrac: number
     /** 陆地占比上限（回显实际筛选口径，前端据此说明"只留与水相邻的格"） */
     maxLandFrac: number
+    /** 距最近既有港口上限（km，回显实际筛选口径） */
+    maxPortDistanceKm: number
     /** 实际使用的聚合分辨率（度）；0 = 全分辨率 */
     resolution: number
   }
@@ -43,6 +51,7 @@ export interface SuitabilityDefaults {
   thresholds: ScoreThresholds
   minLandFrac: number
   maxLandFrac: number
+  maxPortDistanceKm: number
   resolution: number
   source: string
 }
@@ -56,7 +65,12 @@ export class SiteSuitabilityService {
   async compute(query: SuitabilityQuery): Promise<SuitabilityResult> {
     const weights: SuitabilityWeights = parseWeights(query.weights)
     const [rows, kdeP99] = await Promise.all([
-      this.repository.fetchCellsAt(query.minLandFrac, query.maxLandFrac, query.resolution),
+      this.repository.fetchCellsAt(
+        query.minLandFrac,
+        query.maxLandFrac,
+        query.resolution,
+        toMeters(query.maxPortDistanceKm)
+      ),
       this.repository.fetchKdeP99(),
     ])
 
@@ -106,6 +120,7 @@ export class SiteSuitabilityService {
         kdeP99,
         minLandFrac: query.minLandFrac,
         maxLandFrac: query.maxLandFrac,
+        maxPortDistanceKm: query.maxPortDistanceKm,
         // 回显实际聚合口径：0 = 全分辨率；前端可据此提示"当前为聚合视图"
         resolution: query.resolution,
       },
@@ -124,6 +139,7 @@ export class SiteSuitabilityService {
       thresholds: DEFAULT_THRESHOLDS,
       minLandFrac: DEFAULT_MIN_LAND_FRAC,
       maxLandFrac: DEFAULT_MAX_LAND_FRAC,
+      maxPortDistanceKm: DEFAULT_MAX_PORT_DISTANCE_KM,
       resolution: DEFAULT_RESOLUTION,
       source: 'SITE_AHP_MATRIX@2026-09-30',
     }

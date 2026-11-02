@@ -28,11 +28,25 @@ describe('site-suitability repository 陆地占比上下限', () => {
     const { repo, query } = repoWithSqlCapture()
     await repo.fetchCellsAt(0.5, 0.99, 0)
     expect(query.mock.calls[0][0]).toMatch(/land_frac >= \$1 AND land_frac <= \$2/)
-    expect(query.mock.calls[0][1]).toEqual([0.5, 0.99])
+    expect(query.mock.calls[0][1]).toEqual([0.5, 0.99, Number.POSITIVE_INFINITY])
 
     await repo.fetchCellsAt(0.5, 0.99, 0.02)
     expect(query.mock.calls[1][0]).toMatch(/land_frac >= \$1 AND land_frac <= \$2/)
-    expect(query.mock.calls[1][1]).toEqual([0.5, 0.99, 0.02])
+    expect(query.mock.calls[1][1]).toEqual([0.5, 0.99, Number.POSITIVE_INFINITY, 0.02])
+  })
+})
+
+describe('site-suitability repository 港口距离上限', () => {
+  it('🔴 两个分支都把 dist_port_m 上限写进 WHERE 且参数位对得上', async () => {
+    const { repo, query } = repoWithSqlCapture()
+    await repo.fetchCellsAt(0.5, 0.99, 0, 50_000)
+    expect(query.mock.calls[0][0]).toMatch(/dist_port_m <= \$3/)
+    expect(query.mock.calls[0][1]).toEqual([0.5, 0.99, 50_000])
+
+    await repo.fetchCellsAt(0.5, 0.99, 0.02, 50_000)
+    expect(query.mock.calls[1][0]).toMatch(/dist_port_m <= \$3/)
+    // 聚合分支把 resolution 顺延到 $4，端口里程留在 $3
+    expect(query.mock.calls[1][1]).toEqual([0.5, 0.99, 50_000, 0.02])
   })
 })
 
@@ -46,6 +60,6 @@ describe('site-suitability repository 出库坐标 SRID', () => {
     await repo.fetchCellsAt(0.5, 0.99, 0.02)
     const aggregated = query.mock.calls[1][0]
     expect(aggregated).toContain('ST_Transform(ST_Centroid(ST_Collect(geom)), 4326)')
-    expect(aggregated).toContain('GROUP BY floor(ST_X(ST_Transform(geom, 4326)) / $3)')
+    expect(aggregated).toContain('GROUP BY floor(ST_X(ST_Transform(geom, 4326)) / $4)')
   })
 })

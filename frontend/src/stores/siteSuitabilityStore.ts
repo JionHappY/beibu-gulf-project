@@ -8,6 +8,7 @@ import { siteSuitabilityDefaultsSchema } from '@/types/schemas'
 
 import {
   SNAPSHOT_MAX_LAND_FRAC,
+  SNAPSHOT_MAX_PORT_DISTANCE_KM,
   SNAPSHOT_MIN_LAND_FRAC,
   SNAPSHOT_PROVENANCE,
   SNAPSHOT_WEIGHTS,
@@ -33,6 +34,8 @@ export const useSiteSuitabilityStore = defineStore('siteSuitability', () => {
   const minLandFrac: Ref<number> = ref(SNAPSHOT_MIN_LAND_FRAC)
   /** 陆地占比上限（0..1）：0.99 = 只留与水相邻的格，1 = 不设上限 */
   const maxLandFrac: Ref<number> = ref(SNAPSHOT_MAX_LAND_FRAC)
+  /** 距最近既有港口上限（km；0 = 不限制） */
+  const maxPortDistanceKm: Ref<number> = ref(SNAPSHOT_MAX_PORT_DISTANCE_KM)
 
   const { activeTransactionId, bumpTransactionId } = createTransactionId()
   const isRequesting: Ref<boolean> = ref(false)
@@ -116,6 +119,7 @@ export const useSiteSuitabilityStore = defineStore('siteSuitability', () => {
         }
         minLandFrac.value = d.minLandFrac
         maxLandFrac.value = d.maxLandFrac
+        maxPortDistanceKm.value = d.maxPortDistanceKm
         defaultsSource.value = 'remote'
         logger.info('[site-suitability] defaults 后端直连成功', d.source)
       } catch (e) {
@@ -147,6 +151,7 @@ export const useSiteSuitabilityStore = defineStore('siteSuitability', () => {
     weights.value = { ...SNAPSHOT_WEIGHTS }
     minLandFrac.value = SNAPSHOT_MIN_LAND_FRAC
     maxLandFrac.value = SNAPSHOT_MAX_LAND_FRAC
+    maxPortDistanceKm.value = SNAPSHOT_MAX_PORT_DISTANCE_KM
     activeTransactionId.value = 0
     isRequesting.value = false
     data.value = null
@@ -160,6 +165,7 @@ export const useSiteSuitabilityStore = defineStore('siteSuitability', () => {
     weights,
     minLandFrac,
     maxLandFrac,
+    maxPortDistanceKm,
     activeTransactionId,
     isRequesting,
     data,

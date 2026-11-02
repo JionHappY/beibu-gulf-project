@@ -264,6 +264,7 @@ export const siteSuitabilityResponseSchema = z.object({
     kdeP99: z.number(),
     minLandFrac: z.number(),
     maxLandFrac: z.number(),
+    maxPortDistanceKm: z.number(),
   }),
 })
 
@@ -283,6 +284,7 @@ export const siteSuitabilityDefaultsSchema = z.object({
   }),
   minLandFrac: z.number(),
   maxLandFrac: z.number(),
+  maxPortDistanceKm: z.number(),
   resolution: z.number(),
   source: z.string(),
 })

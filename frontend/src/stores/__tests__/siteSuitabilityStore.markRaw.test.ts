@@ -32,6 +32,7 @@ function payload(): SiteSuitabilityResponseParsed {
       kdeP99: 0.9,
       minLandFrac: 0.3,
       maxLandFrac: 0.99,
+      maxPortDistanceKm: 50,
     },
   }
 }

@@ -43,7 +43,8 @@ export class SiteSuitabilityRepository {
   async fetchCellsAt(
     minLandFrac: number,
     maxLandFrac: number,
-    resolution: number
+    resolution: number,
+    maxPortDistanceM = Number.POSITIVE_INFINITY
   ): Promise<SuitabilityCellRow[]> {
     if (!(resolution > 0)) {
       const r = await this.db.query<SuitabilityCellRow>(
@@ -53,9 +54,9 @@ export class SiteSuitabilityRepository {
                 mean_elev_m, mean_slope_deg, land_frac,
                 land_class, dist_port_m, dist_road_m, kde_mass
            FROM suitability_cells
-          WHERE land_frac >= $1 AND land_frac <= $2
+          WHERE land_frac >= $1 AND land_frac <= $2 AND dist_port_m <= $3
           ORDER BY id`,
-        [minLandFrac, maxLandFrac]
+        [minLandFrac, maxLandFrac, maxPortDistanceM]
       )
       return r.rows
     }
@@ -71,11 +72,11 @@ export class SiteSuitabilityRepository {
               avg(dist_road_m) AS dist_road_m,
               avg(kde_mass) AS kde_mass
          FROM suitability_cells
-        WHERE land_frac >= $1 AND land_frac <= $2
-        GROUP BY floor(ST_X(ST_Transform(geom, 4326)) / $3),
-                 floor(ST_Y(ST_Transform(geom, 4326)) / $3)
+        WHERE land_frac >= $1 AND land_frac <= $2 AND dist_port_m <= $3
+        GROUP BY floor(ST_X(ST_Transform(geom, 4326)) / $4),
+                 floor(ST_Y(ST_Transform(geom, 4326)) / $4)
         ORDER BY id`,
-      [minLandFrac, maxLandFrac, resolution]
+      [minLandFrac, maxLandFrac, maxPortDistanceM, resolution]
     )
     return r.rows
   }

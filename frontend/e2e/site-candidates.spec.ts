@@ -40,6 +40,7 @@ const MAP = {
     kdeP99: 1,
     minLandFrac: 0.5,
     maxLandFrac: 0.99,
+    maxPortDistanceKm: 50,
   },
 }
 
@@ -65,7 +66,9 @@ test('候选名单自曝总数与截断，且说明行不挤掉列表', async ({
 
   await page.goto('/site-suitability')
   const note = page.getByTestId('candidate-total')
-  await expect(note).toHaveText('共 3 格 · 按得分取前 3 · 仅含水陆交界格 · 点击行定位')
+  await expect(note).toHaveText(
+    '共 3 格 · 按得分取前 3 · 仅含水陆交界格 · 距既有港口 ≤ 50 km · 点击行定位'
+  )
 
   // 列表行数仍是前 3；面板无纵向溢出（说明行与列表共存不挤爆）
   await expect(page.locator('.cell-name')).toHaveCount(3)

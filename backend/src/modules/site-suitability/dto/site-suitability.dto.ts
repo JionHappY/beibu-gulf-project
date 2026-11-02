@@ -22,6 +22,15 @@ export const DEFAULT_MIN_LAND_FRAC = 0.5
  * min_land_frac 下限挡住。上下限都来自 query，缺省值此处与 defaults 端点同源。
  */
 export const DEFAULT_MAX_LAND_FRAC = 0.99
+/**
+ * 距最近既有港口的上限（km）缺省 50。
+ *
+ * 为什么是硬约束而不是只靠 access 权重：权重只有 1/5，内陆格在土地/地形两项可以拿满分，
+ * 距离再远也压不住——实测 land_frac 过滤后仍有 3,572 格，到港口中位 60.8km、最远 150.3km。
+ * 用户要求「距离太远的不该选出来」，这类格即便入图也没有配套可用。
+ * 50km 为作者设定（港口集疏运 1 小时公路圈量级），不是数据推导值；改它需同步 UI 口径文字。
+ */
+export const DEFAULT_MAX_PORT_DISTANCE_KM = 50
 export const DEFAULT_RESOLUTION = 0
 
 export interface SuitabilityQuery {
@@ -29,6 +38,8 @@ export interface SuitabilityQuery {
   minLandFrac: number
   /** 陆地占比上限：land_frac > 本值的格不入图（缺省 0.99 = 只留与水相邻的格） */
   maxLandFrac: number
+  /** 距最近既有港口上限（km）：dist_port_m > 本值的格不入图（缺省 50，作者设定） */
+  maxPortDistanceKm: number
   /** 聚合分辨率（度）。0 = 全分辨率（默认，保持既有消费方行为）；>0 = 按该边长的粗格聚合 */
   resolution: number
   /** 权重来源（metadata.weightsSource 同值域；幽灵标签修复前 service 恒写 ahp-final） */
@@ -66,6 +77,7 @@ export function parseSuitabilityQuery(query: Record<string, unknown>): Suitabili
     return {
       weights: defaultWeights(),
       ...landFracBounds(query),
+      maxPortDistanceKm: parseMaxPortDistanceKm(query.max_port_distance_km),
       resolution: parseResolution(query.resolution),
       weightsSource: 'ahp-default',
     }
@@ -76,6 +88,7 @@ export function parseSuitabilityQuery(query: Record<string, unknown>): Suitabili
   return {
     weights,
     ...landFracBounds(query),
+    maxPortDistanceKm: parseMaxPortDistanceKm(query.max_port_distance_km),
     resolution: parseResolution(query.resolution),
     weightsSource: 'query',
   }
@@ -110,6 +123,19 @@ function landFracBounds(query: Record<string, unknown>): {
     )
   }
   return { minLandFrac, maxLandFrac }
+}
+
+/**
+ * 港口距离上限解析：0 表示不设上限（显式复现旧行为，便于口径对照）。
+ * 上限 500km 是防呆：再远已经跨出北部湾经济区，写错单位（米当千米）也能被这条挡住。
+ */
+function parseMaxPortDistanceKm(raw: unknown): number {
+  if (raw === undefined || raw === '') return DEFAULT_MAX_PORT_DISTANCE_KM
+  const v = Number(raw)
+  if (!Number.isFinite(v) || v < 0 || v > 500) {
+    throw new BusinessError(ErrorCode.INVALID_PARAMS, 'max_port_distance_km 须 ∈ [0,500]')
+  }
+  return v
 }
 
 function parseMaxLandFrac(raw: unknown): number {

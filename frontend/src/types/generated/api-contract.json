@@ -303,6 +303,10 @@
           "type": "number",
           "optional": false
         },
+        "maxPortDistanceKm": {
+          "type": "number",
+          "optional": false
+        },
         "resolution": {
           "type": "number",
           "optional": false
@@ -933,6 +937,7 @@
         "thresholds": 2,
         "minLandFrac": 6,
         "maxLandFrac": 6,
+        "maxPortDistanceKm": 6,
         "resolution": 6,
         "source": 2
       },

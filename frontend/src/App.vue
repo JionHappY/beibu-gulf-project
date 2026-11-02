@@ -132,12 +132,18 @@ registerTaskIndicator((routePath) => {
   }
 })
 
-// 槽位变化 ⇒ 通知 core 重算进度环（core 不订阅 Pinia，靠计数驱动）
-watch(
-  () => taskStore.slots,
-  () => notifyTaskIndicator(),
-  { deep: true }
+// 槽位变化 ⇒ 通知 core 重算进度环（core 不订阅 Pinia，靠计数驱动）。
+//
+// 不做 deep watch：槽位里挂着任务结果（选址结果是 8,548 个面的 GeoJSON），
+// deep 监听每次触发都要递归遍历整棵结果树，是「大对象进响应式」的放大器。
+// 进度环只消费 occupied/status/progress，这里只把这些字段拍成签名（浅比较）。
+const taskIndicatorSignature = computed(() =>
+  Object.entries(taskStore.slots)
+    .map(([route, slot]) => `${route}|${slot.status}|${slot.progress}|${slot.docked ? 1 : 0}`)
+    .join(';')
 )
+
+watch(taskIndicatorSignature, () => notifyTaskIndicator())
 
 // ===== 3D 路由「准备中」→ 同一个导航进度环（Cesium ②，2026-10-02 用户定）=====
 // 不新增 UI 形态；判据由 meta.engine 派生 ⇒ **所有 3D 路由都适用**（新增 3D 模块自动纳入，

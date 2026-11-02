@@ -39,11 +39,10 @@ async function stubBackend404(page: Page): Promise<void> {
 
 const CASES: Array<{ path: string; chart: string; minWidth?: number }> = [
   // 首页概览图曾因 Home 分支只注入图层控制而在窄屏完全不可达；补 #left 后纳入回归。
-  // 2026-11-02 起 <640 的首页控制台让位给五个分析入口（HomeAnalysisGrid）+ 图层控制，
+  // 2026-11-02 起 <640 的首页控制台让位给四个分析入口（HomeAnalysisGrid）+ 图层控制，
   // 概览图只在 ≥640 渲染 ⇒ 该档不参与本用例（不是坏掉，是承载面变了）
   { path: '/', chart: '.line-chart', minWidth: 640 },
   { path: '/site-suitability', chart: '.suit-radar-chart' },
-  { path: '/diversion-analysis', chart: '.transfer-chart' },
   { path: '/forecast', chart: '.line-chart' },
   { path: '/flood-analysis', chart: '.chart-container' },
 ]

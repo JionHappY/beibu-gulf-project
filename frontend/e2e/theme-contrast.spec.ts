@@ -55,7 +55,7 @@ const SCAN = `(() => {
   return { violations: bad, theme: document.documentElement.dataset.theme }
 })()`
 
-const ROUTES = ['/forecast', '/diversion-analysis', '/site-suitability']
+const ROUTES = ['/forecast', '/route-analysis', '/site-suitability']
 
 for (const theme of ['light', 'dark'] as const) {
   test(`${theme} 主题：面板内文字对比度全部 ≥AA`, async ({ page }) => {

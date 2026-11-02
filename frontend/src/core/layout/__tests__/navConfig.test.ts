@@ -10,12 +10,12 @@ describe('navConfig 派生业务项', () => {
     registerNavItems([
       item('/', 'home'),
       item('/site-suitability', 'business'),
-      item('/diversion-analysis', 'business'),
+      item('/flood-analysis', 'business'),
       item('/profile', 'profile'),
     ])
     expect(businessNavItems.value.map((i) => i.path)).toEqual([
       '/site-suitability',
-      '/diversion-analysis',
+      '/flood-analysis',
     ])
   })
 

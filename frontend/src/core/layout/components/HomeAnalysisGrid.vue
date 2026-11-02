@@ -19,7 +19,6 @@ import { businessNavItems } from '../navConfig'
 /** 说明文案（导航项里没有这份信息，且它只用来解释「这个分析做什么」） */
 const DESC: Record<string, string> = {
   '/site-suitability': '按 AHP 准则打分，给出港址推荐位次',
-  '/diversion-analysis': '货类分流与运河转移量，含桑基图',
   '/forecast': '吞吐量与活跃度的时间序列预测',
   '/flood-analysis': '水位—淹没范围与受影响设施评估',
   '/route-analysis': '船舶航线寻路与航程测算',

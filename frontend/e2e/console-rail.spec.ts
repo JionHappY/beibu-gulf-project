@@ -175,7 +175,7 @@ test('手机档：把芯片拖到 ＋ 上，半圆自动展开，落在弧上即
   // 半圆自己张开（不需要先松手再点 ＋）
   const fan = page.locator('.dock-fan')
   await expect(fan).toBeVisible()
-  await expect(page.locator('.dock-fan [data-dock-route]')).toHaveCount(5)
+  await expect(page.locator('.dock-fan [data-dock-route]')).toHaveCount(4)
   // 半圆展开时控制台收起，但中转带（拖拽起点）必须还看得见
   await expect(page.locator('.console-rail')).toHaveCSS('visibility', 'visible')
   await expect(page.locator('.console-body')).toHaveCSS('visibility', 'hidden')

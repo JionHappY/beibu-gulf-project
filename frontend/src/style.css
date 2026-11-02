@@ -409,7 +409,7 @@ body {
 /* 通用 LineChart/BarChart 挂载点（预测页折线/柱状直接作为 GCSPanel 内容）：
    外层 .line-chart-container/.bar-chart-container 被 .GCS-panel > * 改 auto 后，
    内部 height:100% 的 .line-chart/.bar-chart 失去高度参考而塌缩为 0。直接给挂载点固定高度，
-   并反向撑开 auto 外层容器；diversion 内嵌 .bar-chart 同值命中，与 R2 一致不冲突。 */
+   并反向撑开 auto 外层容器；业务页内嵌 .bar-chart 同值命中，与 R2 一致不冲突。 */
 .GCS-drawer__body .GCS-panel .line-chart,
 .GCS-drawer__body .GCS-panel .bar-chart {
   height: 220px !important;

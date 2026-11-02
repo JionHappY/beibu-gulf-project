@@ -22,10 +22,10 @@ test('半圆展开后焦点进弧内、Tab 循环、Esc 关回 ＋', async ({ pa
   await expect(fan).toBeVisible()
   await expect(page.locator('.dock-fan__item button').first()).toBeFocused()
 
-  // 连续 Tab 走过 5 个入口后必须绕回第一个，而不是掉到遮罩背后
+  // 连续 Tab 走过 4 个入口后必须绕回第一个，而不是掉到遮罩背后
   const items = page.locator('.dock-fan__item button')
   const count = await items.count()
-  expect(count).toBe(5)
+  expect(count).toBe(4)
   for (let i = 1; i < count; i++) {
     await page.keyboard.press('Tab')
     await expect(items.nth(i)).toBeFocused()

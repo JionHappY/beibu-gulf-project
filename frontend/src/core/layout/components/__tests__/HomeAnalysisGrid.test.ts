@@ -10,7 +10,7 @@ import HomeAnalysisGrid from '../HomeAnalysisGrid.vue'
 
 const BUSINESS: NavItem[] = [
   { type: 'business', label: '选址分析', icon: 'site-suitability', path: '/site-suitability' },
-  { type: 'business', label: '分流分析', icon: 'diversion', path: '/diversion-analysis' },
+  { type: 'business', label: '浸没分析', icon: 'flood', path: '/flood-analysis' },
   { type: 'business', label: '预测分析', icon: 'forecast', path: '/forecast' },
 ]
 
@@ -32,7 +32,7 @@ describe('HomeAnalysisGrid', () => {
     const wrapper = mount(HomeAnalysisGrid)
     const labels = wrapper.findAll('.home-analysis__label').map((n) => n.text())
 
-    expect(labels).toEqual(['选址分析', '分流分析', '预测分析'])
+    expect(labels).toEqual(['选址分析', '浸没分析', '预测分析'])
   })
 
   it('每张卡带标签与一句说明，点击把路由交给 router', async () => {

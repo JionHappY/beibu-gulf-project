@@ -40,6 +40,13 @@ export const FACILITY_COLORS_MAP: Record<string, string> = {
 export const FACILITY_FALLBACK_COLOR = '#666666'
 
 /**
+ * 底图瓦片不可用时的地球底色。Cesium 的 `globe.baseColor` 默认是 #000080：
+ * 天地图不可达（内网/断网/密钥失效）时，3D 页面会露出一整片深蓝，看起来像地图坏了。
+ * 这里取与 2D 底图白底相近的中性色，让失败态仍是一张可读的浅色地图（矢量图仍在画）。
+ */
+export const MAP_IMAGERY_FALLBACK = '#e9edf2'
+
+/**
  * 取设施渲染色：唯一入口，避免图表侧手抄 `FACILITY_COLORS_MAP[key] || FACILITY_FALLBACK_COLOR`
  * （2026-10-18 收口 RadarScoreTooltip 与 useRadarChart 两处同构实现）。
  */

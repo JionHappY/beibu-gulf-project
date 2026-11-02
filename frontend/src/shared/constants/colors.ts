@@ -82,14 +82,6 @@ export const LAYER_DEFAULTS = {
   zIndexOverlay: 100, // 覆盖层（水面 / 呼吸动画 / 淹没）
 } as const
 
-/** 分流页弧线/运河渲染色（canvas 色值，单一来源）。 */
-export const DIVERSION_ARC_COLORS = {
-  arc: '#2f7bff',
-  arcHighlight: '#ffb020',
-  canal: '#12b886',
-  canalHighlight: '#ffd43b',
-} as const
-
 // ===== 拖出图层（LayerIR）与任务结果芯片 =====
 /**
  * 品牌蓝渲染色（单一来源）：route-analysis 路径线 与 LayerIR flood-areas 域色同值，

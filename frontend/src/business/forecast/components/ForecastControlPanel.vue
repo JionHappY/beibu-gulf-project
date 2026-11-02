@@ -239,11 +239,11 @@ onUnmounted(() => {
 // H-3 越界事故的收口正本，面板改调函数后手抄清零）
 const maxSteps = computed(() => monthMaxSteps())
 
-// 步数换算收口 ../timeline（年/月双基共用一索引；年串切月 m 缺省兜 1，防 NaN——审查 H-3）
-const currentStep = computed(() => currentTimeToStep(forecastState.currentTime, false))
+// 步数换算收口 ../timeline（月步；历史快照的无月份串由 m 缺省兜 1，防 NaN——审查 H-3）
+const currentStep = computed(() => currentTimeToStep(forecastState.currentTime))
 
 function stepToTime(step: number) {
-  return timelineStepToTime(step, false)
+  return timelineStepToTime(step)
 }
 
 /** 时间轴滑块输入（SliderSelectCard 已抽出 number，无需重复解析事件对象） */
@@ -429,9 +429,9 @@ function hintOnce() {
               :class="{
                 't-tick--start': i === 0,
                 't-tick--end':
-                  i === YEAR_MARKS.length - 1 && yearMarkPosition(m.year, false, maxSteps) >= 100,
+                  i === YEAR_MARKS.length - 1 && yearMarkPosition(m.year, maxSteps) >= 100,
               }"
-              :style="{ left: yearMarkPosition(m.year, false, maxSteps) + '%' }"
+              :style="{ left: yearMarkPosition(m.year, maxSteps) + '%' }"
               @click="jumpToYear(m.year)"
               >{{ m.label }}</span
             >

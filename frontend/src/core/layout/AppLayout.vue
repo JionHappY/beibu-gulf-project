@@ -442,7 +442,6 @@ function goBusiness(item: NavItem): void {
 .console-body :deep(.layer-grid) {
   grid-template-columns: repeat(var(--layer-cols, 3), 1fr);
   grid-auto-rows: var(--layer-row-h, 44px);
-  gap: var(--layer-gap, 4px);
   height: auto;
   overflow: visible;
 }

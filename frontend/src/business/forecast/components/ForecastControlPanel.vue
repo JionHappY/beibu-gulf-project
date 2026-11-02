@@ -530,7 +530,8 @@ function hintOnce() {
 
   /* 气泡带：胶囊画在滑块上方这段留白里，居中于「情景行底边」与「滑块顶边」之间，
      否则 bottom:100% 会直接压到情景按钮上（用户截图复现）。 */
-  padding-top: 22px;
+
+  padding-top: 20px;
 
   /* 不再 margin-top:auto 顶到底：指标网格已 flex:1 吃掉剩余高度，
      再贴底会在情景行与时间轴之间留一条空带 */
@@ -562,7 +563,8 @@ function hintOnce() {
 .time-bubble {
   position: absolute;
   bottom: calc(100% + 4px);
-  /* 气泡在 padding-top 的留白带内垂直居中：4px 上移 + 22px 带高 ⇒ 视觉居中间距约 11px */
+
+  /* 气泡在 padding-top 的留白带内垂直居中：4px 上移 + 20px 带高 ⇒ 视觉居中间距约 11px */
   left: var(--pos, 0%);
   transform: translateX(-50%);
   padding: 2px 8px;

@@ -340,7 +340,7 @@ function goBusiness(item: NavItem): void {
   flex-direction: column;
   gap: 6px;
   padding: 8px;
-  background-color: var(--GCS-bg-page);
+  background-color: var(--GCS-bg-container);
   border-top: 1px solid var(--GCS-border-light);
   pointer-events: auto;
   box-sizing: border-box;

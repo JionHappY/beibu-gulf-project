@@ -1,8 +1,8 @@
 {
   "generatedFrom": "tools/deep-import/scan.mjs",
-  "total": 49,
+  "total": 47,
   "byGroup": {
-    "shared/constants": 3,
+    "shared/constants": 2,
     "core/config": 2,
     "core/map": 4,
     "shared/utils": 22,
@@ -11,14 +11,9 @@
     "types/core": 1,
     "types/business": 1,
     "views/components": 2,
-    "visualization/composables": 4
+    "visualization/composables": 3
   },
   "items": [
-    {
-      "file": "business/diversion/panels.ts",
-      "target": "shared/constants/panels",
-      "group": "shared/constants"
-    },
     {
       "file": "business/site-suitability/panels.ts",
       "target": "shared/constants/panels",
@@ -253,14 +248,9 @@
       "file": "visualization/charts/composables/useRadarChart.ts",
       "target": "visualization/composables/useECharts",
       "group": "visualization/composables"
-    },
-    {
-      "file": "visualization/charts/SankeyChart.vue",
-      "target": "visualization/composables/useECharts",
-      "group": "visualization/composables"
     }
   ],
-  "updatedAt": "2026-10-26",
+  "updatedAt": "2026-11-02",
   "history": [
     {
       "at": "2026-10-26",
@@ -303,6 +293,12 @@
       "total": 49,
       "kind": "真清理",
       "note": "shared composables 改走 constants 入口，3 条穿透收敛"
+    },
+    {
+      "at": "2026-11-02",
+      "total": 47,
+      "kind": "真清理",
+      "note": "分流页与 SankeyChart 退役后两条穿透消失，基线随真实存量下调"
     }
   ]
 }

@@ -89,7 +89,7 @@ function onUp(event: PointerEvent, key: string): void {
 .console-rail {
   display: flex;
   flex: 0 0 auto;
-  gap: var(--GCS-space-1);
+  gap: 8px;
   align-items: center;
   overflow-x: auto;
   scrollbar-width: none;

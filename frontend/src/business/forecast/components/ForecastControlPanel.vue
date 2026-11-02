@@ -24,7 +24,6 @@ import {
   stepToTime as timelineStepToTime,
   timelineYears,
   yearMarkPosition,
-  yearMaxSteps,
 } from '../timeline'
 
 const forecastState = useForecastStore()
@@ -236,20 +235,15 @@ onUnmounted(() => {
 })
 
 // ===== 时间滑块 =====
-const isYearMode = computed({
-  get: () => forecastState.timeGranularity === 'year',
-  set: (v) => forecastState.setTimeGranularity(v ? 'year' : 'month'),
-})
-
 // 步数上限收口 ../timeline（D21-1：两条公式原在此手抄——timeline 同款函数即
 // H-3 越界事故的收口正本，面板改调函数后手抄清零）
-const maxSteps = computed(() => (isYearMode.value ? yearMaxSteps() : monthMaxSteps()))
+const maxSteps = computed(() => monthMaxSteps())
 
 // 步数换算收口 ../timeline（年/月双基共用一索引；年串切月 m 缺省兜 1，防 NaN——审查 H-3）
-const currentStep = computed(() => currentTimeToStep(forecastState.currentTime, isYearMode.value))
+const currentStep = computed(() => currentTimeToStep(forecastState.currentTime, false))
 
 function stepToTime(step: number) {
-  return timelineStepToTime(step, isYearMode.value)
+  return timelineStepToTime(step, false)
 }
 
 /** 时间轴滑块输入（SliderSelectCard 已抽出 number，无需重复解析事件对象） */
@@ -266,12 +260,12 @@ function onTimeRangeInput(e: Event) {
 const YEAR_MARKS = timelineYears().map((year) => ({ year, label: `${year}.1` }))
 
 function jumpToYear(year: number) {
-  forecastState.setCurrentTime(isYearMode.value ? String(year) : `${year}-01`)
+  forecastState.setCurrentTime(`${year}-01`)
 }
 
 const displayTime = computed(() => {
   const t = forecastState.currentTime
-  return isYearMode.value ? t + '年' : t.replace('-', '年') + '月'
+  return t.replace('-', '年') + '月'
 })
 
 /** 气泡跟随滑块的点：按当前步在轨道上的百分比定位（首尾各留半个拇指宽由 translateX(-50%) 抵） */
@@ -435,10 +429,9 @@ function hintOnce() {
               :class="{
                 't-tick--start': i === 0,
                 't-tick--end':
-                  i === YEAR_MARKS.length - 1 &&
-                  yearMarkPosition(m.year, isYearMode, maxSteps) >= 100,
+                  i === YEAR_MARKS.length - 1 && yearMarkPosition(m.year, false, maxSteps) >= 100,
               }"
-              :style="{ left: yearMarkPosition(m.year, isYearMode, maxSteps) + '%' }"
+              :style="{ left: yearMarkPosition(m.year, false, maxSteps) + '%' }"
               @click="jumpToYear(m.year)"
               >{{ m.label }}</span
             >
@@ -535,6 +528,10 @@ function hintOnce() {
 .time-section {
   flex-shrink: 0;
 
+  /* 气泡带：胶囊画在滑块上方这段留白里，居中于「情景行底边」与「滑块顶边」之间，
+     否则 bottom:100% 会直接压到情景按钮上（用户截图复现）。 */
+  padding-top: 22px;
+
   /* 不再 margin-top:auto 顶到底：指标网格已 flex:1 吃掉剩余高度，
      再贴底会在情景行与时间轴之间留一条空带 */
   margin-top: 0;
@@ -565,6 +562,7 @@ function hintOnce() {
 .time-bubble {
   position: absolute;
   bottom: calc(100% + 4px);
+  /* 气泡在 padding-top 的留白带内垂直居中：4px 上移 + 22px 带高 ⇒ 视觉居中间距约 11px */
   left: var(--pos, 0%);
   transform: translateX(-50%);
   padding: 2px 8px;

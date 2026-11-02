@@ -38,7 +38,8 @@ export function useForecastTimeseries(): UseForecastTimeseriesReturn {
   async function load(transactionId: number, signal: AbortSignal): Promise<void> {
     try {
       const indicator = forecastState.activeIndicator
-      const granularity = forecastState.timeGranularity
+      // 粒度固定为月：年粒度在数据不足 10 年时不可读，入口已移除（G1）
+      const granularity = 'month' as const
       const confidence = forecastState.confidenceThresholds[indicator] || DEFAULT_CONFIDENCE
       // 运河情景仅 cargo 有文献锚点（04-B10）：非 cargo 一律按基线请求与缓存
       const scenario =
@@ -86,19 +87,15 @@ export function useForecastTimeseries(): UseForecastTimeseriesReturn {
 
       // 12 点窗口（当前时间往前 11 步，月/年粒度通用），钳制在数据范围内防止空白
       const [sliderYear, sliderMonth] = forecastState.currentTime.split('-').map(Number)
-      const isYear = granularity === 'year'
-      const fmt = (y: number, m: number) =>
-        isYear ? String(y) : `${y}-${String(m || 1).padStart(2, '0')}`
+      const fmt = (y: number, m: number) => `${y}-${String(m || 1).padStart(2, '0')}`
       const dataMin = allData[0].time
       const dataMax = allData[allData.length - 1].time
 
-      const rawStart = isYear
-        ? fmt(sliderYear - 11, 1)
-        : (() => {
-            // D4：绝对月序收口 timeline.toMonthOrdinal/fromMonthOrdinal（原第三份内联口径）
-            const [y, m] = fromMonthOrdinal(toMonthOrdinal(sliderYear, sliderMonth) - 11)
-            return fmt(y, m)
-          })()
+      // 12 点窗口起点：绝对月序收口 timeline.toMonthOrdinal/fromMonthOrdinal（原第三份内联口径）
+      const rawStart = (() => {
+        const [y, m] = fromMonthOrdinal(toMonthOrdinal(sliderYear, sliderMonth) - 11)
+        return fmt(y, m)
+      })()
       const rawEnd = fmt(sliderYear, sliderMonth)
       const windowStart = rawStart >= dataMin ? rawStart : dataMin
       const windowEnd = rawEnd <= dataMax ? rawEnd : dataMax
@@ -122,9 +119,7 @@ export function useForecastTimeseries(): UseForecastTimeseriesReturn {
           const lookup = toLookup(s.data ?? [])
           return {
             name: s.portName,
-            data: (s.data ?? [])
-              .filter(inWindow)
-              .map((d) => yoyAt(lookup, d.time, granularity as 'month' | 'year')),
+            data: (s.data ?? []).filter(inWindow).map((d) => yoyAt(lookup, d.time, 'month')),
           }
         })
         forecastState.chart.lineUnit = '%'

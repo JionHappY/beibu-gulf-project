@@ -145,7 +145,8 @@ export function useForecastComparison(): UseForecastComparisonReturn {
           : null
       // 同比视图：两指标都变成百分比 ⇒ 量纲统一，左右双轴没有意义，全部收回左轴
       const growth = forecastState.growthMode
-      const granularity = forecastState.timeGranularity as 'month' | 'year'
+      // 粒度固定为月（年入口已移除，见 G1）
+      const granularity = 'month' as const
       if (growth) {
         forecastState.chart.barUnit = '%'
         forecastState.chart.barUnitRight = ''

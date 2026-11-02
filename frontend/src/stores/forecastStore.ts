@@ -17,7 +17,6 @@ import { createTransactionId } from './factories'
  */
 export interface ForecastSavedState {
   currentTime: string
-  timeGranularity: string
   playSpeed: number
   activeIndicator: string
   canalScenario: string
@@ -33,7 +32,6 @@ export const useForecastStore = defineStore('forecast', () => {
   // timeRange 死状态已删除（currentTime 与 timeRange.current 双持「当前时间」，
   // 全仓业务 0 消费；start/end 由 BASE_YEAR/END_YEAR 派生）
 
-  const timeGranularity: Ref<string> = ref('month')
   const isPlaying: Ref<boolean> = ref(false)
   const playSpeed: Ref<number> = ref(500)
   const activeIndicator: Ref<string> = ref('cargo')
@@ -108,10 +106,6 @@ export const useForecastStore = defineStore('forecast', () => {
     currentTime.value = time
   }
 
-  function setTimeGranularity(granularity: string): void {
-    timeGranularity.value = granularity
-  }
-
   function setActiveIndicator(indicator: string): void {
     activeIndicator.value = indicator
   }
@@ -140,7 +134,6 @@ export const useForecastStore = defineStore('forecast', () => {
   /** 快照恢复（跨页面登录返回）：一次性批量写回（禁止调用方逐字段直改 state） */
   function restoreState(saved: ForecastSavedState): void {
     currentTime.value = saved.currentTime
-    timeGranularity.value = saved.timeGranularity
     playSpeed.value = saved.playSpeed
     activeIndicator.value = saved.activeIndicator
     // 旧快照无 canalScenario 字段，兜底基线
@@ -163,7 +156,6 @@ export const useForecastStore = defineStore('forecast', () => {
 
   function reset(): void {
     currentTime.value = '2026-06'
-    timeGranularity.value = 'month'
     isPlaying.value = false
     playSpeed.value = 500
     activeIndicator.value = 'cargo'
@@ -211,7 +203,6 @@ export const useForecastStore = defineStore('forecast', () => {
 
   return {
     currentTime,
-    timeGranularity,
     isPlaying,
     playSpeed,
     activeIndicator,
@@ -226,7 +217,6 @@ export const useForecastStore = defineStore('forecast', () => {
     bumpTransactionId,
     setIsRequesting,
     setCurrentTime,
-    setTimeGranularity,
     setActiveIndicator,
     setGrowthMode,
     setCanalScenario,

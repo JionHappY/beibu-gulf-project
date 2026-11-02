@@ -74,7 +74,6 @@ useProfileSnapshot({
 function saveForecastState(): void {
   forecastState.saveState({
     currentTime: forecastState.currentTime,
-    timeGranularity: forecastState.timeGranularity,
     playSpeed: forecastState.playSpeed,
     activeIndicator: forecastState.activeIndicator,
     canalScenario: forecastState.canalScenario,

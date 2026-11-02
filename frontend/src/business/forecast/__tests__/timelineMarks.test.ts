@@ -89,11 +89,14 @@ describe('刻度域单源：年份与位置公式一律派生自 ../timeline', (
     expect(scriptOf(PANEL)).toMatch(/timelineYears\(\)/)
 
     const tmpl = templateOf(PANEL)
-    const calls = [...tmpl.matchAll(/yearMarkPosition\(m\.year,\s*isYearMode,\s*maxSteps\)/g)]
+    // 年粒度入口已删除（G1）：粒度固定为月，第三参恒为 false
+    const calls = [...tmpl.matchAll(/yearMarkPosition\(m\.year,\s*false,\s*maxSteps\)/g)]
     // 两处调用：t-tick--end 判据 + left 百分比
     expect(calls.length).toBe(2)
     // 阳性对照：模板里刻度确实在渲染（不是空分母）
     expect(tmpl).toMatch(/v-for="\(m, i\) in YEAR_MARKS"/)
+    // G1：年粒度入口整块移除，面板脚本里不应再有 isYearMode
+    expect(stripComments(scriptOf(PANEL))).not.toMatch(/isYearMode/)
   })
 
   it('timeline 的 yearMarkPosition 经 currentTimeToStep 派生，不复制步长公式', () => {

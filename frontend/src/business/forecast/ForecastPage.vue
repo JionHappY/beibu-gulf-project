@@ -18,6 +18,7 @@ import { ChartLoading } from '@/shared'
 import { BarChart, LineChart } from '@/visualization'
 
 import ForecastControlPanel from './components/ForecastControlPanel.vue'
+import { useDiversionShare } from './composables/useDiversionShare'
 import { useForecastLayer } from './composables/useForecastLayer'
 import { provideForecastOrchestrator } from './composables/useForecastOrchestrator'
 
@@ -33,6 +34,17 @@ const FORECAST_PANEL_ORDER: string[] = ['cargo', 'activity', 'container'].map(fo
 
 const forecastState = useForecastStore()
 const mapStore = useMapStore()
+
+/** G2：分流结论并入预测页——三港能吃到多少，跟着当前时点的年份走 */
+const { ports: sharePorts, total: shareTotal } = useDiversionShare()
+
+/** 万吨取整 + 千分位；占比取整百分比 */
+const shareTotalText = computed(() =>
+  shareTotal.value.toLocaleString('zh-CN', { maximumFractionDigits: 0 })
+)
+function sharePct(share: number): string {
+  return `${Math.round(share * 100)}%`
+}
 
 /**
  * P1-1 降级角标：只有接口显式标记 'engine-fallback' 才渲染。
@@ -190,6 +202,19 @@ onUnmounted(() => {
             :y-unit="forecastState.chart.barUnit"
             :y-unit-right="forecastState.chart.barUnitRight"
           />
+          <!-- G2：分流结论（三港分摊）并入预测页；无数据时整行不渲染，不留空壳 -->
+          <div
+            v-if="sharePorts.length"
+            class="share-line"
+            data-testid="diversion-share"
+            :title="`量产口径：西江→运河转移量 ${shareTotalText} 万吨，按港分摊`"
+          >
+            <span class="share-line__label">西江→运河</span>
+            <b class="share-line__total">{{ shareTotalText }}<i>万吨</i></b>
+            <span v-for="p in sharePorts" :key="p.id" class="share-line__port">
+              {{ p.name }} {{ sharePct(p.share) }}
+            </span>
+          </div>
           <ChartLoading v-if="forecastState.isRequesting" />
           <div
             v-if="isBarFallback"
@@ -225,6 +250,40 @@ onUnmounted(() => {
 
 .forecast-page :deep(.GCS-panel) {
   pointer-events: auto;
+}
+
+/* G2 分流结论行：图表下方的窄条，不参与图表伸缩（flex:0 0 auto），
+   否则 ECharts 容器会把这一行压成 0 高。 */
+.share-line {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: baseline;
+  gap: 8px;
+  padding: 0 10px 6px;
+  font-size: 11px;
+  color: var(--GCS-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.share-line__label {
+  color: var(--GCS-text-muted);
+}
+
+.share-line__total {
+  color: var(--GCS-text-primary);
+  font-size: 13px;
+}
+
+.share-line__total i {
+  margin-left: 2px;
+  font-size: 10px;
+  font-style: normal;
+  color: var(--GCS-text-muted);
+}
+
+.share-line__port {
+  color: var(--GCS-text-secondary);
 }
 
 /* P1-1 降级角标：绝对定位覆盖在图表右上角，不参与布局流 ⇒ 正常路径（不渲染）布局零变化。

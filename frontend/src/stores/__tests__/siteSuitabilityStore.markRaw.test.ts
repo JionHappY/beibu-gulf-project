@@ -14,6 +14,7 @@ import { useSiteSuitabilityStore } from '../siteSuitabilityStore'
  * Vue 的 traverse 上（17 个长任务、最大 557ms、23.6fps）。markRaw 后 0.23s / 66.8fps。
  * 这条用例盯的是「结构属性」（不是性能数字）：改深层字段不得触发依赖。
  */
+/** 最小合法响应：字段按 siteSuitabilityResponseSchema 填齐，避免用 as 缝合 */
 function payload(): SiteSuitabilityResponseParsed {
   return {
     type: 'FeatureCollection',
@@ -21,10 +22,17 @@ function payload(): SiteSuitabilityResponseParsed {
       {
         type: 'Feature',
         geometry: { type: 'Point', coordinates: [108.6, 21.7] },
-        properties: { score: 0.9, land: 0.8 },
+        properties: { id: 1, score: 0.9, land: 0.8 },
       },
     ],
-  } as SiteSuitabilityResponseParsed
+    metadata: {
+      count: 1,
+      weights: { inundation: 0.2, terrain: 0.2, land: 0.2, access: 0.2, demand: 0.2 },
+      weightsSource: 'default',
+      kdeP99: 0.9,
+      minLandFrac: 0.3,
+    },
+  }
 }
 
 describe('siteSuitabilityStore 大对象载荷', () => {

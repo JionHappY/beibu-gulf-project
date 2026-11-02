@@ -7,6 +7,7 @@ import type { SiteSuitabilityDefaultsParsed, SiteSuitabilityResponseParsed } fro
 import { siteSuitabilityDefaultsSchema } from '@/types/schemas'
 
 import {
+  SNAPSHOT_MAX_LAND_FRAC,
   SNAPSHOT_MIN_LAND_FRAC,
   SNAPSHOT_PROVENANCE,
   SNAPSHOT_WEIGHTS,
@@ -30,6 +31,8 @@ export const useSiteSuitabilityStore = defineStore('siteSuitability', () => {
   const weights: Ref<SuitabilityWeightsState> = ref({ ...SNAPSHOT_WEIGHTS })
   /** 最小陆像元占比过滤（0..1） */
   const minLandFrac: Ref<number> = ref(SNAPSHOT_MIN_LAND_FRAC)
+  /** 陆地占比上限（0..1）：0.99 = 只留与水相邻的格，1 = 不设上限 */
+  const maxLandFrac: Ref<number> = ref(SNAPSHOT_MAX_LAND_FRAC)
 
   const { activeTransactionId, bumpTransactionId } = createTransactionId()
   const isRequesting: Ref<boolean> = ref(false)
@@ -112,6 +115,7 @@ export const useSiteSuitabilityStore = defineStore('siteSuitability', () => {
           demand: d.weights.demand,
         }
         minLandFrac.value = d.minLandFrac
+        maxLandFrac.value = d.maxLandFrac
         defaultsSource.value = 'remote'
         logger.info('[site-suitability] defaults 后端直连成功', d.source)
       } catch (e) {
@@ -142,6 +146,7 @@ export const useSiteSuitabilityStore = defineStore('siteSuitability', () => {
   function reset(): void {
     weights.value = { ...SNAPSHOT_WEIGHTS }
     minLandFrac.value = SNAPSHOT_MIN_LAND_FRAC
+    maxLandFrac.value = SNAPSHOT_MAX_LAND_FRAC
     activeTransactionId.value = 0
     isRequesting.value = false
     data.value = null
@@ -154,6 +159,7 @@ export const useSiteSuitabilityStore = defineStore('siteSuitability', () => {
   return {
     weights,
     minLandFrac,
+    maxLandFrac,
     activeTransactionId,
     isRequesting,
     data,

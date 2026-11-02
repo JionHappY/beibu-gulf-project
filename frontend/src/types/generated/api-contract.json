@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-29",
+  "generatedAt": "2026-11-02",
   "source": "frontend/src/types/schemas.ts（单一事实源，types:gen 自动生成勿手改）",
   "schemas": {
     "userSchema": {
@@ -296,6 +296,10 @@
           "optional": false
         },
         "minLandFrac": {
+          "type": "number",
+          "optional": false
+        },
+        "maxLandFrac": {
           "type": "number",
           "optional": false
         },
@@ -928,6 +932,7 @@
         "weights": 7,
         "thresholds": 2,
         "minLandFrac": 6,
+        "maxLandFrac": 6,
         "resolution": 6,
         "source": 2
       },

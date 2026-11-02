@@ -82,6 +82,7 @@ describe('useSiteSuitabilityLayer（BLM 注册/更新 + 事务取消）', () => 
         weightsSource: 'ahp-default',
         kdeP99: 0,
         minLandFrac: 0.5,
+        maxLandFrac: 0.99,
       },
     })
     const scope = effectScope()
@@ -97,6 +98,8 @@ describe('useSiteSuitabilityLayer（BLM 注册/更新 + 事务取消）', () => 
     expect(call[0]).toBe('/site-suitability/map')
     expect(call[1].params.w_inundation).toBe(0.4299)
     expect(call[1].params.min_land_frac).toBe(0.5)
+    // 上限 0.99：只留"格内有水"的交界带，否则内陆格回流（G3 空间约束）
+    expect(call[1].params.max_land_frac).toBe(0.99)
     await vi.waitFor(() => expect(mockManager.updateData).toHaveBeenCalled())
     expect(mockManager.updateData.mock.calls[0][0]).toBe('site-suitability-main')
   })
@@ -126,6 +129,7 @@ describe('useSiteSuitabilityLayer（BLM 注册/更新 + 事务取消）', () => 
         weightsSource: 'ahp-default',
         kdeP99: 0,
         minLandFrac: 0.5,
+        maxLandFrac: 0.99,
       },
     })
     await new Promise((r) => setTimeout(r, 20))
@@ -235,6 +239,7 @@ describe('useSiteSuitabilityLayer（BLM 注册/更新 + 事务取消）', () => 
             weightsSource: 'ahp-default',
             kdeP99: 0,
             minLandFrac: 0.5,
+            maxLandFrac: 0.99,
           },
         },
       })
@@ -286,6 +291,7 @@ describe('阈值渲染（v4 后续迭代：只上图 score ≥ 0.7 的格）', (
         weightsSource: 'ahp-default',
         kdeP99: 0,
         minLandFrac: 0.5,
+        maxLandFrac: 0.99,
       },
     })
     const scope = effectScope()

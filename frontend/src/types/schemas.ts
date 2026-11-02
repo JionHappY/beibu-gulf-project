@@ -263,6 +263,7 @@ export const siteSuitabilityResponseSchema = z.object({
     weightsSource: z.string(),
     kdeP99: z.number(),
     minLandFrac: z.number(),
+    maxLandFrac: z.number(),
   }),
 })
 
@@ -281,6 +282,7 @@ export const siteSuitabilityDefaultsSchema = z.object({
     roadScaleM: z.number(),
   }),
   minLandFrac: z.number(),
+  maxLandFrac: z.number(),
   resolution: z.number(),
   source: z.string(),
 })

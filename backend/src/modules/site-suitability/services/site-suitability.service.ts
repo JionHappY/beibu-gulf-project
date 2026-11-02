@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common'
 
 import { DEFAULT_THRESHOLDS, type ScoreThresholds } from '../constants/score.constants'
 import {
+  DEFAULT_MAX_LAND_FRAC,
   DEFAULT_MIN_LAND_FRAC,
   DEFAULT_RESOLUTION,
   defaultWeights,
@@ -29,6 +30,8 @@ export interface SuitabilityResult {
     weightsSource: 'query' | 'ahp-default'
     kdeP99: number
     minLandFrac: number
+    /** 陆地占比上限（回显实际筛选口径，前端据此说明"只留与水相邻的格"） */
+    maxLandFrac: number
     /** 实际使用的聚合分辨率（度）；0 = 全分辨率 */
     resolution: number
   }
@@ -39,6 +42,7 @@ export interface SuitabilityDefaults {
   weights: Record<string, number>
   thresholds: ScoreThresholds
   minLandFrac: number
+  maxLandFrac: number
   resolution: number
   source: string
 }
@@ -52,7 +56,7 @@ export class SiteSuitabilityService {
   async compute(query: SuitabilityQuery): Promise<SuitabilityResult> {
     const weights: SuitabilityWeights = parseWeights(query.weights)
     const [rows, kdeP99] = await Promise.all([
-      this.repository.fetchCellsAt(query.minLandFrac, query.resolution),
+      this.repository.fetchCellsAt(query.minLandFrac, query.maxLandFrac, query.resolution),
       this.repository.fetchKdeP99(),
     ])
 
@@ -101,6 +105,7 @@ export class SiteSuitabilityService {
         weightsSource: query.weightsSource,
         kdeP99,
         minLandFrac: query.minLandFrac,
+        maxLandFrac: query.maxLandFrac,
         // 回显实际聚合口径：0 = 全分辨率；前端可据此提示"当前为聚合视图"
         resolution: query.resolution,
       },
@@ -118,6 +123,7 @@ export class SiteSuitabilityService {
       weights: defaultWeights(),
       thresholds: DEFAULT_THRESHOLDS,
       minLandFrac: DEFAULT_MIN_LAND_FRAC,
+      maxLandFrac: DEFAULT_MAX_LAND_FRAC,
       resolution: DEFAULT_RESOLUTION,
       source: 'SITE_AHP_MATRIX@2026-09-30',
     }

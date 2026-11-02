@@ -31,6 +31,7 @@ function payload(): SiteSuitabilityResponseParsed {
       weightsSource: 'default',
       kdeP99: 0.9,
       minLandFrac: 0.3,
+      maxLandFrac: 0.99,
     },
   }
 }

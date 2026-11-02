@@ -149,6 +149,7 @@ export function useSiteSuitabilityLayer(): UseSiteSuitabilityLayerReturn {
     return {
       ...Object.fromEntries(Object.entries(weights).map(([k, v]) => [`w_${k}`, v])),
       min_land_frac: state.minLandFrac,
+      max_land_frac: state.maxLandFrac,
       // 性能治本（2026-10-02）：全量 14 万格 ≈ 28.8MB 响应 ⇒ 浏览器解析即卡。
       // 热力图按 ~1km 粗格聚合（服务端 AVG + 众数）在视觉上等价，payload 降 30-50×。
       resolution: DISPLAY_RESOLUTION_DEG,

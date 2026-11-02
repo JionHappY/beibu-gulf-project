@@ -24,6 +24,7 @@ const DEFAULTS = {
     roadScaleM: 3000,
   },
   minLandFrac: 0.5,
+  maxLandFrac: 0.99,
   resolution: 0.02,
   source: 'e2e',
 }
@@ -43,6 +44,7 @@ const MAP = {
     weightsSource: 'e2e',
     kdeP99: 1,
     minLandFrac: 0.5,
+    maxLandFrac: 0.99,
   },
 }
 

@@ -21,7 +21,7 @@ function repoWithRows(
   spy?: { minLandFrac?: number; resolution?: number }
 ): SiteSuitabilityRepository {
   return {
-    fetchCellsAt: async (minLandFrac: number, resolution: number) => {
+    fetchCellsAt: async (minLandFrac: number, _maxLandFrac: number, resolution: number) => {
       if (spy) {
         spy.minLandFrac = minLandFrac
         spy.resolution = resolution
@@ -58,6 +58,7 @@ describe('site-suitability 对外契约：id 类型归一', () => {
     const res = await svc.compute({
       weights: { inundation: 0.4, terrain: 0.1, land: 0.2, access: 0.2, demand: 0.1 },
       minLandFrac: 0.5,
+      maxLandFrac: 0.99,
       resolution: 0,
       weightsSource: 'query',
     })
@@ -77,6 +78,7 @@ describe('site-suitability 对外契约：id 类型归一', () => {
     const res = await svc.compute({
       weights: { inundation: 0.4, terrain: 0.1, land: 0.2, access: 0.2, demand: 0.1 },
       minLandFrac: 0.5,
+      maxLandFrac: 0.99,
       resolution: 0,
       weightsSource: 'query',
     })
@@ -90,6 +92,7 @@ describe('site-suitability 对外契约：id 类型归一', () => {
     const res = await svc.compute({
       weights: { inundation: 0.4, terrain: 0.1, land: 0.2, access: 0.2, demand: 0.1 },
       minLandFrac: 0.5,
+      maxLandFrac: 0.99,
       resolution: 0.02,
       weightsSource: 'query',
     })
@@ -109,6 +112,7 @@ describe('site-suitability 对外契约：id 类型归一', () => {
     const res = await svc.compute({
       weights: { inundation: 0.4, terrain: 0.1, land: 0.2, access: 0.2, demand: 0.1 },
       minLandFrac: 0.5,
+      maxLandFrac: 0.99,
       resolution: 0,
       weightsSource: 'query',
     })

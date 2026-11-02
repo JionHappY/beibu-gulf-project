@@ -40,7 +40,11 @@ export class SiteSuitabilityRepository {
    * 出库经纬度与原聚合分组都显式 ST_Transform 到 4326：源表 geom 为 4490
    * （db-schema-gis.sql），前端契约只认 4326，不依赖「两个地理坐标系数值接近」。
    */
-  async fetchCellsAt(minLandFrac: number, resolution: number): Promise<SuitabilityCellRow[]> {
+  async fetchCellsAt(
+    minLandFrac: number,
+    maxLandFrac: number,
+    resolution: number
+  ): Promise<SuitabilityCellRow[]> {
     if (!(resolution > 0)) {
       const r = await this.db.query<SuitabilityCellRow>(
         `SELECT id,
@@ -49,9 +53,9 @@ export class SiteSuitabilityRepository {
                 mean_elev_m, mean_slope_deg, land_frac,
                 land_class, dist_port_m, dist_road_m, kde_mass
            FROM suitability_cells
-          WHERE land_frac >= $1
+          WHERE land_frac >= $1 AND land_frac <= $2
           ORDER BY id`,
-        [minLandFrac]
+        [minLandFrac, maxLandFrac]
       )
       return r.rows
     }
@@ -67,11 +71,11 @@ export class SiteSuitabilityRepository {
               avg(dist_road_m) AS dist_road_m,
               avg(kde_mass) AS kde_mass
          FROM suitability_cells
-        WHERE land_frac >= $1
-        GROUP BY floor(ST_X(ST_Transform(geom, 4326)) / $2),
-                 floor(ST_Y(ST_Transform(geom, 4326)) / $2)
+        WHERE land_frac >= $1 AND land_frac <= $2
+        GROUP BY floor(ST_X(ST_Transform(geom, 4326)) / $3),
+                 floor(ST_Y(ST_Transform(geom, 4326)) / $3)
         ORDER BY id`,
-      [minLandFrac, resolution]
+      [minLandFrac, maxLandFrac, resolution]
     )
     return r.rows
   }

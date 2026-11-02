@@ -199,7 +199,7 @@ onUnmounted(() => {
           <div class="candidates-body">
             <p v-if="totalCells" class="list-note" data-testid="candidate-total">
               共 {{ totalCells.toLocaleString() }} 格 · 按得分取前 {{ candidates.length }} ·
-              点击行定位
+              仅含水陆交界格 · 点击行定位
             </p>
             <PaginatedListPanel
               :items="candidates"

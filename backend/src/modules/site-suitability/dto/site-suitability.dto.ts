@@ -13,11 +13,22 @@ import { isUnitInterval } from '../constants/unit-interval'
  * 前端快照（defaults.snapshot.ts）是此间定稿值的发布副本，对齐守卫见后端 defaults 单测。
  */
 export const DEFAULT_MIN_LAND_FRAC = 0.5
+/**
+ * 陆地占比上限（缺省 0.99）：只留"格里有水"的格子。
+ *
+ * 为什么要这条：480m 格的 land_frac = 1 表示整格都是陆地——这类格子可能是内陆城区、
+ * 也可能是离岸很远的农田，选出来的"港口候选"没有岸线可用（用户实测反馈：候选点落在
+ * 市区和内陆）。0.99 的判据是"格内至少有一丝水体"，等价于水陆交界带；纯水格仍由
+ * min_land_frac 下限挡住。上下限都来自 query，缺省值此处与 defaults 端点同源。
+ */
+export const DEFAULT_MAX_LAND_FRAC = 0.99
 export const DEFAULT_RESOLUTION = 0
 
 export interface SuitabilityQuery {
   weights: Record<string, number>
   minLandFrac: number
+  /** 陆地占比上限：land_frac > 本值的格不入图（缺省 0.99 = 只留与水相邻的格） */
+  maxLandFrac: number
   /** 聚合分辨率（度）。0 = 全分辨率（默认，保持既有消费方行为）；>0 = 按该边长的粗格聚合 */
   resolution: number
   /** 权重来源（metadata.weightsSource 同值域；幽灵标签修复前 service 恒写 ahp-final） */
@@ -54,7 +65,7 @@ export function parseSuitabilityQuery(query: Record<string, unknown>): Suitabili
   if (!anyGiven) {
     return {
       weights: defaultWeights(),
-      minLandFrac: parseMinLandFrac(query.min_land_frac),
+      ...landFracBounds(query),
       resolution: parseResolution(query.resolution),
       weightsSource: 'ahp-default',
     }
@@ -64,7 +75,7 @@ export function parseSuitabilityQuery(query: Record<string, unknown>): Suitabili
   }
   return {
     weights,
-    minLandFrac: parseMinLandFrac(query.min_land_frac),
+    ...landFracBounds(query),
     resolution: parseResolution(query.resolution),
     weightsSource: 'query',
   }
@@ -79,6 +90,34 @@ function parseResolution(raw: unknown): number {
   const v = Number(raw)
   if (!isUnitInterval(v))
     throw new BusinessError(ErrorCode.INVALID_PARAMS, 'resolution 须 ∈ (0,1]，或 0 表示全分辨率')
+  return v
+}
+
+/**
+ * 陆地占比的上下限一起解析：两者有顺序约束（上限必须 ≥ 下限），
+ * 分开返回会让"下限 0.95 + 上限 0.5"这种矛盾组合静默变成空集。
+ */
+function landFracBounds(query: Record<string, unknown>): {
+  minLandFrac: number
+  maxLandFrac: number
+} {
+  const minLandFrac = parseMinLandFrac(query.min_land_frac)
+  const maxLandFrac = parseMaxLandFrac(query.max_land_frac)
+  if (maxLandFrac < minLandFrac) {
+    throw new BusinessError(
+      ErrorCode.INVALID_PARAMS,
+      'max_land_frac 须 ≥ min_land_frac（否则筛选结果恒为空）'
+    )
+  }
+  return { minLandFrac, maxLandFrac }
+}
+
+function parseMaxLandFrac(raw: unknown): number {
+  if (raw === undefined || raw === '') return DEFAULT_MAX_LAND_FRAC
+  const v = Number(raw)
+  if (!isUnitInterval(v)) {
+    throw new BusinessError(ErrorCode.INVALID_PARAMS, 'max_land_frac 须 ∈ [0,1]')
+  }
   return v
 }
 

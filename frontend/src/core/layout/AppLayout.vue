@@ -96,6 +96,14 @@ onUnmounted(() => {
 // 控制台底部让开 dock（dock 是 1 cell 高的 GCSPanel，同源取 cellPixel，不写死像素）
 const consoleStyle = computed(() => ({ bottom: `${Math.round(cellPixel.value * 1.7)}px` }))
 
+/**
+ * 控制台的阅读顺序（a1）：默认「参数 → 结果」（right → left），因为多数页面右列是
+ * 操作/参数；选址页反过来——先给结论（画像 + 候选名单）再给权重，所以由页面声明。
+ */
+withDefaults(defineProps<{ consoleOrder?: 'right-first' | 'left-first' }>(), {
+  consoleOrder: 'right-first',
+})
+
 // 专注态激活期间切路由 ⇒ 旧页 AppLayout 卸载，而 useSliderFocus 的
 // onScopeDispose(endSliderFocus) 与本 watch 的效果在同一批 scope.stop() 里停掉，
 // 排队的 pre-flush 回调被丢弃（真 vue 3.5.41 实测 after stop: class 仍在）⇒
@@ -213,6 +221,15 @@ onUnmounted(() => {
         <template v-else-if="route.name === 'Profile'">
           <slot name="right" />
         </template>
+        <template v-else-if="consoleOrder === 'left-first'">
+          <slot name="left" />
+          <!-- 参数默认折叠成一条：结果页先给结论，调参是第二动作（a1） -->
+          <details class="console-fold">
+            <summary>调参：准则权重与阈值</summary>
+            <slot name="right" />
+          </details>
+          <slot name="layers" />
+        </template>
         <template v-else>
           <slot name="right" />
           <slot name="left" />
@@ -311,6 +328,20 @@ onUnmounted(() => {
 }
 
 /* 内容区唯一可滚动的地方；面板改为正常流堆叠，压缩后尽量一屏放完 */
+.console-fold > summary {
+  padding: 6px 8px;
+  font-size: 12px;
+  color: var(--GCS-text-regular);
+  background: var(--GCS-bg-container);
+  border: 1px solid var(--GCS-border-light);
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.console-fold[open] > summary {
+  margin-bottom: 4px;
+}
+
 .console-body {
   flex: 1;
   min-height: 0;

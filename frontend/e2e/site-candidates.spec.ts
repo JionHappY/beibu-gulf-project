@@ -80,3 +80,49 @@ test('候选名单自曝总数与截断，且说明行不挤掉列表', async ({
   })
   expect(overflow).toBeLessThanOrEqual(0)
 })
+
+/**
+ * a1「结果前置」：控制台的阅读顺序由页面声明。
+ * 选址页先给结论（画像 → 候选名单），权重（参数）放最后；
+ * 判据看 DOM 顺序而不是视觉位置——控制台就是按 DOM 自上而下读的。
+ */
+test('控制台里结果先于参数（画像 → 名单 → 权重）', async ({ page }) => {
+  await page.setViewportSize({ width: 800, height: 900 })
+  await page.route('**/*', (route) => {
+    const { pathname } = new URL(route.request().url())
+    if (pathname === '/nest-api/site-suitability/defaults') {
+      return route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ code: 200, data: DEFAULTS }),
+      })
+    }
+    if (pathname === '/nest-api/site-suitability/map') {
+      return route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ code: 200, data: MAP }),
+      })
+    }
+    return route.continue()
+  })
+  await page.goto('/site-suitability')
+  // 控制台是挂载后才有的（地图初始化 + 首次响应），不等到它就 evaluate 会拿到 null
+  await expect(page.locator('.mobile-console .console-body')).toHaveCount(1, { timeout: 30_000 })
+
+  const order = await page.evaluate(() => {
+    const body = document.querySelector('.mobile-console .console-body')
+    if (!body) return null
+    // 按面板的固定文案认类：雷达「综合得分」/ 名单「按得分取前」/ 权重「准则权重」
+    return [...body.children].map((el) => {
+      const t = (el.textContent ?? '').replace(/\s+/g, '')
+      if (t.includes('综合得分')) return 'radar'
+      if (t.includes('按得分取前')) return 'candidates'
+      if (t.includes('准则权重')) return 'weights'
+      if (t.includes('底图')) return 'layers'
+      return 'other'
+    })
+  })
+  expect(order?.slice(0, 2)).toEqual(['radar', 'candidates'])
+  expect(order?.[order.length - 2]).toBe('weights')
+})

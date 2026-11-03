@@ -41,7 +41,8 @@ const CASES: Array<{ path: string; chart: string; minWidth?: number }> = [
   // 首页概览图曾因 Home 分支只注入图层控制而在窄屏完全不可达；补 #left 后纳入回归。
   // 2026-11-02 起 <640 的首页控制台让位给四个分析入口（HomeAnalysisGrid）+ 图层控制，
   // 概览图只在 ≥640 渲染 ⇒ 该档不参与本用例（不是坏掉，是承载面变了）
-  { path: '/', chart: '.line-chart', minWidth: 640 },
+  // 首页概览图只在桌面档渲染（<960 的控制台是「分析入口 + 图层」，不放概览图）
+  { path: '/', chart: '.line-chart', minWidth: 960 },
   { path: '/site-suitability', chart: '.suit-radar-chart' },
   { path: '/forecast', chart: '.line-chart' },
   { path: '/flood-analysis', chart: '.chart-container' },
@@ -67,13 +68,8 @@ for (const vp of VIEWPORTS) {
       }
       await page.goto(item.path)
 
-      // 三档各自的承载面（2026-11-02 随控制台骨架更新）：
-      //   <640 控制台直接承载图表，没有抽屉也没有菜单键；
-      //   640–959 仍是抽屉档，要先点菜单；
-      //   ≥960 面板直接挂在布局上。
-      if (vp.width >= 640 && vp.width < 960) {
-        await page.getByRole('button', { name: '菜单' }).click()
-      }
+      // 承载面（2026-11-03 抽屉退役后）：<960 一律由下半屏控制台直接承载图表，
+      // 没有抽屉也没有菜单键；≥960 面板直接挂在布局上。
 
       const chart = page.locator(item.chart)
       await expect(chart).toBeVisible()

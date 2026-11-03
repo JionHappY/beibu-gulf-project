@@ -183,6 +183,7 @@ function preloadIf3D(item: NavItem): void {
         <NavButton
           v-for="item in navItems"
           :key="item.label"
+          :data-dock-route="item.path || undefined"
           :label="item.label"
           :icon="item.icon"
           :disabled="item.disabled"

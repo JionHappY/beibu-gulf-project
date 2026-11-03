@@ -208,7 +208,8 @@
       "weightsSource": "ahp-default",
       "kdeP99": 6.08561061288239e-7,
       "minLandFrac": 0.5,
-      "resolution": 0.9
+      "resolution": 0.9,
+      "maxLandFrac": 0.99
     }
   }
 }

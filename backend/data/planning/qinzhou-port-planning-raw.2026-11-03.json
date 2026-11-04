@@ -1,0 +1,309 @@
+{
+  "meta": {
+    "title": "钦州港 规划港区/工业区 原始采集数据（留底版）",
+    "collected_date": "2026-11-03",
+    "collector": "Doubao 依据公开法定文件采集",
+    "coordinate_system": "CGCS2000 2000国家大地坐标系；民用精度与 WGS84 / EPSG:4326 重合，可直接按经纬度使用",
+    "coordinate_order_note": "JSON 内坐标一律写成 [lng, lat]（经度在前，GeoJSON 惯例）；原始度分秒字段 dms 保留原文",
+    "integrity_note": "本文件为原始采集留底，未做工程加工。status=pending 表示该项尚未采集到坐标，禁止当作已核实数据使用；所有 decimal 点均由对应 dms 换算并可复算",
+    "dms_to_decimal_formula": "decimal = 度 + 分/60 + 秒/3600"
+  },
+  "sources": [
+    {
+      "id": "S1",
+      "name": "广西壮族自治区人民政府关于钦州港总体规划（2035年）的批复",
+      "doc_number": "桂政函〔2020〕92号",
+      "date": "2020-09-20",
+      "publisher": "广西壮族自治区人民政府",
+      "url": "http://www.gxzf.gov.cn/zfwj/zxwj/t6486646.shtml",
+      "provides": ["港区/港点名称", "功能定位", "规划岸线"]
+    },
+    {
+      "id": "S2",
+      "name": "关于钦州港中国石油广西石化三墩岛30万吨级原油码头管道项目海洋环境影响报告书的批复",
+      "doc_number": "桂环审〔2019〕297号",
+      "date": "2019-08-28",
+      "publisher": "广西壮族自治区生态环境厅",
+      "url": "http://sthjt.gxzf.gov.cn/zdxxgk/3894851061841379.pdf",
+      "provides": ["三墩港区锚点坐标"]
+    },
+    {
+      "id": "S3",
+      "name": "钦州港口岸三墩港区中船2#、5#泊位口岸限定区域范围及管理要求公告",
+      "date": "2025-09-25",
+      "publisher": "钦州市口岸办公室 / 钦州出入境边防检查站",
+      "url": "http://www.qinzhou.gov.cn/zfxxgk/qzszfxxgkpt/qzsswj/fdzdgknr_4/tzgg/t26001899.shtml",
+      "provides": ["三墩港区锚点坐标"]
+    },
+    {
+      "id": "S4",
+      "name": "钦州港大榄坪港区大榄坪作业区4号5号泊位工程通航安全技术参数备案通告",
+      "doc_number": "桂航通〔2026〕0854号",
+      "date": "2026-10-13",
+      "publisher": "广西海事局 / 钦州海事局",
+      "url": "http://gx.msa.gov.cn/content.html?keyValue=53320",
+      "provides": ["大榄坪港区锚点坐标"]
+    },
+    {
+      "id": "S5",
+      "name": "钦州港大榄坪港区大榄坪作业区12号13号泊位工程通航安全技术参数备案通告",
+      "doc_number": "桂航通〔2026〕0165号",
+      "date": "2026-03-11",
+      "publisher": "广西海事局 / 钦州海事局",
+      "url": "https://www.gx.msa.gov.cn/content.html?keyValue=51640",
+      "provides": ["大榄坪港区锚点坐标"]
+    },
+    {
+      "id": "S6",
+      "name": "钦州港金谷港区勒沟作业区11-12#泊位口岸限定区域范围及管理要求公告",
+      "date": "2024-12-30",
+      "publisher": "钦州市口岸办公室 / 钦州出入境边防检查站",
+      "url": "http://www.qinzhou.gov.cn/zfxxgk/qzszfxxgkpt/qzsswj/fdzdgknr_4/tzgg/t19454902.shtml",
+      "provides": ["金谷港区锚点坐标"]
+    },
+    {
+      "id": "S7",
+      "name": "钦州港金谷港区金鼓江作业区6-7#泊位口岸限定区域范围及管理要求公告",
+      "date": "2026-03-11",
+      "publisher": "钦州市口岸办公室 / 钦州出入境边防检查站",
+      "url": "http://www.qinzhou.gov.cn/zfxxgk/qzszfxxgkpt/qzsswj/fdzdgknr_4/tzgg/t27335570.shtml",
+      "provides": ["金谷港区锚点坐标"]
+    },
+    {
+      "id": "S8",
+      "name": "中国（广西）自由贸易试验区钦州港片区国土空间分区规划（2023-2035年）解读",
+      "date": "2024-12-30",
+      "publisher": "中国（广西）自由贸易试验区钦州港片区管理委员会",
+      "url": "http://qzftz.gxzf.gov.cn/zwgk/zcjd/t19515133.shtml",
+      "provides": ["工业区名称", "工业用地规模"]
+    },
+    {
+      "id": "S9",
+      "name": "中国（广西）自由贸易试验区钦州港片区国土空间分区规划（2023—2035年）通知",
+      "date": "2024-12-30",
+      "publisher": "中国（广西）自由贸易试验区钦州港片区管理委员会",
+      "url": "http://qzftz.gxzf.gov.cn/zwgk/zcfg/ztzc/t19515020.shtml",
+      "provides": ["工业区规划依据"]
+    },
+    {
+      "id": "S10",
+      "name": "广西北部湾港船舶污染物接收、转运、处置能力评估及相应设施建设方案",
+      "date": "2017-04-01",
+      "publisher": "广西壮族自治区交通运输厅",
+      "url": "http://jtt.gxzf.gov.cn/zfxxgk/fdzdgk/tzgg/P020180121798150054641.pdf",
+      "provides": ["金谷港区作业区构成"]
+    },
+    {
+      "id": "S11",
+      "name": "中华人民共和国海事局 纸质航海图书在线服务（钦州港海图出版预告）",
+      "publisher": "中华人民共和国海事局",
+      "url_index": {
+        "92102": "https://pnp.chart.msa.gov.cn/Msgs/Details/3afd5d08-a6d7-4d3c-8e43-ea62186d188d",
+        "92103": "https://pnp.chart.msa.gov.cn/Msgs/Details/2c7d1c1a-5563-4604-ae41-081baac1b62b",
+        "92104": "https://pnp.chart.msa.gov.cn/Msgs/Details/fa810cb9-cf6d-4788-bae6-ad21e7ba20ea",
+        "92105": "https://pnp.chart.msa.gov.cn/Msgs/Details/b5e26cd3-6aa3-4278-af08-da2ee3d41425"
+      },
+      "provides": ["官方海图经纬度框（地理图幅，非港界）"]
+    }
+  ],
+  "planning_approval": {
+    "source": "S1",
+    "port_positioning": "国际枢纽海港，西部陆海新通道国际门户的重要枢纽；以集装箱和石油化工运输为主",
+    "planned_shoreline_km": 64.57,
+    "planned_deepwater_shoreline_km": 51.017,
+    "port_areas": ["金谷港区", "大榄坪港区", "三墩港区"],
+    "harbor_points": ["龙门港点", "茅岭港点", "平山港点", "沙井港点", "三娘湾港点"]
+  },
+  "port_areas": [
+    {
+      "id": "area-jingu",
+      "name": "金谷港区",
+      "function": "以油品、液体化工品和煤炭运输为主，兼顾散杂货运输，主要为临港产业园区发展服务",
+      "representative_point": {
+        "coordinate": [108.607271, 21.732575],
+        "derived_from": "区内两个法定锚点的经纬度均值",
+        "status": "verified"
+      },
+      "anchors": [
+        {
+          "name": "勒沟作业区11-12#泊位 A点",
+          "dms": { "lat": "21°43′56.03″N", "lng": "108°35′10.20″E" },
+          "coordinate": [108.586167, 21.732231],
+          "source": "S6",
+          "status": "verified"
+        },
+        {
+          "name": "金鼓江作业区6号点",
+          "dms": { "lat": "21°43′58.5069″N", "lng": "108°37′42.1535″E" },
+          "coordinate": [108.628376, 21.732919],
+          "source": "S7",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "id": "area-dalanping",
+      "name": "大榄坪港区",
+      "function": "以集装箱运输为核心的大型专业化、智能化港区，兼顾滚装和散杂货，支撑自贸区钦州港片区，发展为现代综合物流服务中心",
+      "representative_point": {
+        "coordinate": [108.637, 21.71075],
+        "derived_from": "区内两个法定锚点的经纬度均值",
+        "status": "verified"
+      },
+      "anchors": [
+        {
+          "name": "大榄坪作业区4/5号泊位中心",
+          "dms": { "lat": "21°42′06.68″N", "lng": "108°38′09.49″E" },
+          "coordinate": [108.635969, 21.701856],
+          "source": "S4",
+          "status": "verified"
+        },
+        {
+          "name": "大榄坪作业区12/13号泊位中心",
+          "dms": { "lat": "21°43′10.720″N", "lng": "108°38′16.908″E" },
+          "coordinate": [108.63803, 21.719644],
+          "source": "S5",
+          "status": "verified"
+        }
+      ]
+    },
+    {
+      "id": "area-sandun",
+      "name": "三墩港区",
+      "function": "以油品、液体化工品和集装箱运输为主，兼顾散杂货，发展为大型综合性港区，主要为临港产业园区和腹地集装箱运输服务",
+      "representative_point": {
+        "coordinate": [108.673486, 21.596966],
+        "derived_from": "区内两个法定锚点的经纬度均值",
+        "status": "verified"
+      },
+      "anchors": [
+        {
+          "name": "三墩岛30万吨级原油码头管道中心（QZ04-QZ06架空段）",
+          "dms": { "lat": "21°35′47.47″N", "lng": "108°40′41.6″E" },
+          "coordinate": [108.678222, 21.596519],
+          "source": "S2",
+          "status": "verified"
+        },
+        {
+          "name": "三墩港区中船2#/5#泊位 K1点",
+          "dms": { "lat": "21°35′50.6881″N", "lng": "108°40′07.4969″E" },
+          "coordinate": [108.668749, 21.597413],
+          "source": "S3",
+          "status": "verified"
+        }
+      ]
+    }
+  ],
+  "harbor_points": [
+    { "name": "龙门港点", "coordinate": null, "status": "pending" },
+    { "name": "茅岭港点", "coordinate": null, "status": "pending" },
+    { "name": "平山港点", "coordinate": null, "status": "pending" },
+    { "name": "沙井港点", "coordinate": null, "status": "pending" },
+    { "name": "三娘湾港点", "coordinate": null, "status": "pending" }
+  ],
+  "nautical_charts": [
+    {
+      "chart_no": "92102",
+      "chart_name": "钦州港(一)",
+      "scale": "1:15000",
+      "dms_box": {
+        "lat_min": "21°27′51″N",
+        "lat_max": "21°33′30″N",
+        "lng_min": "108°33′09″E",
+        "lng_max": "108°41′46″E"
+      },
+      "center_coordinate": [108.624306, 21.51125],
+      "note": "地理图幅框，非港界",
+      "source": "S11"
+    },
+    {
+      "chart_no": "92103",
+      "chart_name": "钦州港(二)",
+      "scale": "1:15000",
+      "dms_box": {
+        "lat_min": "21°33′24″N",
+        "lat_max": "21°39′03″N",
+        "lng_min": "108°34′06″E",
+        "lng_max": "108°42′42″E"
+      },
+      "center_coordinate": [108.64, 21.60375],
+      "note": "地理图幅框，非港界",
+      "source": "S11"
+    },
+    {
+      "chart_no": "92104",
+      "chart_name": "钦州港(三)",
+      "scale": "1:15000",
+      "dms_box": {
+        "lat_min": "21°38′58″N",
+        "lat_max": "21°44′39″N",
+        "lng_min": "108°31′48″E",
+        "lng_max": "108°40′29″E"
+      },
+      "center_coordinate": [108.602361, 21.696806],
+      "note": "地理图幅框，非港界",
+      "source": "S11"
+    },
+    {
+      "chart_no": "92105",
+      "chart_name": "钦州港(四)",
+      "scale": "1:15000",
+      "dms_box": {
+        "lat_min": "21°44′34″N",
+        "lat_max": "21°52′40″N",
+        "lng_min": "108°30′02″E",
+        "lng_max": "108°36′11″E"
+      },
+      "center_coordinate": [108.551806, 21.810278],
+      "note": "地理图幅框，非港界",
+      "source": "S11"
+    }
+  ],
+  "industrial_parks": [
+    {
+      "name": "钦州石化产业园",
+      "function": "绿色化工，炼化一体化/芳烃/烯烃及精细化工",
+      "coordinate": null,
+      "status": "pending"
+    },
+    {
+      "name": "中马钦州产业园",
+      "function": "产业园区，金鼓江区域",
+      "coordinate": null,
+      "status": "pending"
+    },
+    {
+      "name": "大榄坪装备制造产业园",
+      "function": "海洋装备/高端制造",
+      "coordinate": null,
+      "status": "pending"
+    },
+    {
+      "name": "新能源新材料产业园",
+      "function": "新能源材料/新能源汽车零部件",
+      "coordinate": null,
+      "status": "pending"
+    }
+  ],
+  "industrial_land_total_ha": 5621,
+  "industrial_land_source": "S8",
+  "work_zones_named": {
+    "note": "作业区名称结构（S10 及各规划）；仅部分作业区已采到坐标，其余 pending",
+    "金谷港区": [
+      { "name": "勒沟作业区", "has_coordinate": true },
+      { "name": "果子山作业区", "has_coordinate": false, "status": "pending" },
+      { "name": "鹰岭作业区", "has_coordinate": false, "status": "pending" },
+      { "name": "金鼓江作业区", "has_coordinate": true },
+      { "name": "樟木环作业区（预留）", "has_coordinate": false, "status": "pending" },
+      { "name": "金鼓江北作业区（预留）", "has_coordinate": false, "status": "pending" }
+    ],
+    "大榄坪港区": [
+      { "name": "大榄坪作业区", "has_coordinate": true },
+      { "name": "大榄坪南作业区", "has_coordinate": false, "status": "pending" }
+    ],
+    "三墩港区": [
+      { "name": "三墩作业区", "has_coordinate": true },
+      { "name": "三墩二期扩区", "has_coordinate": false, "status": "pending" }
+    ]
+  }
+}

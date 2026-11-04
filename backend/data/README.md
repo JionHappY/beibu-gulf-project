@@ -140,3 +140,18 @@ data/
 - DEM 栅格体积较大（`landsea_utm48n*.tif`），本目录以 `.gitkeep` 保留结构；大文件按需本地准备，
   来源与复跑见 `tools/dem-pipeline/README.md`。
 - 洪涝演算引擎（`tools/flood/engine/`）为离线工具，不随 Node 后端启动；在线洪涝域只读其产物。
+
+## 九、规划港区采集件（2026-11-03 入库）
+
+`planning/qinzhou-port-planning-raw.2026-11-03.json` + `planning/qinzhou-port-planning-points.2026-11-03.csv`
+
+- **来源**：豆包按 11 份公开法定文件汇编（主件为桂政函〔2020〕92号《钦州港总体规划（2035年）》批复），原始采集件未做几何加工；逐条来源见 JSON 的 `sources`。
+- **可用部分**：3 个规划港区代表点（金谷 / 大榄坪 / 三墩）+ 6 个法定锚点，`status=verified`，CGCS2000（民用精度与 EPSG:4326 重合）。
+- **缺口**：4 个产业园（钦州石化、中马钦州、大榄坪装备制造、新能源新材料）只有名称与功能定位，**坐标 pending**。
+  采集件明确「待补坐标」，本仓不自行推算填充——这正是选址域「规划配套」口径唯一缺的输入。
+- **当前是否参与计算**：**否**。`dist_port_m` 用的是既有三港，规划港区与它们在量级上不同（港区 vs 城市），
+  在产业园坐标补齐前加二次筛选会与现有距离项重复；数据先入库留档并加完整性判据。
+- **判据**：`backend/test/planning-data-integrity.spec.ts`（代表点 == 两锚点均值 ±1e-5、pending 条目必须无坐标、
+  CSV 与 JSON 逐点同值、坐标落在北部湾界内）。
+- **待办**：`tools/data-audit/source-registry.json` 的 `planning-port-areas` 组 `provenanceStatus=pending`，
+  `reviewBy=2026-12-04`（需逐条核对再分发许可，或补齐产业园坐标）。

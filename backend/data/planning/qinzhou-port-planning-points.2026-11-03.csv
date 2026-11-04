@@ -1,0 +1,10 @@
+﻿id,category,area_name,point_name,lat,lng,coordinate_system,source_doc,source_url,status
+P01,port_area_representative,金谷港区,金谷港区代表点,21.732575,108.607271,CGCS2000,桂政函92号/锚点均值,http://www.gxzf.gov.cn/zfwj/zxwj/t6486646.shtml,verified
+P02,port_area_representative,大榄坪港区,大榄坪港区代表点,21.710750,108.637000,CGCS2000,桂政函92号/锚点均值,http://www.gxzf.gov.cn/zfwj/zxwj/t6486646.shtml,verified
+P03,port_area_representative,三墩港区,三墩港区代表点,21.596966,108.673486,CGCS2000,桂政函92号/锚点均值,http://www.gxzf.gov.cn/zfwj/zxwj/t6486646.shtml,verified
+A01,anchor,金谷港区,勒沟作业区11-12#A点,21.732231,108.586167,CGCS2000,勒沟口岸公告,http://www.qinzhou.gov.cn/zfxxgk/qzszfxxgkpt/qzsswj/fdzdgknr_4/tzgg/t19454902.shtml,verified
+A02,anchor,金谷港区,金鼓江作业区6号点,21.732919,108.628376,CGCS2000,金鼓江口岸公告,http://www.qinzhou.gov.cn/zfxxgk/qzszfxxgkpt/qzsswj/fdzdgknr_4/tzgg/t27335570.shtml,verified
+A03,anchor,大榄坪港区,大榄坪作业区4/5号泊位中心,21.701856,108.635969,CGCS2000,桂航通2026-0854号,http://gx.msa.gov.cn/content.html?keyValue=53320,verified
+A04,anchor,大榄坪港区,大榄坪作业区12/13号泊位中心,21.719644,108.638030,CGCS2000,桂航通2026-0165号,https://www.gx.msa.gov.cn/content.html?keyValue=51640,verified
+A05,anchor,三墩港区,三墩岛30万吨原油码头管道中心,21.596519,108.678222,CGCS2000,桂环审2019-297号,http://sthjt.gxzf.gov.cn/zdxxgk/3894851061841379.pdf,verified
+A06,anchor,三墩港区,三墩港区中船2#/5#泊位K1点,21.597413,108.668749,CGCS2000,三墩中船泊位公告,http://www.qinzhou.gov.cn/zfxxgk/qzszfxxgkpt/qzsswj/fdzdgknr_4/tzgg/t26001899.shtml,verified

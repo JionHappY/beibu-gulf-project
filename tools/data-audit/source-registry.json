@@ -112,6 +112,21 @@
       "coverage": "说明件（2026-10-06 复核：与现役 data/ 口径一致；site-selection/Express 仅以「历史/已移除」条目标注，无在役叙述）",
       "quality": "git grep -n \"site-selection\" -- backend/data/README.md（命中行须带历史/已移除语境）；git grep -n \"throughput\\.json\" -- backend/data/README.md（应为空）",
       "provenanceStatus": "confirmed"
+    },
+    {
+      "id": "planning-port-areas",
+      "title": "选址域·规划港区与产业园（豆包采集件）",
+      "paths": [
+        "backend/data/planning/qinzhou-port-planning-raw.2026-11-03.json",
+        "backend/data/planning/qinzhou-port-planning-points.2026-11-03.csv"
+      ],
+      "source": "豆包（Doubao）按 11 份公开来源汇编：桂政函〔2020〕92号《钦州港总体规划（2035年）》批复、广西壮族自治区人民政府网等；原始采集件未做几何加工",
+      "license": "各条目自带 source 字段指向原始文档；再分发许可尚未逐条核对（pending）",
+      "fetchedAt": "2026-11-03",
+      "coverage": "3 个规划港区代表点（金谷/大榄坪/三墩，verified，CGCS2000≈WGS84）+ 5 个港点 + 4 个产业园（坐标 pending）；共 11 条来源文档",
+      "quality": "node tools/data-audit/source-registry.mjs --json（件数与登记一致）",
+      "provenanceStatus": "pending",
+      "reviewBy": "2026-12-04"
     }
   ],
   "_assumptionsComment": "口径假设登记（方法侧的唯一权威源）：代码常量/数据文件里「不是实测、不是文献」的选择必须在此出现。where=可核对的落点（file:line，文件必须存在）；status=author-set 作者设定 / literature 文献锚点 / synthetic 合成 / proxy 代理指标 / unverified 未达标待裁；impact=论文里不这样写就会失实；disclosure=当前披露位置（UI/文档/论文），「待补」=尚未披露。",

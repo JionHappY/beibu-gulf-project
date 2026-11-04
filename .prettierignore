@@ -67,3 +67,6 @@ docs/根基文档/审查体系专项/专项2-生命周期复查清单.md
 # agent 工作目录含运行时文件，非项目源码
 .zcodeignore
 untitled-project/
+# 本机个人答辩材料（2026-11-04 加入：未跟踪、非项目源码；opening-defense.html 为个人讲稿
+# 排版，不随 prettier 重排；未忽略会导致 pre-push format:check 全仓红——先例同 面试*.md）
+/thesis-defense/

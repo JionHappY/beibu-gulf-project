@@ -66,6 +66,16 @@ describe('AppLayout 二级控制台挂点唯一性', () => {
     expect(wrapper.findAllComponents(SecondaryConsoleSlot)).toHaveLength(1)
   })
 
+  it('上一页收起后进新页面默认展开（避免无入口页锁死）', async () => {
+    await setViewportWidth(1440)
+    useSecondaryConsole().closeConsole()
+
+    const wrapper = mount(AppLayout)
+
+    expect(useSecondaryConsole().open.value).toBe(true)
+    expect(wrapper.findAll('.layer-panel-stub')).toHaveLength(1)
+  })
+
   it('showSecondaryConsole=false（个人中心）：不挂图层控制', async () => {
     await setViewportWidth(1440)
     const wrapper = mount(AppLayout, { props: { showSecondaryConsole: false } })

@@ -21,6 +21,7 @@ import HomeAnalysisGrid from './components/HomeAnalysisGrid.vue'
 import NavButton from './components/NavButton.vue'
 import SecondaryConsoleSlot from './components/SecondaryConsoleSlot.vue'
 import { type ChipDragPoint, GCS_TASK_CHIPS_KEY } from './taskChipsContext'
+import { useSecondaryConsole } from './useSecondaryConsole'
 import { useSliderFocus } from './useSliderFocus'
 
 const route = useRoute()
@@ -39,6 +40,9 @@ const { isDark, toggleTheme } = useTheme()
 // 抽屉开关（模块级单例，nav 菜单按钮与抽屉共享）
 // 滑块专注模式（模块级单例，滑块组件调用 begin/end）
 const { active: sliderFocusActive, activePanel: sliderActivePanel } = useSliderFocus()
+// 进页面默认展开图层控制：AppLayout 是页面级组件，路由切换会新挂一次。
+// 不复位就会出现「在 A 页收起后，进没有入口按钮的 B 页再也打不开」（关闭态是模块单例）。
+useSecondaryConsole().reset()
 
 // 任务结果芯片（手机档进控制台；桌面档由 App.vue 自己渲染浮条）。
 // 未 provide 时（单测/独立挂载）为 undefined ⇒ 中转带不渲染。

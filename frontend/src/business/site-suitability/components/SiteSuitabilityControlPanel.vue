@@ -18,7 +18,6 @@ const state = useSiteSuitabilityStore()
 const { beginSliderFocusOnRange, endSliderFocus } = useSliderFocus()
 const { cellPixel, css } = useGCS()
 const { cell8px } = css
-const labelFontSizeCss = computed(() => `${cellPixel.value * 0.175}px`)
 const smallFontSizeCss = computed(() => `${cellPixel.value * 0.15}px`)
 /** 卡片行高系数与 panelCapacity 的 ROW_HEIGHT_CELL 同源（三处控制面板统一 0.8cell） */
 const cardHeightCss = computed(() => `${cellPixel.value * ROW_HEIGHT_CELL}px`)
@@ -58,9 +57,6 @@ onUnmounted(() => {
 
 <template>
   <div ref="panelRef" class="ss-ctrl">
-    <div class="sec-title" title="AHP 定稿判断矩阵（CR=0.052）；评分阈值为作者设定，见论文方法章">
-      准则权重（自动归一化）
-    </div>
     <!-- 2 列 × 3 行：5 张准则卡片 + 陆地占比（末格）；行高与老选址控制面板同为 0.8cell -->
     <div
       class="criteria-grid"
@@ -122,12 +118,6 @@ onUnmounted(() => {
   box-sizing: border-box;
   gap: v-bind(cell8px);
   overflow-y: auto;
-}
-
-.sec-title {
-  font-size: v-bind(labelFontSizeCss);
-  font-weight: 600;
-  color: var(--GCS-color-primary);
 }
 
 .criteria-grid {

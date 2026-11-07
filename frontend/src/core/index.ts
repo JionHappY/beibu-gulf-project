@@ -8,6 +8,7 @@ export * from './layout/navConfig'
 export * from './layout/routeReadiness'
 export * from './layout/taskChipsContext'
 export * from './layout/taskIndicator'
+export * from './layout/useSecondaryConsole'
 export * from './layout/useSliderFocus'
 export * from './layout/useStackablePanels'
 export * from './map/BusinessLayerManager'
@@ -20,8 +21,8 @@ export * from './map/layerAdapters'
 export * from './map/renderers/MapRenderer'
 // 3D Tiles 分组派生（通用能力，零业务语义）：按谓词从瓦片集裁子树 + uri 绝对化 + Data URI。
 // 业务分组定义由调用方（business）提供，见 business/route-analysis/constants/pingluTiles.ts
-export * from './map/tiles3dGroups'
 export * from './map/ir/LayerIR'
+export * from './map/tiles3dGroups'
 export * from './provideKeys'
 // Q4 收口：渲染器工厂/预载经入口对外（App.vue 使用；OLRenderer/CesiumRenderer 实现类不对外）
 export { createRenderer, preloadCesium } from './map/renderers'
@@ -31,18 +32,19 @@ export { default as BottomNavBar } from './layout/components/BottomNavBar.vue'
 export { default as GCSButton } from './layout/components/GCSButton.vue'
 export { default as GCSPanel } from './layout/components/GCSPanel.vue'
 export { default as NavButton } from './layout/components/NavButton.vue'
+export { default as SecondaryConsoleSlot } from './layout/components/SecondaryConsoleSlot.vue'
 // v4 任务体系（S5/S6）：投递区 / 进度环 / 可拖面板包装
 // 🔴 2026-09-19 语义修正后删除：
 //    · TaskDockHost + TaskCard —— 后台任务浮层卡片（用户否定：不另造承载物）
 //    · TaskPlaceholder —— 原位占位条（用户澄清：面板不消失，拖走的是任务优先级）
 //    任务状态一律由导航按钮上「绕按钮一圈」的进度环表达。
-export { default as TaskDropZone } from './layout/components/TaskDropZone.vue'
-export { default as TaskResultChip } from './layout/components/TaskResultChip.vue'
-export { default as TaskDock } from './layout/components/TaskDock.vue'
-export type { TaskDockCard } from './layout/components/TaskDock.vue'
-export { default as TaskPanelSlot } from './layout/components/TaskPanelSlot.vue'
 export { default as StackSlot } from './layout/components/StackSlot.vue'
+export type { TaskDockCard } from './layout/components/TaskDock.vue'
+export { default as TaskDock } from './layout/components/TaskDock.vue'
+export { default as TaskDropZone } from './layout/components/TaskDropZone.vue'
+export { default as TaskPanelSlot } from './layout/components/TaskPanelSlot.vue'
 export { default as TaskProgressRing } from './layout/components/TaskProgressRing.vue'
+export { default as TaskResultChip } from './layout/components/TaskResultChip.vue'
 export { default as LayerControlPanel } from './map/components/LayerControlPanel.vue'
 export { default as UnifiedMap } from './map/UnifiedMap.vue'
 // DEV 调试层（DebugToggle / GCSDebugOverlay）已于 2026-10-26 删除：二者仅

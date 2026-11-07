@@ -3,18 +3,18 @@
    * 预测分析模块：纯 API 链路（cargo/container 为后端模型预测的真实吞吐量，
    * activity 为真数据派生「港口吞吐活跃度」指数——berth/traffic 纯合成指标已下架）。
    * 验证 heatmap 图层注册/销毁、纯 2D 业务承载与时间轴驱动的图层增量更新性能。
-   * 布局：左 LineChart + BarChart，右 ForecastControlPanel + LayerControlPanel（各 4×4）
+   * 布局：左 LineChart + BarChart，右 ForecastControlPanel（4×4）；图层控制由全局二级控制台统一挂载
    */
 -->
 <script setup lang="ts">
 import { computed, onUnmounted, watch } from 'vue'
 
-import { AppLayout, GCSPanel, LayerControlPanel, StackSlot, useStackablePanels } from '@/core'
+import { AppLayout, GCSPanel, StackSlot, useStackablePanels } from '@/core'
 import { DEFAULT_LAYER_ORDER, forecastLayerId, logger, useProfileSnapshot } from '@/shared'
+import { ChartLoading } from '@/shared'
 import { useForecastStore } from '@/stores'
 import { useMapStore } from '@/stores'
 import type { ForecastSavedState } from '@/stores/forecastStore'
-import { ChartLoading } from '@/shared'
 import { BarChart, LineChart } from '@/visualization'
 
 import ForecastControlPanel from './components/ForecastControlPanel.vue'
@@ -148,7 +148,7 @@ onUnmounted(() => {
 
 <template>
   <div class="forecast-page">
-    <AppLayout>
+    <AppLayout :layer-order="[...DEFAULT_LAYER_ORDER, ...FORECAST_PANEL_ORDER]">
       <template #left>
         <GCSPanel
           v-if="!isStacked('line')"
@@ -229,11 +229,6 @@ onUnmounted(() => {
       <template #right>
         <GCSPanel :w="4" :h="4" anchor="top-right" :offset-x="0" :offset-y="1.25">
           <ForecastControlPanel />
-        </GCSPanel>
-      </template>
-      <template #layers>
-        <GCSPanel :w="4" :h="4" anchor="top-right" :offset-x="0" :offset-y="5.5">
-          <LayerControlPanel :layer-order="[...DEFAULT_LAYER_ORDER, ...FORECAST_PANEL_ORDER]" />
         </GCSPanel>
       </template>
     </AppLayout>

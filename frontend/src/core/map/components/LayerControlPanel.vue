@@ -7,21 +7,12 @@
 
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 
-import { resolveLayerPanelState } from '@/core/map/layerAdapters'
 import { useBusinessLayers } from '@/core/map/composables/useBusinessLayers'
+import { resolveLayerPanelState } from '@/core/map/layerAdapters'
 import { DEFAULT_LAYER_ORDER, ROW_HEIGHT_CELL, useGCS } from '@/shared'
 import { useMapStore } from '@/stores'
-import type { LayerEntry } from '@/types'
+import type { LayerEntry, LayerGroupSpec, LayerType } from '@/types'
 import { DEFAULT_ENGINES } from '@/types'
-import type { LayerType } from '@/types'
-
-/** 图层组规格：多个图层共用面板上的**一个**开关（层级可分、控制合一）。
- * 成员必须是有 layerType 的业务图层（base 类互斥单选不可入组）。 */
-interface LayerGroupSpec {
-  key: string
-  label: string
-  memberKeys: string[]
-}
 
 interface Props {
   /** 图层显示顺序（由业务页注入，core 不硬编码业务 key） */

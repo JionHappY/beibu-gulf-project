@@ -11,15 +11,16 @@ import { useRoute, useRouter } from 'vue-router'
 
 import { MAP_CONFIG } from '@/core/config/map'
 import { useMapControls } from '@/core/map/composables/useMapControls'
-import LayerControlPanel from '@/core/map/components/LayerControlPanel.vue'
-import HomeAnalysisGrid from './components/HomeAnalysisGrid.vue'
 import { PanelTitle, useGCS, useTheme } from '@/shared'
+import type { LayerGroupSpec } from '@/types'
 
 import BottomNavBar from './components/BottomNavBar.vue'
 import ConsoleRail from './components/ConsoleRail.vue'
 import GCSPanel from './components/GCSPanel.vue'
+import HomeAnalysisGrid from './components/HomeAnalysisGrid.vue'
 import NavButton from './components/NavButton.vue'
-import { GCS_TASK_CHIPS_KEY, type ChipDragPoint } from './taskChipsContext'
+import SecondaryConsoleSlot from './components/SecondaryConsoleSlot.vue'
+import { type ChipDragPoint, GCS_TASK_CHIPS_KEY } from './taskChipsContext'
 import { useSliderFocus } from './useSliderFocus'
 
 const route = useRoute()
@@ -100,8 +101,23 @@ const consoleStyle = computed(() => ({ bottom: `${Math.round(cellPixel.value * 1
  * 控制台的阅读顺序（a1）：默认「参数 → 结果」（right → left），因为多数页面右列是
  * 操作/参数；选址页反过来——先给结论（画像 + 候选名单）再给权重，所以由页面声明。
  */
-withDefaults(defineProps<{ consoleOrder?: 'right-first' | 'left-first' }>(), {
+interface Props {
+  consoleOrder?: 'right-first' | 'left-first'
+  /** 本页图层顺序：只声明参数，面板本体由全局二级控制台持有 */
+  layerOrder?: string[]
+  layerGroups?: LayerGroupSpec[]
+  excludeKeys?: string[]
+  /** 个人中心等自带整列面板的页面关掉槽位，避免 4×4 叠在 4×8 上 */
+  showSecondaryConsole?: boolean
+}
+
+withDefaults(defineProps<Props>(), {
   consoleOrder: 'right-first',
+  showSecondaryConsole: true,
+  // 不在这里覆盖子面板的默认图层顺序：undefined 会继续透传，由 LayerControlPanel 兜底
+  layerOrder: undefined,
+  layerGroups: undefined,
+  excludeKeys: undefined,
 })
 
 // 专注态激活期间切路由 ⇒ 旧页 AppLayout 卸载，而 useSliderFocus 的
@@ -165,19 +181,18 @@ onUnmounted(() => {
       <!-- 左侧 Panel 组：由业务页通过 #left slot 注入 -->
       <slot name="left" />
 
-      <!-- 右侧 Panel 组 -->
+      <!-- 右侧 Panel 组 + 全局二级控制台（全站唯一一份图层控制） -->
       <div v-show="showPanels">
         <slot name="right">
           <!-- 右上：雷达图 4×4（与选址分析同源：分析结果第一名，未分析时快照兜底） -->
           <GlobalRadarPanel />
-          <!-- 右下：图层控制 4×4 -->
-          <GCSPanel :w="4" :h="4" anchor="top-right" :offset-x="0" :offset-y="5.5">
-            <LayerControlPanel />
-          </GCSPanel>
         </slot>
-        <!-- 图层控制单独一口：桌面档按 placements 绝对定位，位置与在 #right 里无差别；
-             手机档控制台按「参数 → 结果 → 图层」排阅读顺序，必须能把它排到最后 -->
-        <slot name="layers" />
+        <SecondaryConsoleSlot
+          v-if="showSecondaryConsole"
+          :layer-order="layerOrder"
+          :layer-groups="layerGroups"
+          :exclude-keys="excludeKeys"
+        />
       </div>
     </template>
 
@@ -216,7 +231,6 @@ onUnmounted(() => {
       <div class="console-body">
         <template v-if="route.name === 'Home'">
           <HomeAnalysisGrid />
-          <div class="console-card"><LayerControlPanel /></div>
         </template>
         <template v-else-if="route.name === 'Profile'">
           <slot name="right" />
@@ -228,14 +242,18 @@ onUnmounted(() => {
             <summary>调参：准则权重与阈值</summary>
             <slot name="right" />
           </details>
-          <slot name="layers" />
         </template>
         <template v-else>
           <slot name="right" />
           <slot name="left" />
-          <!-- 图层控制放最后：控制台是按 DOM 顺序自上而下读的 -->
-          <slot name="layers" />
         </template>
+        <!-- 图层控制放最后：控制台是按 DOM 顺序自上而下读的；桌面/手机两条挂点共用同一槽位 -->
+        <SecondaryConsoleSlot
+          v-if="showSecondaryConsole"
+          :layer-order="layerOrder"
+          :layer-groups="layerGroups"
+          :exclude-keys="excludeKeys"
+        />
       </div>
     </section>
 
@@ -354,13 +372,6 @@ onUnmounted(() => {
   /* 末端留白：最后一行（如年份刻度）贴到滚动区底边时会被 dock 上沿的
      拖拽手柄压住半个字，实测 390×844 预测页 */
   padding-bottom: 12px;
-}
-
-.console-card {
-  background-color: var(--GCS-bg-panel);
-  border-radius: var(--GCS-radius-md);
-  box-shadow: var(--GCS-shadow-sm);
-  padding: 6px;
 }
 
 /* 面板进控制台后按内容高度堆叠。

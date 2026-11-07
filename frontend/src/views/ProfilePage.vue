@@ -13,8 +13,8 @@ import { useAuth, useGCS } from '@/shared'
 
 import PlansPanel from './components/PlansPanel.vue'
 import UserInfoCard from './components/UserInfoCard.vue'
-import LoginPanel from './LoginPanel.vue'
 import { LazyBarChart, LazyLineChart } from './lazyCharts'
+import LoginPanel from './LoginPanel.vue'
 
 const LineChart = LazyLineChart
 const BarChart = LazyBarChart
@@ -63,7 +63,7 @@ const logoutPaddingCss = css.cell8px
 
 <template>
   <div class="profile-page">
-    <AppLayout>
+    <AppLayout :show-secondary-console="false">
       <!-- 左侧：吞吐量图表（自 AppLayout 下沉） -->
       <template #left>
         <GCSPanel :w="4" :h="4" anchor="top-left" :offset-x="0" :offset-y="1.25">

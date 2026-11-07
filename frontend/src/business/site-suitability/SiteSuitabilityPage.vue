@@ -6,24 +6,17 @@
 <script setup lang="ts">
 import { computed, onUnmounted, watch } from 'vue'
 
-import {
-  AppLayout,
-  GCSPanel,
-  LayerControlPanel,
-  StackSlot,
-  useMapControls,
-  useStackablePanels,
-} from '@/core'
+import { AppLayout, GCSPanel, StackSlot, useMapControls, useStackablePanels } from '@/core'
 import { logger, PaginatedListPanel, usePanelPlacements, useProfileSnapshot } from '@/shared'
 import { useMapStore } from '@/stores'
 import { useSiteSuitabilityStore } from '@/stores'
 import type { ScoredXiaoqu } from '@/types/xiaoqu'
 
-import type { SuitabilityCriterionKey } from './constants/criteria'
 import SiteSuitabilityControlPanel from './components/SiteSuitabilityControlPanel.vue'
 import SuitabilityRadarPanel from './components/SuitabilityRadarPanel.vue'
 import { useSiteSuitabilityLayer } from './composables/useSiteSuitabilityLayer'
 import { useSiteSuitabilityRequest } from './composables/useSiteSuitabilityRequest'
+import type { SuitabilityCriterionKey } from './constants/criteria'
 import { SITE_SUITABILITY_PANELS } from './panels'
 
 const mapStore = useMapStore()
@@ -223,11 +216,6 @@ onUnmounted(() => {
       <template #right>
         <GCSPanel v-bind="placements.control">
           <SiteSuitabilityControlPanel />
-        </GCSPanel>
-      </template>
-      <template #layers>
-        <GCSPanel v-bind="placements.layers">
-          <LayerControlPanel />
         </GCSPanel>
       </template>
     </AppLayout>

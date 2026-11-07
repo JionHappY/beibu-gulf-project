@@ -15,6 +15,14 @@ export type LayerType =
   | 'imageOverlay'
   | 'terrain'
 
+/** 图层组规格：多个图层共用面板上的**一个**开关（层级可分、控制合一）。
+ * 成员必须是有 layerType 的业务图层（base 类互斥单选不可入组）。 */
+export interface LayerGroupSpec {
+  key: string
+  label: string
+  memberKeys: string[]
+}
+
 /** 水面图层数据载荷（3D Only，waterSurface adapter 入参，业务层构造 payload 时复用） */
 export interface WaterSurfaceData {
   /** 水面边界多边形坐标环（[lng, lat][]） */

@@ -11,7 +11,6 @@ import {
   AppLayout,
   GCSPanel,
   isWater3DCapable,
-  LayerControlPanel,
   StackSlot,
   TaskPanelSlot,
   useBusinessLayers,
@@ -529,7 +528,9 @@ onUnmounted(() => {
 
 <template>
   <div class="flood-analysis-page">
-    <AppLayout>
+    <AppLayout
+      :layer-order="[...DEFAULT_LAYER_ORDER, WATER_SURFACE_ID, FLOOD_LAYER_ID, FACILITY_LAYER_ID]"
+    >
       <template #left>
         <GCSPanel
           v-if="!isStacked('report')"
@@ -571,18 +572,6 @@ onUnmounted(() => {
         >
           <WaterLevelProfilePanel ref="waterPanelRef" :state-restored="stateRestored" />
         </TaskPanelSlot>
-      </template>
-      <template #layers>
-        <GCSPanel :w="4" :h="4" anchor="top-right" :offset-x="0" :offset-y="5.5">
-          <LayerControlPanel
-            :layer-order="[
-              ...DEFAULT_LAYER_ORDER,
-              WATER_SURFACE_ID,
-              FLOOD_LAYER_ID,
-              FACILITY_LAYER_ID,
-            ]"
-          />
-        </GCSPanel>
       </template>
     </AppLayout>
     <StackSlot :items="stackItems" @restore="restore" />

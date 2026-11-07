@@ -25,7 +25,6 @@ describe('SiteSuitabilityPage 布局派生', () => {
       radar: { w: 4, h: 4, anchor: 'top-left', offsetX: 0, offsetY: 1.25 },
       candidates: { w: 4, h: 4, anchor: 'top-left', offsetX: 0, offsetY: 5.5 },
       control: { w: 4, h: 4, anchor: 'top-right', offsetX: 0, offsetY: 1.25 },
-      layers: { w: 4, h: 4, anchor: 'top-right', offsetX: 0, offsetY: 5.5 },
     })
   })
 

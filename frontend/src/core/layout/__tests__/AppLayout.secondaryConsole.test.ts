@@ -23,6 +23,8 @@ vi.mock('@/core/map/components/LayerControlPanel.vue', () => ({
   },
 }))
 
+import { useGCS } from '@/shared/layout/useGCS'
+
 import AppLayout from '../AppLayout.vue'
 import SecondaryConsoleSlot from '../components/SecondaryConsoleSlot.vue'
 import { useSecondaryConsole } from '../useSecondaryConsole'
@@ -32,8 +34,13 @@ const originalWidth = window.innerWidth
 async function setViewportWidth(width: number): Promise<void> {
   Object.defineProperty(window, 'innerWidth', { value: width, writable: true, configurable: true })
   window.dispatchEvent(new Event('resize'))
-  // useGCS 的 resize 防抖 150ms：必须等模块单例真正换档，否则挂载仍按旧档渲染
-  await new Promise((resolve) => setTimeout(resolve, 200))
+  // useGCS 的 resize 防抖 150ms：轮询到模块单例真正换档，固定 sleep 在并发负载下会偶发读到旧档
+  await vi.waitFor(
+    () => {
+      expect(useGCS().consoleMode.value).toBe(width < 960)
+    },
+    { timeout: 3000 }
+  )
 }
 
 beforeEach(() => {

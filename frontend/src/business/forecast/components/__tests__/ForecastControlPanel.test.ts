@@ -15,7 +15,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { defineComponent, effectScope, h, nextTick } from 'vue'
 import { createMemoryHistory, createRouter, type Router } from 'vue-router'
 
-import { useSliderFocus } from '@/core'
+import { useSecondaryConsole, useSliderFocus } from '@/core'
 import { showToast } from '@/shared'
 
 vi.mock('@/shared', async (importOriginal) => {
@@ -377,6 +377,36 @@ describe('自动播放与后台标签页', () => {
     const before = store.currentTime
     vi.advanceTimersByTime(2000)
     expect(store.currentTime).not.toBe(before)
+    wrapper.unmount()
+  })
+})
+
+describe('图层控制入口（G3）', () => {
+  beforeEach(async () => {
+    setActivePinia(createPinia())
+    router = createRouter({ history: createMemoryHistory(), routes: [] })
+    await router.push('/')
+    await router.isReady()
+    useSecondaryConsole().reset()
+  })
+
+  it('默认展开图层控制；点按钮收起，再点调出（真实入口）', async () => {
+    const wrapper = mountPanel()
+    const c = useSecondaryConsole()
+    const btn = wrapper.find('button.layer-toggle')
+
+    expect(c.open.value).toBe(true)
+    expect(btn.text()).toContain('收起图层')
+    expect(btn.attributes('aria-pressed')).toBe('true')
+
+    await btn.trigger('click')
+    expect(c.open.value).toBe(false)
+    expect(btn.text()).toContain('图层控制')
+    expect(btn.attributes('aria-pressed')).toBe('false')
+
+    await btn.trigger('click')
+    expect(c.open.value).toBe(true)
+    expect(btn.text()).toContain('收起图层')
     wrapper.unmount()
   })
 })

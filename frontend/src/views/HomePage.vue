@@ -13,6 +13,7 @@ import { AppLayout, GCSPanel } from '@/core'
 import { usePanelPlacements } from '@/shared'
 
 import { HOME_PANELS } from './panels'
+import DevelopmentIndexPanel from './components/DevelopmentIndexPanel.vue'
 import { LazyBarChart, LazyLineChart } from './lazyCharts'
 
 const LineChart = LazyLineChart
@@ -38,6 +39,13 @@ onUnmounted(cancelOverviewCharts)
         <!-- 左下：柱状图 4×4 -->
         <GCSPanel v-bind="placements.compare">
           <BarChart title="港口吞吐量对比" :x-data="barData.labels" :series="barData.series" />
+        </GCSPanel>
+      </template>
+
+      <template #right>
+        <!-- 右列：城市发展指数 4×4（六项指标，居住密度为代理口径） -->
+        <GCSPanel v-bind="placements.development" title="城市发展指数">
+          <DevelopmentIndexPanel />
         </GCSPanel>
       </template>
     </AppLayout>

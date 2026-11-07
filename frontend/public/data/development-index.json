@@ -1,0 +1,177 @@
+{
+  "generatedAt": "2026-11-07",
+  "method": "六项指标按三市 min-max 归一化到 0–100 后加权求和；淹没暴露为逆向指标（占比越低得分越高）。人口维度以住宅小区密度代理：数据库无人口普查/户数/年龄字段，不能表述为人口结构。",
+  "weights": {
+    "portCargo": 0.25,
+    "container": 0.2,
+    "residential": 0.15,
+    "industrial": 0.1,
+    "publicService": 0.15,
+    "floodExposure": 0.15
+  },
+  "sources": {
+    "throughput": "forecast_data.payload 中 2025-01~2025-12 月值求和（货物万吨、集装箱 TEU）",
+    "residential": "xiaoqu 住宅小区点位数 ÷ 城区面积 ×100",
+    "industrial": "industrial_zones 与城区相交面积 ÷ 城区面积",
+    "publicService": "poi_facilities 七类公共服务 POI 数 ÷ 城区面积 ×100",
+    "floodExposure": "flood_levels.level=5.0 与城区相交面积 ÷ 城区面积"
+  },
+  "cities": [
+    {
+      "id": "qz",
+      "name": "钦州市",
+      "score": 60,
+      "areaKm2": 4853.7,
+      "metrics": {
+        "portCargoWanTon": 22576,
+        "containerTeu": 7462172,
+        "residentialPer100Km2": 11.19,
+        "industrialSharePct": 0.69,
+        "publicServicePer100Km2": 22.97,
+        "floodExposurePct": 9
+      },
+      "dimensions": [
+        {
+          "key": "portCargo",
+          "label": "港口吞吐",
+          "score": 100,
+          "display": "22,576 万吨"
+        },
+        {
+          "key": "container",
+          "label": "集装箱",
+          "score": 100,
+          "display": "746.2 万 TEU"
+        },
+        {
+          "key": "residential",
+          "label": "居住密度*",
+          "score": 0,
+          "display": "11.2 个/百 km²"
+        },
+        {
+          "key": "industrial",
+          "label": "产业用地",
+          "score": 0,
+          "display": "0.69%"
+        },
+        {
+          "key": "publicService",
+          "label": "公共服务",
+          "score": 0,
+          "display": "23.0 个/百 km²"
+        },
+        {
+          "key": "floodExposure",
+          "label": "淹没暴露",
+          "score": 100,
+          "display": "9.0%"
+        }
+      ]
+    },
+    {
+      "id": "fcg",
+      "name": "防城港市",
+      "score": 29.1,
+      "areaKm2": 2866.7,
+      "metrics": {
+        "portCargoWanTon": 20590,
+        "containerTeu": 1350362,
+        "residentialPer100Km2": 23.23,
+        "industrialSharePct": 1.59,
+        "publicServicePer100Km2": 25.01,
+        "floodExposurePct": 17.1
+      },
+      "dimensions": [
+        {
+          "key": "portCargo",
+          "label": "港口吞吐",
+          "score": 88.4,
+          "display": "20,590 万吨"
+        },
+        {
+          "key": "container",
+          "label": "集装箱",
+          "score": 1.6,
+          "display": "135.0 万 TEU"
+        },
+        {
+          "key": "residential",
+          "label": "居住密度*",
+          "score": 12.7,
+          "display": "23.2 个/百 km²"
+        },
+        {
+          "key": "industrial",
+          "label": "产业用地",
+          "score": 42.5,
+          "display": "1.59%"
+        },
+        {
+          "key": "publicService",
+          "label": "公共服务",
+          "score": 3.3,
+          "display": "25.0 个/百 km²"
+        },
+        {
+          "key": "floodExposure",
+          "label": "淹没暴露",
+          "score": 0,
+          "display": "17.1%"
+        }
+      ]
+    },
+    {
+      "id": "bh",
+      "name": "北海市",
+      "score": 48,
+      "areaKm2": 1175.7,
+      "metrics": {
+        "portCargoWanTon": 5386,
+        "containerTeu": 1250103,
+        "residentialPer100Km2": 106.06,
+        "industrialSharePct": 2.82,
+        "publicServicePer100Km2": 85.57,
+        "floodExposurePct": 12.8
+      },
+      "dimensions": [
+        {
+          "key": "portCargo",
+          "label": "港口吞吐",
+          "score": 0,
+          "display": "5,386 万吨"
+        },
+        {
+          "key": "container",
+          "label": "集装箱",
+          "score": 0,
+          "display": "125.0 万 TEU"
+        },
+        {
+          "key": "residential",
+          "label": "居住密度*",
+          "score": 100,
+          "display": "106.1 个/百 km²"
+        },
+        {
+          "key": "industrial",
+          "label": "产业用地",
+          "score": 100,
+          "display": "2.82%"
+        },
+        {
+          "key": "publicService",
+          "label": "公共服务",
+          "score": 100,
+          "display": "85.6 个/百 km²"
+        },
+        {
+          "key": "floodExposure",
+          "label": "淹没暴露",
+          "score": 53.1,
+          "display": "12.8%"
+        }
+      ]
+    }
+  ]
+}

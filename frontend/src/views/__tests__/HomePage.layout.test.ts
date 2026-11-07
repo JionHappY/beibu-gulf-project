@@ -24,6 +24,14 @@ vi.mock('@/business', () => ({
     loadOverviewCharts: vi.fn(),
     cancelOverviewCharts: vi.fn(),
   }),
+  useDevelopmentIndex: () => ({
+    data: { value: null },
+    failed: { value: false },
+    selectedId: { value: 'qz' },
+    selected: { value: null },
+    load: vi.fn(),
+    cancel: vi.fn(),
+  }),
 }))
 
 /** 真实 AppLayout 依赖路由/地图/store：以渲染命名插槽的替身承接布局骨架 */
@@ -52,6 +60,7 @@ describe('HomePage 位置派生（注册表 → props）', () => {
     expect(placementsFor(HOME_PANELS, 80)).toEqual({
       trend: { w: 4, h: 4, anchor: 'top-left', offsetX: 0, offsetY: 1.25 },
       compare: { w: 4, h: 4, anchor: 'top-left', offsetX: 0, offsetY: 5.5 },
+      development: { w: 4, h: 4, anchor: 'top-right', offsetX: 0, offsetY: 1.25 },
     })
   })
 
@@ -70,12 +79,20 @@ describe('HomePage 位置派生（注册表 → props）', () => {
       expect(derived70.trend.offsetY).not.toBe(1.25)
 
       const wrapper = mount(HomePage, {
-        global: { stubs: { AppLayout: AppLayoutStub, LineChart: true, BarChart: true } },
+        global: {
+          stubs: {
+            AppLayout: AppLayoutStub,
+            LineChart: true,
+            BarChart: true,
+            DevelopmentIndexPanel: true,
+          },
+        },
       })
       const panels = wrapper.findAllComponents(GCSPanel)
-      expect(panels).toHaveLength(2)
+      expect(panels).toHaveLength(3)
       expect(panels[0].props()).toMatchObject(derived70.trend)
       expect(panels[1].props()).toMatchObject(derived70.compare)
+      expect(panels[2].props()).toMatchObject(derived70.development)
       wrapper.unmount()
     } finally {
       cellPixel.value = original

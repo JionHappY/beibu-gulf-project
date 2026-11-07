@@ -117,7 +117,7 @@ test('手机档：结果芯片进控制台中转带，点击上图，换路由�
   await expect(slots.nth(0)).toBeVisible({ timeout: 30_000 })
   await slots.nth(0).click()
   await page.locator('.poi-item').first().click()
-  await slots.nth(3).click()
+  await slots.nth(1).click()
   await page.locator('.poi-item').nth(1).click()
   await page.getByRole('button', { name: '开始查询' }).click()
 
@@ -149,7 +149,7 @@ test('手机档：把芯片拖到 ＋ 上，半圆自动展开，落在弧上即
   await expect(slots.nth(0)).toBeVisible({ timeout: 30_000 })
   await slots.nth(0).click()
   await page.locator('.poi-item').first().click()
-  await slots.nth(3).click()
+  await slots.nth(1).click()
   await page.locator('.poi-item').nth(1).click()
   await page.getByRole('button', { name: '开始查询' }).click()
 

@@ -62,7 +62,7 @@ vi.mock('../../composables/useRouteLayer', () => ({
     updateRouteLayers: mocks.updateRouteLayers,
     clearRouteLayers: mocks.clearRouteLayers,
   }),
-  ROUTE_SLOT_KEYS: ['from', 'waypoint-1', 'waypoint-2', 'to'],
+  ROUTE_SLOT_KEYS: ['from', 'to'],
 }))
 
 vi.mock('../../composables/useCityBoundary', () => ({
@@ -144,7 +144,7 @@ describe('RouteControlPanel — 抓取/注入交互（2026-09-12 线上反馈回
     expect(wrapper.find('.pending-text').text()).toContain('北海港')
     expect(wrapper.find('.pending-src').text()).toBe('港口')
     expect(wrapper.find('input.poi-search').exists()).toBe(false)
-    expect(slotLabels(wrapper)).toEqual(['+ 起点', '+ 途径点', '+ 途径点', '+ 终点'])
+    expect(slotLabels(wrapper)).toEqual(['+ 起点', '+ 终点'])
 
     // 点「起点」→ 注入并清空暂存
     await wrapper.findAll('.slot-btn')[0].trigger('click')
@@ -158,15 +158,15 @@ describe('RouteControlPanel — 抓取/注入交互（2026-09-12 线上反馈回
     const wrapper = mountPanel()
     await flushPromises()
 
-    await wrapper.findAll('.slot-btn')[2].trigger('click') // 激活「途径点 2」
+    await wrapper.findAll('.slot-btn')[1].trigger('click') // 激活「终点」
     await flushPromises()
     await wrapper.find('.poi-item').trigger('mousedown')
     await flushPromises()
 
-    expect(slotLabels(wrapper)[2]).toContain('北海港')
+    expect(slotLabels(wrapper)[1]).toContain('北海港')
     expect(wrapper.find('.pending-chip').exists()).toBe(false)
-    // 旧实现会流转到「终点」；现口径注入即结束，终点保持空
-    expect(slotLabels(wrapper)[3]).toBe('+ 终点')
+    // 注入即结束，起点保持空（不再自动流转选中另一槽）
+    expect(slotLabels(wrapper)[0]).toBe('+ 起点')
   })
 
   it('下拉打开时点地图 → 不再被静默丢弃：收起下拉并抓取暂存', async () => {
@@ -184,9 +184,9 @@ describe('RouteControlPanel — 抓取/注入交互（2026-09-12 线上反馈回
     expect(wrapper.find('.pending-chip').exists()).toBe(true)
     expect(wrapper.find('.pending-text').text()).toContain('108.6200')
 
-    await wrapper.findAll('.slot-btn')[3].trigger('click')
+    await wrapper.findAll('.slot-btn')[1].trigger('click')
     await flushPromises()
-    expect(slotLabels(wrapper)[3]).toContain('108.6200')
+    expect(slotLabels(wrapper)[1]).toContain('108.6200')
   })
 
   it('范围内校验失败（三市之外）→ 提示且不抓取', async () => {
@@ -241,7 +241,7 @@ describe('RouteControlPanel — 抓取/注入交互（2026-09-12 线上反馈回
     expect(queryBtn.attributes('disabled')).toBeDefined()
 
     // 终点：激活槽 → 选搜索结果（快路径直接落入该槽）
-    await wrapper.findAll('.slot-btn')[3].trigger('click')
+    await wrapper.findAll('.slot-btn')[1].trigger('click')
     await flushPromises()
     await wrapper.find('.poi-item').trigger('mousedown')
     await flushPromises()
@@ -294,7 +294,7 @@ describe('RouteControlPanel — 抓取/注入交互（2026-09-12 线上反馈回
     await wrapper.findAll('.slot-btn')[0].trigger('click')
     await flushPromises()
     await mapPick(wrapper, 109.2, 21.6)
-    await wrapper.findAll('.slot-btn')[3].trigger('click')
+    await wrapper.findAll('.slot-btn')[1].trigger('click')
     await flushPromises()
 
     await wrapper.find('.route-btn.primary').trigger('click')
@@ -326,7 +326,7 @@ describe('RouteControlPanel — 抓取/注入交互（2026-09-12 线上反馈回
     await wrapper.findAll('.slot-btn')[0].trigger('click')
     await flushPromises()
     await mapPick(wrapper, 109.2, 21.6)
-    await wrapper.findAll('.slot-btn')[3].trigger('click')
+    await wrapper.findAll('.slot-btn')[1].trigger('click')
     await flushPromises()
 
     await wrapper.find('.route-btn.primary').trigger('click')
@@ -370,7 +370,7 @@ describe('RouteControlPanel — 抓取/注入交互（2026-09-12 线上反馈回
     await wrapper.findAll('.slot-btn')[0].trigger('click')
     await flushPromises()
     await mapPick(wrapper, 109.2, 21.6)
-    await wrapper.findAll('.slot-btn')[3].trigger('click')
+    await wrapper.findAll('.slot-btn')[1].trigger('click')
     await flushPromises()
 
     await wrapper.find('.route-btn.primary').trigger('click')
@@ -390,7 +390,7 @@ describe('RouteControlPanel — 抓取/注入交互（2026-09-12 线上反馈回
     await wrapper.findAll('.slot-btn')[0].trigger('click')
     await flushPromises()
     await mapPick(wrapper, 109.2, 21.6)
-    await wrapper.findAll('.slot-btn')[3].trigger('click')
+    await wrapper.findAll('.slot-btn')[1].trigger('click')
     await flushPromises()
 
     await wrapper.find('.route-btn.primary').trigger('click')

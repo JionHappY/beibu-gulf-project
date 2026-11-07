@@ -3,11 +3,11 @@
  * 航线分析控制面板（图层控制面板上方 4×4 槽位）：
  * 顶行「POI 搜索框」（3.8 宽通栏，常驻）——输入即搜，结果在搜索框下方下拉展开
  *（不覆盖搜索框本身；初始即载入一批兜底 POI 填充列表），点选填入激活槽并飞行定位；
- * 中部四个 1.8 宽槽位按钮（起点/途径1/途径2/终点，途径可空）——
+ * 中部两个 1.8 宽槽位按钮（起点/终点）——
  *   按钮主体 = 聚焦 POI 搜索（激活该槽）；右侧定位图标 = 地图选点模式（悬浮提示），
  *   仅限钦北防三市；
- * 底行「最短/最快」口径切换 + 「开始查询」主按钮 → 按起点→途径→终点链逐段查询（后端 /route/path 单段），
- *   段折线全部上图，总里程/时长 emit 给页面结果面板。
+ * 底行「最短/最快」口径切换 + 「开始查询」主按钮 → 按起点→终点单段查询（后端 /route/path），
+ *   路径折线图上，总里程/时长 emit 给页面结果面板。
  * 按钮规格对齐控制台类面板（2×1.8fr grid、0.8cell 行高、token 全走 --GCS-*）。
  */
 import { computed, onMounted, onUnmounted, ref } from 'vue'
@@ -110,11 +110,9 @@ const { cell8px, cell16px } = css
 const btnHeightCss = computed(() => `${cellPixel.value * ROW_HEIGHT_CELL}px`)
 const labelFontSizeCss = computed(() => `${cellPixel.value * 0.175}px`)
 
-/** 四槽状态：key 顺序即途径链顺序（from → waypoint-1 → waypoint-2 → to） */
+/** 两槽状态：key 顺序即查询顺序（from → to） */
 const slots = ref<Record<RouteSlotKey, RoutePoint | null>>({
   from: null,
-  'waypoint-1': null,
-  'waypoint-2': null,
   to: null,
 })
 
@@ -123,8 +121,6 @@ const activeSlot = ref<RouteSlotKey | null>(null)
 
 const SLOT_LABELS: Record<RouteSlotKey, string> = {
   from: '起点',
-  'waypoint-1': '途径点',
-  'waypoint-2': '途径点',
   to: '终点',
 }
 
@@ -230,9 +226,8 @@ function focusSlotWithPoi(key: RouteSlotKey): void {
 /**
  * 落点：把点写入指定槽（唯一注入入口）。
  *
- * 注入后清空暂存与激活态，**不再自动流转到下一槽**（2026-09-12 交互重构）。原「起点选完
- * 自动流转到终点」有两个副作用：①想选途径点时被迫先接受终点态；②下拉此时已关，再点「终点」
- * 会被判成"取消激活"（第一下没反应）——线上实测复现。
+ * 注入后清空暂存与激活态，**不再自动流转到下一槽**（2026-09-12 交互重构）。
+ * 原「起点选完自动流转到终点」会让下拉提前关闭，再点「终点」会被判成"取消激活"（第一下没反应）。
  */
 function fillSlot(key: RouteSlotKey, point: RoutePoint): void {
   slots.value[key] = point
@@ -342,14 +337,14 @@ function setMode(next: RouteModeKey): void {
   if (hasResult.value) void handleQuery()
 }
 
-// ---- 查询（逐段拼接） ----
+// ---- 查询（单段） ----
 
-/** 非空槽按链序展开：from → 途径… → to */
-function buildChain(): RoutePoint[] {
+/** 按槽序展开非空点：from → to */
+function buildPoints(): RoutePoint[] {
   return ROUTE_SLOT_KEYS.map((k) => slots.value[k]).filter((p): p is RoutePoint => p !== null)
 }
 
-function chainSignature(points: RoutePoint[], routeMode: RouteModeKey): string {
+function pointSignature(points: RoutePoint[], routeMode: RouteModeKey): string {
   return JSON.stringify([routeMode, points.map((p) => [p.lng, p.lat, p.name ?? null])])
 }
 
@@ -363,14 +358,15 @@ function chainSignature(points: RoutePoint[], routeMode: RouteModeKey): string {
  * v4 改为经 `taskStore.submitAndWait`：请求提交给后端异步任务域，
  * 状态与保活由 store 托管，页面卸载不影响（这正是「丢到后台跑」的语义）。
  *
- * ## 为什么仍是逐段循环
+ * ## 单段
  *
- * 后端 `route-path` 任务域只处理**单段**（from→to）。整链（最多 3 段）由本面板
- * 逐段串行编排：等上一段落地再提下一段 —— 这样后端零改动，且每段都能独立重试。
- * 段间不做并发：串行是既定口径（queue 并发上限 1），并发提交只会互相排队。
+ * 后端 `route-path` 任务域只处理单段（from→to）；途径点已按 v4.1 口径移除，
+ * 因此这里只提交起点→终点这一段。
  */
 async function handleQuery(): Promise<void> {
-  if (!hasFromTo.value) {
+  const from = slots.value.from
+  const to = slots.value.to
+  if (!from || !to) {
     showWarning('请先选择起点与终点')
     return
   }
@@ -379,70 +375,59 @@ async function handleQuery(): Promise<void> {
     return
   }
 
-  const chain = buildChain()
-  const requestSignature = chainSignature(chain, mode.value)
+  const points = buildPoints()
+  const requestedSignature = pointSignature(points, mode.value)
   const isRequestCurrent = (): boolean =>
-    chainSignature(buildChain(), mode.value) === requestSignature
+    pointSignature(buildPoints(), mode.value) === requestedSignature
   const segments: RoutePathResult[] = []
   calculating.value = true
 
   try {
-    for (let i = 0; i < chain.length - 1; i++) {
-      const a = chain[i] as RoutePoint
-      const b = chain[i + 1] as RoutePoint
+    // 单段提交给后端异步任务域；store 负责轮询与保活（页面卸载不中断）
+    const { slot } = await taskStore.submitAndWait({
+      route: ROUTE_PATH,
+      domain: 'route-path',
+      params: {
+        fromLng: from.lng,
+        fromLat: from.lat,
+        toLng: to.lng,
+        toLat: to.lat,
+        mode: mode.value,
+      },
+    })
 
-      // 逐段提交给后端异步任务域；store 负责轮询与保活（页面卸载不中断）
-      const { slot } = await taskStore.submitAndWait({
-        route: ROUTE_PATH,
-        domain: 'route-path',
-        params: {
-          fromLng: a.lng,
-          fromLat: a.lat,
-          toLng: b.lng,
-          toLat: b.lat,
-          mode: mode.value,
-        },
-      })
+    // 任务被取消 / 从 dock 移除：不再写图层
+    if (!slot || slot.status === 'cancelled') return
 
-      // 任务被取消 / 从 dock 移除：中止整链（不静默继续下一段）
-      if (!slot || slot.status === 'cancelled') return
+    // 🔴 组件已卸载：后续副作用无意义（且会污染 App 级图层管理器）。
+    // 后端任务仍由 taskStore 保活，不受此处影响。
+    if (disposed) return
 
-      // 🔴 组件已卸载：本链的后续副作用无意义（且会污染 App 级图层管理器）。
-      // 后端任务仍由 taskStore 保活，不受此处影响。
-      if (disposed) return
+    // 等待期间起点/终点/方式变了：旧结果已不是用户当前要的东西
+    if (!isRequestCurrent()) return
 
-      // 等待期间起点/终点/方式变了：旧链结果已不是用户当前要的东西
-      if (!isRequestCurrent()) return
-
-      if (slot.status === 'failed') {
-        showError(slot.error?.message ?? '路径查询失败', { fallback: '路径查询失败，请稍后重试' })
-        break
-      }
-
+    if (slot.status === 'failed') {
+      showError(slot.error?.message ?? '路径查询失败', { fallback: '路径查询失败，请稍后重试' })
+    } else {
       const resp = slot.result as RoutePathResponse | undefined
       if (!resp) {
         showError(null, { fallback: '路径查询返回为空' })
-        break
-      }
-
-      if (!resp.found) {
+      } else if (!resp.found) {
         const reasons: Record<string, string> = {
           origin_not_snapped: '未吸附到路网（离道路过远）',
           destination_not_snapped: '未吸附到路网（离道路过远）',
           unreachable: '两点间路网不连通',
         }
-        showWarning(
-          `第 ${i + 1} 段（${slotName(a)} → ${slotName(b)}）：${reasons[resp.reason] ?? '未找到可达路径'}`
-        )
-        break
+        showWarning(`起点 → 终点：${reasons[resp.reason] ?? '未找到可达路径'}`)
+      } else {
+        segments.push(resp as RoutePathResult)
       }
-      segments.push(resp as RoutePathResult)
     }
   } catch (err) {
     // 🔴 2026-09-19 修复（P0）：此前是 `try/finally` 无 catch。
     // 队列满（`TASK_QUEUE_LIMIT = 8`，洪涝文档自述"一次拖动就打满"）或后端不可达时
     // `submitAndWait` 必 reject ⇒ 此前表现为 unhandledrejection（main.ts 只计数、不提示），
-    // 且链末整段不执行 ⇒ 用户看到"点了没反应"，已成功的段也不上图。
+    // 用户看到"点了没反应"。
     if (!disposed) {
       showError(err, { fallback: '路径查询失败，请稍后重试' })
     }
@@ -453,11 +438,11 @@ async function handleQuery(): Promise<void> {
   // 组件已卸载 / 查询参数已变：不再写 App 级图层管理器、不再 emit
   if (disposed || !isRequestCurrent()) return
 
-  // 已成功段也上图（多段中断时保留可达部分），槽点始终刷新
+  // 查询失败/不可达时也刷新槽点，并清掉上一次的路径线
   props.updateRouteLayers(segments, collectSlots())
   hasResult.value = segments.length > 0
   if (segments.length > 0) {
-    emit('query-result', { segments, pointCount: chain.length })
+    emit('query-result', { segments, pointCount: points.length })
   }
 }
 
@@ -477,7 +462,7 @@ function collectSlots(): RouteSlot[] {
 }
 
 function handleClear(): void {
-  slots.value = { from: null, 'waypoint-1': null, 'waypoint-2': null, to: null }
+  slots.value = { from: null, to: null }
   activeSlot.value = null
   poiDropOpen.value = false
   pendingPoint.value = null
@@ -564,7 +549,7 @@ defineExpose({
           @input="onPoiInput"
         />
 
-        <!-- 中部四槽：2×2（1.8 宽）；主体点击 = 抓点注入 / 展开搜索，定位图标 = 地图选点 -->
+        <!-- 中部两槽：2×1（1.8 宽）；主体点击 = 抓点注入 / 展开搜索，定位图标 = 地图选点 -->
         <button
           v-for="key in ROUTE_SLOT_KEYS"
           :key="key"

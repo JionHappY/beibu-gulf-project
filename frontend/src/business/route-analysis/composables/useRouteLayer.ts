@@ -7,13 +7,13 @@ import type { LayerOptions, RoutePathResult } from '@/types'
 /** 路径线图层 id（业务命名空间前缀 route-；BLM registry / catalog / 渲染器 featureType 三处同源） */
 export const ROUTE_PATH_LAYER_ID = LAYER_KEYS.routePath
 
-/** 起点/途径点/终点标记图层 id */
+/** 起点/终点标记图层 id */
 export const ROUTE_ENDPOINT_LAYER_ID = LAYER_KEYS.routeEndpoint
 
-/** 选点槽位 key：起点 → 途径 1 → 途径 2 → 终点（途径可空） */
-export type RouteSlotKey = 'from' | 'waypoint-1' | 'waypoint-2' | 'to'
+/** 选点槽位 key：起点 → 终点 */
+export type RouteSlotKey = 'from' | 'to'
 
-export const ROUTE_SLOT_KEYS: RouteSlotKey[] = ['from', 'waypoint-1', 'waypoint-2', 'to']
+export const ROUTE_SLOT_KEYS: RouteSlotKey[] = ['from', 'to']
 
 /** 面板选点槽位：坐标 + 可选 POI 名称（POI 选点时有，按钮优先显示名称） */
 export interface RoutePoint {
@@ -43,7 +43,7 @@ const ROUTE_ENDPOINT_STYLE: LayerOptions = {
 
 /**
  * 由多段路径结果构建线要素集合（每段一个 LineString Feature，同 featureType 同层）。
- * 前端逐段拼接：起点→途径1→途径2→终点按非空槽顺序分段查询，后端 /route/path 仅支持单段。
+ * 前端按槽序查询：起点→终点；后端 /route/path 仅支持单段。
  * 单段 coordinates <2 点（未吸附无折线）跳过；全部无效返回空集。
  */
 function buildRouteGeoJson(segments: RoutePathResult[]): FeatureCollection<LineString> {
@@ -60,7 +60,7 @@ function buildRouteGeoJson(segments: RoutePathResult[]): FeatureCollection<LineS
   return { type: 'FeatureCollection', features }
 }
 
-/** 由四槽选点构建端点标记点集（role 区分 from/waypoint-1/waypoint-2/to，name 随 properties 供气泡/调试） */
+/** 由两槽选点构建端点标记点集（role 区分 from/to，name 随 properties 供气泡/调试） */
 function buildEndpointGeoJson(slots: RouteSlot[]): FeatureCollection {
   const features: Feature[] = []
   for (const slot of slots) {
@@ -99,7 +99,7 @@ export function useRouteLayer(): UseRouteLayerReturn {
   const owned = useOwnedLayers('route-analysis')
 
   function updateRouteLayers(segments: RoutePathResult[], slots: RouteSlot[]): void {
-    // 端点标记层：始终按四槽刷新
+    // 端点标记层：始终按两槽刷新
     const endpointGeo = buildEndpointGeoJson(slots)
     if (endpointGeo.features.length > 0) {
       // 幂等上图：注册与更新走同一条调用；空集走下面的 unregister 清层

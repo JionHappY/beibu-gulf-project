@@ -472,7 +472,7 @@ describe('useTaskStore', () => {
     })
   })
 
-  describe('waitForResult / submitAndWait（v4-S3 逐段串行编排原语）', () => {
+  describe('waitForResult / submitAndWait（v4-S3 任务编排原语）', () => {
     const base = {
       route: '/route-analysis',
       domain: 'route-path' as const,

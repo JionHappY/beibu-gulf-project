@@ -92,15 +92,7 @@ function mountLayerHook() {
 describe('useRouteLayer', () => {
   it('有结果且有起终点 → 注册两条图层（路径线 featureType 同层 id）', () => {
     const { fake, api } = mountLayerHook()
-    api.updateRouteLayers(
-      [RESULT],
-      [
-        SLOT('from', 108.6, 21.6),
-        { key: 'waypoint-1', point: null },
-        { key: 'waypoint-2', point: null },
-        SLOT('to', 108.8, 21.8),
-      ]
-    )
+    api.updateRouteLayers([RESULT], [SLOT('from', 108.6, 21.6), SLOT('to', 108.8, 21.8)])
     expect(fake.manager.has(ROUTE_PATH_LAYER_ID)).toBe(true)
     expect(fake.manager.has(ROUTE_ENDPOINT_LAYER_ID)).toBe(true)
     expect(fake.calls).toContain(`register:${ROUTE_PATH_LAYER_ID}`)
@@ -164,20 +156,17 @@ describe('useRouteLayer', () => {
     expect(fake2.manager.has(ROUTE_PATH_LAYER_ID)).toBe(false)
   })
 
-  it('端点几何：四槽仅非空槽产出，role 随 properties，POI 名带上', () => {
+  it('端点几何：两槽仅有限坐标产出，role 随 properties，POI 名带上', () => {
     const { fake, api } = mountLayerHook()
     const slots: RouteSlot[] = [
       { key: 'from', point: { lng: 1, lat: 2, name: '钦州港' } },
-      { key: 'waypoint-1', point: null },
-      { key: 'waypoint-2', point: { lng: Number.NaN, lat: 4 } },
-      { key: 'to', point: { lng: 3, lat: 4 } },
+      { key: 'to', point: { lng: Number.NaN, lat: 4 } },
     ]
     api.updateRouteLayers([], slots)
     const geo = endpointData(fake)
-    expect(geo.features.length).toBe(2)
+    expect(geo.features.length).toBe(1)
     expect(geo.features[0].properties?.role).toBe('from')
     expect(geo.features[0].properties?.name).toBe('钦州港')
-    expect(geo.features[1].properties?.role).toBe('to')
   })
 })
 // D3 去 export：buildRouteGeoJson / buildEndpointGeoJson 已收为模块内部；本组是「公开面收窄」本身的判据。

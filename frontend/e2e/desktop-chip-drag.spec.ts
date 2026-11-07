@@ -113,7 +113,7 @@ test('桌面档：把结果芯片拖到导航项上，换到该分析页且芯�
   await expect(slots.nth(0)).toBeVisible({ timeout: 30_000 })
   await slots.nth(0).click()
   await page.locator('.poi-item').first().click()
-  await slots.nth(3).click()
+  await slots.nth(1).click()
   await page.locator('.poi-item').nth(1).click()
   await page.getByRole('button', { name: '开始查询' }).click()
 

@@ -152,10 +152,10 @@ test.describe('任务全流程（提交→轮询→done→结果上屏）', () =
     await expect(slotBtns.nth(0)).toContainText('钦州港西港区')
 
     // 选终点：点「终点」槽 → 下拉重新展开 → 点第二个 POI（坐标不同，from≠to）
-    await slotBtns.nth(3).click()
+    await slotBtns.nth(1).click()
     await expect(page.locator('.poi-drop')).toBeVisible()
     await page.locator('.poi-item').nth(1).click()
-    await expect(slotBtns.nth(3)).toContainText('防城港渔澫港区')
+    await expect(slotBtns.nth(1)).toContainText('防城港渔澫港区')
 
     // 「开始查询」可用后点击，触发 taskStore.submitAndWait
     const queryBtn = page.getByRole('button', { name: '开始查询' })

@@ -1,8 +1,8 @@
 <script setup lang="ts">
 /**
  * 航线分析业务页（Cesium 引擎驱动）：
- * 控制面板（右上图层控制上方 4×4）选点 → 逐段调 /route/path（Nest + pgRouting）→
- * 多段路径线 + 端点标记图层；左栏为结果摘要面板。
+ * 控制面板（右上图层控制上方 4×4）选点 → 调 /route/path（Nest + pgRouting）→
+ * 路径线 + 端点标记图层；左栏为结果摘要面板。
  * 选点双入口：POI 搜索（Nest /route/pois，2026-09-30 自老选址域迁入）或地图点击（限钦北防三市，见 RouteControlPanel）。
  * 引擎固定 3D（Cesium）：由路由 meta.engine='3d' 经 App 路由守卫统一驱动，本页不再自行切换/还原，
  * 与浸没分析一致——同为 3D 的路由互切时 UnifiedMap 直接复用同一 Viewer，不卸载、不重建上下文。
@@ -196,7 +196,7 @@ function handleQueryResult(payload: { segments: RoutePathResult[]; pointCount: n
   const netM = segments.reduce((s, seg) => s + seg.distanceM, 0)
   const snapM = segments.reduce((s, seg) => s + seg.snapDistanceM.from + seg.snapDistanceM.to, 0)
   summary.value = {
-    // 主行只合计路网里程；接驳单独透出（多段时接驳含段间吸附往返，不与路网里程混算）
+    // 主行只合计路网里程；接驳单独透出，不与路网里程混算
     totalKm: netM / 1000,
     totalMin: segments.reduce((s, seg) => s + seg.durationMin, 0),
     segCount: segments.length,
@@ -485,9 +485,7 @@ onUnmounted(() => {
               </div>
               <div class="summary-sub">含接驳 {{ summary.totalWithSnapKm.toFixed(1) }} km</div>
             </template>
-            <div v-else class="result-hint">
-              在右侧面板选择起点与终点后点击「开始查询」；途径点可选（最多 2 个）
-            </div>
+            <div v-else class="result-hint">在右侧面板选择起点与终点后点击「开始查询」</div>
             <button class="clear-btn" @click="panelRef?.handleClear()">清除全部</button>
           </div>
         </GCSPanel>

@@ -15,6 +15,7 @@ import {
   GCSPanel,
   isImageOverlayCapable,
   isTiles3DCapable,
+  SecondaryConsoleEntry,
   StackSlot,
   tallyGroups,
   type TilesetJson,
@@ -505,6 +506,10 @@ onUnmounted(() => {
         />
       </template>
     </AppLayout>
+    <!-- 图层控制入口：本页原先没有 SecondaryConsoleEntry，收起后无法再开 -->
+    <div class="secondary-entry-dock">
+      <SecondaryConsoleEntry />
+    </div>
     <StackSlot :items="stackItems" @restore="restore" />
   </div>
 </template>
@@ -514,6 +519,15 @@ onUnmounted(() => {
   width: 100%;
   height: 100%;
   pointer-events: none;
+}
+
+.secondary-entry-dock {
+  position: absolute;
+  left: 20px;
+  bottom: 20px;
+  z-index: 5;
+  width: 128px;
+  pointer-events: auto;
 }
 
 .result-panel {

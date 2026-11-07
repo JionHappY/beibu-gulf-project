@@ -11,6 +11,7 @@ import {
   AppLayout,
   GCSPanel,
   isWater3DCapable,
+  SecondaryConsoleEntry,
   StackSlot,
   TaskPanelSlot,
   useBusinessLayers,
@@ -574,6 +575,10 @@ onUnmounted(() => {
         </TaskPanelSlot>
       </template>
     </AppLayout>
+    <!-- 图层控制入口：本页原先只有报告面板里的「DEM 参考」，收起后无法再开 -->
+    <div class="secondary-entry-dock">
+      <SecondaryConsoleEntry />
+    </div>
     <StackSlot :items="stackItems" @restore="restore" />
   </div>
 </template>
@@ -588,6 +593,15 @@ onUnmounted(() => {
 }
 
 .flood-analysis-page :deep(.GCS-panel) {
+  pointer-events: auto;
+}
+
+.secondary-entry-dock {
+  position: absolute;
+  left: 20px;
+  bottom: 20px;
+  z-index: 5;
+  width: 128px;
   pointer-events: auto;
 }
 

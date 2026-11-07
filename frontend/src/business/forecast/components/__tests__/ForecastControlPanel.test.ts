@@ -32,12 +32,12 @@ import ForecastControlPanel from '../ForecastControlPanel.vue'
  *  doForecastUpdate 为桩：与 ForecastPage.vue 的 provide 路径同形，且注入靠组件树而非 key 字面量。 */
 const doForecastUpdate = vi.fn(() => Promise.resolve())
 let router: Router
-function mountPanel(attach = false) {
+function mountPanel(attach = false, props: Record<string, unknown> = {}) {
   const Parent = defineComponent({
     setup() {
       const orchestrator = provideForecastOrchestrator({ updateForecastLayer: async () => {} })
       orchestrator.doForecastUpdate = doForecastUpdate
-      return () => h(ForecastControlPanel)
+      return () => h(ForecastControlPanel, props)
     },
   })
   return mount(Parent, {
@@ -407,6 +407,36 @@ describe('图层控制入口（G3）', () => {
     await btn.trigger('click')
     expect(c.open.value).toBe(true)
     expect(btn.text()).toContain('收起图层')
+    wrapper.unmount()
+  })
+})
+
+describe('分流分析入口（D2=C）', () => {
+  beforeEach(async () => {
+    setActivePinia(createPinia())
+    router = createRouter({ history: createMemoryHistory(), routes: [] })
+    await router.push('/')
+    await router.isReady()
+  })
+
+  it('份额行有数据时可用，点击发出 locate-diversion（不新开面板）', async () => {
+    const wrapper = mountPanel()
+    const btn = wrapper.find('button[data-testid="diversion-entry"]')
+
+    expect(btn.attributes('disabled')).toBeUndefined()
+    expect(btn.attributes('title')).toBe('定位到底部分流份额')
+
+    await btn.trigger('click')
+    expect(wrapper.findComponent(ForecastControlPanel).emitted('locate-diversion')).toHaveLength(1)
+    wrapper.unmount()
+  })
+
+  it('份额行无数据时禁用并说明原因', () => {
+    const wrapper = mountPanel(false, { diversionReady: false })
+    const btn = wrapper.find('button[data-testid="diversion-entry"]')
+
+    expect(btn.attributes('disabled')).toBeDefined()
+    expect(btn.attributes('title')).toBe('分流数据尚未就绪')
     wrapper.unmount()
   })
 })

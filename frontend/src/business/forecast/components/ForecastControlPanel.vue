@@ -11,8 +11,8 @@ import {
   DEFAULT_CONFIDENCE,
   type IconName,
   ROW_HEIGHT_CELL,
-  SliderSelectCard,
   showToast,
+  SliderSelectCard,
   useGCS,
 } from '@/shared'
 import { useForecastStore } from '@/stores'
@@ -25,6 +25,11 @@ import {
   timelineYears,
   yearMarkPosition,
 } from '../timeline'
+
+const props = withDefaults(defineProps<{ diversionReady?: boolean }>(), {
+  diversionReady: true,
+})
+const emit = defineEmits<{ (e: 'locate-diversion'): void }>()
 
 const forecastState = useForecastStore()
 
@@ -440,9 +445,21 @@ function hintOnce() {
       </div>
     </div>
 
-    <!-- 底部入口位：先落一个真实的图层控制开关；分流入口等 D2 裁决后再并排。 -->
+    <!-- 底部入口位：图层控制开关 + D2=C 的「分流分析」定位入口（不建桑基）。
+         分流入口只在份额行有数据时可用，避免点开空白。 -->
     <div class="action-row">
       <SecondaryConsoleEntry />
+      <button
+        type="button"
+        class="diversion-entry"
+        data-testid="diversion-entry"
+        :disabled="!props.diversionReady"
+        :title="props.diversionReady ? '定位到底部分流份额' : '分流数据尚未就绪'"
+        @click="emit('locate-diversion')"
+      >
+        <span class="entry-icon" aria-hidden="true">🔀</span>
+        <span>分流分析</span>
+      </button>
     </div>
   </div>
 </template>
@@ -498,6 +515,42 @@ function hintOnce() {
 .action-row {
   flex: 0 0 auto;
   display: flex;
+  gap: v-bind(cell8px);
+}
+
+/* 与 SecondaryConsoleEntry 同款：并排时各占一半，不新增第二种按钮尺寸。 */
+.diversion-entry {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  height: 40px;
+  padding: 0 8px;
+  border: 1px solid var(--GCS-border-default);
+  border-radius: var(--GCS-radius-lg);
+  background: var(--GCS-bg-panel);
+  color: var(--GCS-text-regular);
+  cursor: pointer;
+  font-size: v-bind(smallFontSizeCss);
+  transition:
+    background-color var(--GCS-duration-base),
+    border-color var(--GCS-duration-base);
+}
+
+.diversion-entry:hover:not(:disabled) {
+  border-color: var(--GCS-color-primary);
+  background: var(--GCS-bg-hover);
+}
+
+.diversion-entry:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.entry-icon {
+  font-size: v-bind(iconFontSizeCss);
+  line-height: 1;
 }
 
 .ind-icon {

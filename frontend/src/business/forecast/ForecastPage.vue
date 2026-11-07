@@ -7,7 +7,7 @@
    */
 -->
 <script setup lang="ts">
-import { computed, onUnmounted, watch } from 'vue'
+import { computed, nextTick, onUnmounted, ref, watch } from 'vue'
 
 import { AppLayout, GCSPanel, StackSlot, useStackablePanels } from '@/core'
 import { DEFAULT_LAYER_ORDER, forecastLayerId, logger, useProfileSnapshot } from '@/shared'
@@ -44,6 +44,25 @@ const shareTotalText = computed(() =>
 )
 function sharePct(share: number): string {
   return `${Math.round(share * 100)}%`
+}
+
+// D2=C：分流分析不再新建桑基图，入口把视口定向到已有的份额行并短暂高亮。
+// 份额行在港口对比面板里；若该面板被用户叠进 StackSlot，先还原再定位。
+const shareLineRef = ref<HTMLElement | null>(null)
+const shareHighlighted = ref(false)
+let shareHighlightTimer: ReturnType<typeof setTimeout> | null = null
+
+function locateDiversion(): void {
+  if (isStacked('bar')) restorePanel('bar')
+  void nextTick(() => {
+    shareLineRef.value?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+    shareHighlighted.value = true
+    if (shareHighlightTimer) clearTimeout(shareHighlightTimer)
+    shareHighlightTimer = setTimeout(() => {
+      shareHighlighted.value = false
+      shareHighlightTimer = null
+    }, 1600)
+  })
 }
 
 /**
@@ -141,6 +160,10 @@ watch(
 
 onUnmounted(() => {
   cancelAll()
+  if (shareHighlightTimer) {
+    clearTimeout(shareHighlightTimer)
+    shareHighlightTimer = null
+  }
   // 图层注销不由本页负责：注册经 useOwnedLayers 登记归属，卸载由 onScopeDispose 统一清
   forecastState.reset()
 })
@@ -206,7 +229,9 @@ onUnmounted(() => {
           <!-- G2：分流结论（三港分摊）并入预测页；无数据时整行不渲染，不留空壳 -->
           <div
             v-if="sharePorts.length"
+            ref="shareLineRef"
             class="share-line"
+            :class="{ 'share-line--highlight': shareHighlighted }"
             data-testid="diversion-share"
             :title="`量产口径：西江→运河转移量 ${shareTotalText} 万吨，按港分摊`"
           >
@@ -228,7 +253,10 @@ onUnmounted(() => {
       </template>
       <template #right>
         <GCSPanel :w="4" :h="4" anchor="top-right" :offset-x="0" :offset-y="1.25">
-          <ForecastControlPanel />
+          <ForecastControlPanel
+            :diversion-ready="sharePorts.length > 0"
+            @locate-diversion="locateDiversion"
+          />
         </GCSPanel>
       </template>
     </AppLayout>
@@ -291,6 +319,21 @@ onUnmounted(() => {
 
 .share-line__port {
   color: var(--GCS-text-secondary);
+}
+
+/* 定位后的短暂高亮：只改背景，不位移份额行，避免图表区域重排。 */
+.share-line--highlight {
+  animation: share-line-flash 1.6s ease-out;
+}
+
+@keyframes share-line-flash {
+  0% {
+    background: var(--GCS-bg-active);
+  }
+
+  100% {
+    background: transparent;
+  }
 }
 
 /* P1-1 降级角标：绝对定位覆盖在图表右上角，不参与布局流 ⇒ 正常路径（不渲染）布局零变化。

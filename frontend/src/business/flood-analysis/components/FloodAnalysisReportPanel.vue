@@ -6,12 +6,14 @@
 
 import { computed } from 'vue'
 
+import { useSecondaryConsole } from '@/core'
 import { formatLoss, useGCS } from '@/shared'
 import { useFloodStore } from '@/stores'
 
 import { summarizeFacilityTypes } from '../constants/facilityTypeLabels'
 
 const floodStore = useFloodStore()
+const { openConsole } = useSecondaryConsole()
 const { cellPixel, css } = useGCS()
 // 解构出 CSS 变量供 v-bind() 使用
 const { cell16px } = css
@@ -168,6 +170,17 @@ const staleInfo = computed<{ badge: string; detail: string } | null>(() => {
         }}</span>
       </div>
     </div>
+    <!-- 报告的平均/最大水深来自 6 档 DEM 反演表：入口贴着被解释的数字，
+         点开把全局 4×4 槽位换成表，返回由表内按钮负责。 -->
+    <button
+      type="button"
+      class="dem-ref-entry"
+      data-testid="dem-ref-entry"
+      title="查看 6 档海洋 DEM 反演参考表"
+      @click="openConsole('ocean-dem')"
+    >
+      DEM 参考
+    </button>
 
     <!-- 灰色内容区：3.8宽×2.8高，距标题下方0.6cell、左右各0.1cell -->
     <div class="report-content" :style="contentStyle">
@@ -197,6 +210,28 @@ const staleInfo = computed<{ badge: string; detail: string } | null>(() => {
   display: flex;
   flex-direction: column;
   position: relative;
+}
+
+/* DEM 参考入口：绝对定位在标题行右侧，不挤占居中标题与 2.8cell 行区。
+   它是真实内容入口（点开有 6 档表），不是 D3 裁掉的占位按钮。 */
+.dem-ref-entry {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  height: 18px;
+  padding: 0 4px;
+  border: 1px solid var(--GCS-border-default);
+  border-radius: var(--GCS-radius-sm);
+  background: var(--GCS-bg-panel);
+  color: var(--GCS-text-muted);
+  font-size: var(--GCS-font-size-xs);
+  line-height: 1;
+  cursor: pointer;
+}
+
+.dem-ref-entry:hover {
+  border-color: var(--GCS-color-primary);
+  color: var(--GCS-color-primary);
 }
 
 /* 标题区：居中显示 */

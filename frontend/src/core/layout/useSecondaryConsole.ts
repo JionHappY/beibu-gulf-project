@@ -5,14 +5,14 @@
  * 槽位里的 LayerControlPanel 全站唯一。页面只声明入口与图层顺序，
  * 不再各自 new 一份 4×4 面板（原 4 份副本，违反 AGENTS §七-7）。
  *
- * 当前只有 'layers' 一个内容面板；P2 接桑基、P3 接海洋 DEM 时，
- * 由入口调用 setActivePanel 把图层控制换下去，不新增第二套槽位。
+ * 内容面板由入口调用 openConsole/setActivePanel 换下去，不新增第二套槽位。
+ * 当前两种：'layers'（图层控制）与 'ocean-dem'（浸没页六档海洋 DEM 参考表）。
  */
 
 import { type Ref, ref } from 'vue'
 
 /** 槽位当前承载的二级面板；后续内容在此联合类型上扩，不另开口子 */
-type SecondaryConsolePanel = 'layers'
+type SecondaryConsolePanel = 'layers' | 'ocean-dem'
 
 interface UseSecondaryConsoleReturn {
   /** 槽位是否展开（false = 整体移出，入口再次 openConsole 才回来） */

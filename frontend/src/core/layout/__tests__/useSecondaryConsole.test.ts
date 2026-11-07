@@ -25,6 +25,15 @@ describe('useSecondaryConsole 槽位状态', () => {
     expect(c.activePanel.value).toBe('layers')
   })
 
+  it('openConsole 可切到海洋 DEM 参考面板并保持展开', () => {
+    const c = useSecondaryConsole()
+    c.closeConsole()
+
+    c.openConsole('ocean-dem')
+    expect(c.open.value).toBe(true)
+    expect(c.activePanel.value).toBe('ocean-dem')
+  })
+
   it('toggleConsole 在开/关之间切换', () => {
     const c = useSecondaryConsole()
     c.toggleConsole()

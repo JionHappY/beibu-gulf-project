@@ -19,6 +19,7 @@ vi.mock('@/shared', async (importOriginal) => {
   }
 })
 
+import { useSecondaryConsole } from '@/core'
 import { useFloodStore } from '@/stores'
 import type { FloodStatistics } from '@/types'
 
@@ -69,6 +70,14 @@ describe('FloodAnalysisReportPanel — 失败/空/真实零', () => {
     expect(badge.text()).toBe('上次结果（水位 5m）')
     expect(badge.attributes('title')).toContain('水位 7m 请求失败')
     expect(badge.attributes('title')).toContain('仍显示上次结果（水位 5m）')
+    wrapper.unmount()
+  })
+
+  it('DEM 参考入口把全局槽位切到 ocean-dem（真实内容入口，非占位）', async () => {
+    useSecondaryConsole().reset()
+    const wrapper = mount(FloodAnalysisReportPanel)
+    await wrapper.find('[data-testid="dem-ref-entry"]').trigger('click')
+    expect(useSecondaryConsole().activePanel.value).toBe('ocean-dem')
     wrapper.unmount()
   })
 

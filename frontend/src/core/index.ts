@@ -32,6 +32,7 @@ export { default as BottomNavBar } from './layout/components/BottomNavBar.vue'
 export { default as GCSButton } from './layout/components/GCSButton.vue'
 export { default as GCSPanel } from './layout/components/GCSPanel.vue'
 export { default as NavButton } from './layout/components/NavButton.vue'
+export { default as SecondaryConsoleEntry } from './layout/components/SecondaryConsoleEntry.vue'
 export { default as SecondaryConsoleSlot } from './layout/components/SecondaryConsoleSlot.vue'
 // v4 任务体系（S5/S6）：投递区 / 进度环 / 可拖面板包装
 // 🔴 2026-09-19 语义修正后删除：

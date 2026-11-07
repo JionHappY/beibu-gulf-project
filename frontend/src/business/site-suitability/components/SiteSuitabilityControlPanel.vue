@@ -7,7 +7,7 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 
-import { useSliderFocus } from '@/core'
+import { SecondaryConsoleEntry, useSliderFocus } from '@/core'
 import { ROW_HEIGHT_CELL, SliderSelectCard, useGCS } from '@/shared'
 import { COMPARE_TOLERANCE } from '@/shared/constants'
 import { useSiteSuitabilityStore } from '@/stores'
@@ -105,6 +105,11 @@ onUnmounted(() => {
         </div>
       </div>
     </div>
+
+    <!-- 底部入口位：真实图层开关；占位按钮按 D3 裁决后再加。 -->
+    <div class="action-row">
+      <SecondaryConsoleEntry />
+    </div>
   </div>
 </template>
 
@@ -118,6 +123,11 @@ onUnmounted(() => {
   box-sizing: border-box;
   gap: v-bind(cell8px);
   overflow-y: auto;
+}
+
+.action-row {
+  flex: 0 0 auto;
+  display: flex;
 }
 
 .criteria-grid {

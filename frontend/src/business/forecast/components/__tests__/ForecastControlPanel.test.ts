@@ -393,7 +393,7 @@ describe('图层控制入口（G3）', () => {
   it('默认展开图层控制；点按钮收起，再点调出（真实入口）', async () => {
     const wrapper = mountPanel()
     const c = useSecondaryConsole()
-    const btn = wrapper.find('button.layer-toggle')
+    const btn = wrapper.find('button.secondary-entry')
 
     expect(c.open.value).toBe(true)
     expect(btn.text()).toContain('收起图层')

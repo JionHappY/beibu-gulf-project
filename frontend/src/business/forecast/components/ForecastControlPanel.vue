@@ -3,7 +3,7 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, reactive, watch } from 'vue'
 
-import { useSecondaryConsole, useSliderFocus } from '@/core'
+import { SecondaryConsoleEntry, useSliderFocus } from '@/core'
 import {
   AppIcon,
   CANAL_SCENARIO_OPTIONS,
@@ -30,9 +30,6 @@ const forecastState = useForecastStore()
 
 // 滑块专注模式（安卓控制中心风格）：拖动滑块时隐藏其他面板，只留本面板
 const { beginSliderFocusOnRange, endSliderFocus } = useSliderFocus()
-
-// 图层控制入口（G3）：二级控制台默认展开，按钮把它收起/调出；面板本体仍只由 AppLayout 持有。
-const { open: layersOpen, toggleConsole } = useSecondaryConsole()
 
 // GCS 尺寸变量：cell8px=0.1cell 面板内边距；cell16px=0.2cell 按钮间距
 const { cellPixel, css } = useGCS()
@@ -445,16 +442,7 @@ function hintOnce() {
 
     <!-- 底部入口位：先落一个真实的图层控制开关；分流入口等 D2 裁决后再并排。 -->
     <div class="action-row">
-      <button
-        type="button"
-        class="action-btn layer-toggle gcs-chip"
-        :class="{ sel: layersOpen }"
-        :aria-pressed="layersOpen"
-        @click="toggleConsole"
-      >
-        <span class="action-icon">🗺</span>
-        <span>{{ layersOpen ? '收起图层' : '图层控制' }}</span>
-      </button>
+      <SecondaryConsoleEntry />
     </div>
   </div>
 </template>
@@ -510,40 +498,6 @@ function hintOnce() {
 .action-row {
   flex: 0 0 auto;
   display: flex;
-}
-
-.action-btn {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: v-bind(cell8px);
-  height: 40px;
-  padding: 0 8px;
-  border: 1px solid var(--GCS-border-default);
-  border-radius: var(--GCS-radius-lg);
-  background: var(--GCS-bg-panel);
-  color: var(--GCS-text-regular);
-  cursor: pointer;
-  font-size: v-bind(smallFontSizeCss);
-  transition:
-    background-color var(--GCS-duration-base),
-    border-color var(--GCS-duration-base);
-}
-
-.action-btn:hover {
-  border-color: var(--GCS-color-primary);
-  background: var(--GCS-bg-hover);
-}
-
-.action-btn.sel {
-  border-color: var(--GCS-color-primary);
-  color: var(--GCS-color-primary);
-}
-
-.action-icon {
-  font-size: v-bind(iconFontSizeCss);
-  line-height: 1;
 }
 
 .ind-icon {

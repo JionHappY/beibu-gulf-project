@@ -60,6 +60,21 @@ describe('site-suitability repository 出库坐标 SRID', () => {
     await repo.fetchCellsAt(0.5, 0.99, 0.02)
     const aggregated = query.mock.calls[1][0]
     expect(aggregated).toContain('ST_Transform(ST_Centroid(ST_Collect(geom)), 4326)')
-    expect(aggregated).toContain('GROUP BY floor(ST_X(ST_Transform(geom, 4326)) / $4)')
+    expect(aggregated).toContain('GROUP BY floor(ST_X(ST_Transform(c.geom, 4326)) / $4)')
+  })
+})
+
+describe('site-suitability repository 5m 淹没面实判', () => {
+  it('🔴 两个分支都带 5m 淹没面 CTE 与 flood_exposed 列', async () => {
+    const { repo, query } = repoWithSqlCapture()
+    await repo.fetchCellsAt(0.5, 0.99, 0)
+    expect(query.mock.calls[0][0]).toContain('ST_Union(ST_MakeValid(geom))')
+    expect(query.mock.calls[0][0]).toContain('level = 5.0')
+    expect(query.mock.calls[0][0]).toContain('AS flood_exposed')
+
+    await repo.fetchCellsAt(0.5, 0.99, 0.02)
+    expect(query.mock.calls[1][0]).toContain('ST_Union(ST_MakeValid(geom))')
+    expect(query.mock.calls[1][0]).toContain('bool_or(ST_Intersects(c.geom, flood.g))')
+    expect(query.mock.calls[1][0]).toContain('AS flood_exposed')
   })
 })

@@ -37,7 +37,8 @@ export const LAND_CLASS_SCORE: Readonly<Record<number, number>> = {
 }
 
 /**
- * ── 浸没安全适宜度 ← mean_elev（EGM96 正高，与 flood_levels 档位同基准）──
+ * ── 浸没安全适宜度 ← mean_elev 代理（EGM96 正高，与 flood_levels 档位同基准）──
+ * 仅当格未命中 5m 淹没面且无其他实判证据时用于代理；命中 5m 面一律 0.05（scoring.ts）。
  * 〔作者设定，无硬文献〕阈值 1m/6m：北部湾沿海 0~6m 带直接暴露于台风风暴潮增水，
  * 本系统淹没档位体系（flood_levels 0~25m、251 档、0.1m 步长）即为此而建——阈值
  * 取档位体系内的工程判断：<1m 滩涂/高潮位即淹（0.05）；1~6m 线性升至 1.0；

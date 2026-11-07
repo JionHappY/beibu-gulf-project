@@ -51,6 +51,8 @@ export interface FactorCell {
   distPortM: number | null
   distRoadM: number | null
   kdeMass: number | null
+  /** 5m 淹没面内（真实淹没面实判；缺数据时不传，回落高程代理） */
+  floodExposed?: boolean
 }
 
 export interface CellScore {
@@ -71,7 +73,9 @@ function demandScore(kdeMass: number, kdeP99: number): number {
  * （园区 3h 辐射外）⇒ demand 子分按 0（无产业密度证据）。
  */
 export function cellScore(cell: FactorCell, w: SuitabilityWeights, kdeP99: number): CellScore {
-  const sInundation = inundationScore(cell.meanElevM)
+  // 浸没准则优先用 5m 淹没面实判：高程只是无淹没面时的代理，单独用它会把
+  // 「高程高但仍在 5m 淹没面内」的格误判为安全（AHP 浸没权重 0.43，代价最大）。
+  const sInundation = cell.floodExposed ? 0.05 : inundationScore(cell.meanElevM)
   const sTerrain = terrainScore(cell.meanSlopeDeg)
   const sLand = cell.landClass != null ? (LAND_CLASS_SCORE[cell.landClass] ?? 0.5) : 0.5
   const sAccess = accessScore(cell.distPortM, cell.distRoadM)

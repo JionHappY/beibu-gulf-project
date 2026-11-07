@@ -101,6 +101,7 @@ export class SiteSuitabilityService {
         distPortM: row.dist_port_m,
         distRoadM: row.dist_road_m,
         kdeMass: row.kde_mass,
+        floodExposed: row.flood_exposed === true,
       }
       const cs: CellScore = cellScore(cell, weights, kdeP99)
       return {

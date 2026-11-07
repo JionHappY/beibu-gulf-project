@@ -23,6 +23,8 @@ interface SuitabilityCellRow {
   dist_port_m: number | null
   dist_road_m: number | null
   kde_mass: number | null
+  /** 是否落在 5m 淹没面内（AHP 浸没准则的实判依据；无淹没数据时为 false） */
+  flood_exposed: boolean | null
 }
 
 @Injectable()
@@ -48,12 +50,18 @@ export class SiteSuitabilityRepository {
   ): Promise<SuitabilityCellRow[]> {
     if (!(resolution > 0)) {
       const r = await this.db.query<SuitabilityCellRow>(
-        `SELECT id,
+        `WITH flood AS (
+           SELECT ST_Union(ST_MakeValid(geom)) AS g
+             FROM flood_levels
+            WHERE level = 5.0 AND geom IS NOT NULL
+         )
+         SELECT id,
                 ST_X(ST_Transform(geom, 4326)) AS lon,
                 ST_Y(ST_Transform(geom, 4326)) AS lat,
                 mean_elev_m, mean_slope_deg, land_frac,
-                land_class, dist_port_m, dist_road_m, kde_mass
-           FROM suitability_cells
+                land_class, dist_port_m, dist_road_m, kde_mass,
+                COALESCE(ST_Intersects(c.geom, flood.g), false) AS flood_exposed
+           FROM suitability_cells c LEFT JOIN flood ON TRUE
           WHERE land_frac >= $1 AND land_frac <= $2 AND dist_port_m <= $3
           ORDER BY id`,
         [minLandFrac, maxLandFrac, maxPortDistanceM]
@@ -61,7 +69,12 @@ export class SiteSuitabilityRepository {
       return r.rows
     }
     const r = await this.db.query<SuitabilityCellRow>(
-      `SELECT min(id) AS id,
+      `WITH flood AS (
+           SELECT ST_Union(ST_MakeValid(geom)) AS g
+             FROM flood_levels
+            WHERE level = 5.0 AND geom IS NOT NULL
+         )
+         SELECT min(id) AS id,
               ST_X(ST_Transform(ST_Centroid(ST_Collect(geom)), 4326)) AS lon,
               ST_Y(ST_Transform(ST_Centroid(ST_Collect(geom)), 4326)) AS lat,
               avg(mean_elev_m) AS mean_elev_m,
@@ -70,11 +83,12 @@ export class SiteSuitabilityRepository {
               mode() WITHIN GROUP (ORDER BY land_class) AS land_class,
               avg(dist_port_m) AS dist_port_m,
               avg(dist_road_m) AS dist_road_m,
-              avg(kde_mass) AS kde_mass
-         FROM suitability_cells
+              avg(kde_mass) AS kde_mass,
+              bool_or(ST_Intersects(c.geom, flood.g)) AS flood_exposed
+         FROM suitability_cells c LEFT JOIN flood ON TRUE
         WHERE land_frac >= $1 AND land_frac <= $2 AND dist_port_m <= $3
-        GROUP BY floor(ST_X(ST_Transform(geom, 4326)) / $4),
-                 floor(ST_Y(ST_Transform(geom, 4326)) / $4)
+        GROUP BY floor(ST_X(ST_Transform(c.geom, 4326)) / $4),
+                 floor(ST_Y(ST_Transform(c.geom, 4326)) / $4)
         ORDER BY id`,
       [minLandFrac, maxLandFrac, maxPortDistanceM, resolution]
     )

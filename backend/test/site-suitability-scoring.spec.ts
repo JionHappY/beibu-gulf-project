@@ -111,6 +111,13 @@ describe('cellScore 加权和', () => {
     )
     expect(r2.sub.demand).toBe(0)
   })
+  it('5m 淹没面实判优先于高程代理：面内高格仍按最低安全余量 0.05', () => {
+    const wInund = { inundation: 1, terrain: 0, land: 0, access: 0, demand: 0 }
+    const exposed = cellScore({ ...BASE_CELL, meanElevM: 20, floodExposed: true }, wInund, 10)
+    const dry = cellScore({ ...BASE_CELL, meanElevM: 20 }, wInund, 10)
+    expect(exposed.sub.inundation).toBe(0.05)
+    expect(dry.sub.inundation).toBe(1)
+  })
   it('权重全 0 非法——单准则=1 其余 0 时 score=该准则子分', () => {
     const r = cellScore(BASE_CELL, { inundation: 1, terrain: 0, land: 0, access: 0, demand: 0 }, 10)
     expect(r.score).toBeCloseTo(inundationScore(10), 9)

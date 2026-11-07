@@ -443,7 +443,8 @@ function hintOnce() {
 </template>
 
 <style scoped>
-/* 面板内边距 0.1cell（与 LayerControlPanel 一致）；段落间距 0.2cell */
+/* 面板内边距 0.1cell（与 LayerControlPanel 一致）；段落间距 0.1cell——
+   底部时间轴压成一格后，再用 0.2cell 会在卡片与时间轴之间留出空带。 */
 .forecast-ctrl {
   width: 100%;
   height: 100%;
@@ -451,7 +452,7 @@ function hintOnce() {
   flex-direction: column;
   padding: v-bind(cell8px);
   box-sizing: border-box;
-  gap: v-bind(cell16px);
+  gap: v-bind(cell8px);
 }
 
 /* 按钮网格：2×2 自上而下读（货物/集装箱，活跃度/同比增速）。三格横排会让第四格
@@ -459,11 +460,12 @@ function hintOnce() {
 .btn-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  grid-auto-rows: minmax(0, 1fr);
   gap: v-bind(cell16px);
 
-  /* 撑满面板剩余高度：原来 flex:none 固定 0.8cell，4×4 面板下面空出一大片 */
-  flex: 1 1 auto;
+  /* 固定两行 0.8cell：不再 flex:1 吃掉全部剩余高度。底部要让出「时间轴 1 格 +
+     两个入口位 1 格」，卡片继续撑满会把入口位挤没（P2 在此落按钮）。 */
+  flex: 0 0 auto;
+  grid-auto-rows: v-bind(btnHeightCss);
   min-height: 0;
 
   /* 容量出口（c043）：面板变矮时按钮不被 GCSPanel 的 overflow:hidden 裁掉，仍可滚可达。
@@ -520,21 +522,18 @@ function hintOnce() {
 
 /* 静态面见 style.css 的 .gcs-chip（F29 收口）；只有随 cell 尺寸走的两项留在组件内 */
 .scenario-chip {
-  padding: v-bind(cell8px) 0;
+  /* 上下 2px：0.1cell 的上下内边距会把情景行撑到 34px，时间轴就压不进一格 */
+  padding: 2px 0;
   font-size: v-bind(smallFontSizeCss);
 }
 
-/* ===== 时间轴（滑块收进统一卡片；控件行高 0.8cell，与卡片行高同源） ===== */
+/* ===== 时间轴（裸露滑块，一整行） ===== */
 .time-section {
   flex-shrink: 0;
 
-  /* 气泡带：胶囊画在滑块上方这段留白里，居中于「情景行底边」与「滑块顶边」之间，
-     否则 bottom:100% 会直接压到情景按钮上（用户截图复现）。 */
-
-  padding-top: 20px;
-
-  /* 不再 margin-top:auto 顶到底：指标网格已 flex:1 吃掉剩余高度，
-     再贴底会在情景行与时间轴之间留一条空带 */
+  /* 不再用 20px 气泡留白带：气泡改为覆盖在刻度行上（拖动时刻度本来就不看），
+     整段从 102px 压到 40px，给底部入口位让出一格。 */
+  padding-top: 0;
   margin-top: 0;
 }
 
@@ -551,7 +550,7 @@ function hintOnce() {
   grid-row: 1;
   display: flex;
   align-items: center;
-  height: v-bind(btnHeightCss);
+  height: 24px;
   padding: 0;
 
   /* 不再套一层描边卡片：时间轴与浸没页的水位滑块同一种裸露形态，
@@ -562,17 +561,18 @@ function hintOnce() {
 
 .time-bubble {
   position: absolute;
-  bottom: calc(100% + 4px);
 
-  /* 气泡在 padding-top 的留白带内垂直居中：4px 上移 + 20px 带高 ⇒ 视觉居中间距约 11px */
+  /* 气泡落在刻度行上（top:100%），拖动时遮住刻度、松开后随 focus 消失；
+     不再向上占用情景行的留白带。 */
+  top: 100%;
   left: var(--pos, 0%);
   transform: translateX(-50%);
-  padding: 2px 8px;
+  padding: 2px 6px;
   border-radius: var(--GCS-radius-md);
   background: var(--GCS-color-primary);
   color: var(--GCS-text-inverse);
-  font-size: v-bind(smallFontSizeCss);
-  line-height: 1.2;
+  font-size: 11px;
+  line-height: 1.1;
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
   opacity: 0;
@@ -585,6 +585,12 @@ function hintOnce() {
 .time-card:hover .time-bubble,
 .time-card:focus-within .time-bubble {
   opacity: 1;
+}
+
+/* 气泡与刻度共用同一行：气泡出现时让刻度退场，避免两层字叠在一起 */
+.time-card:hover ~ .time-slider-wrap .t-ticks,
+.time-card:focus-within ~ .time-slider-wrap .t-ticks {
+  opacity: 0;
 }
 
 .time-range {
@@ -639,7 +645,7 @@ function hintOnce() {
   grid-column: 1;
   grid-row: 2;
   align-self: start;
-  height: 18px;
+  height: 16px;
 }
 
 .t-ticks {
@@ -650,7 +656,7 @@ function hintOnce() {
   left: 9px;
   right: 9px;
   margin: 0;
-  height: 18px;
+  height: 16px;
 }
 
 .t-tick {
